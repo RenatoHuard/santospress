@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@supabase/supabase-js'
 import Image from 'next/image'
+import { useTheme } from 'next-themes'
 import { validarConvite, aceitarConvite, aceitarConviteGoogle } from '@/app/sistema/actions/convites'
 
 type ConviteInfo = {
@@ -22,6 +23,8 @@ function getBrowserClient() {
 export default function ConvitePage() {
   const { token } = useParams<{ token: string }>()
   const router = useRouter()
+  const { resolvedTheme } = useTheme()
+  const [mounted, setMounted] = useState(false)
 
   const [status, setStatus] = useState<'loading' | 'valid' | 'invalid' | 'success'>('loading')
   const [erro, setErro] = useState<string | null>(null)
@@ -56,6 +59,8 @@ export default function ConvitePage() {
       setStatus('valid')
     }
   }
+
+  useEffect(() => { setMounted(true) }, [])
 
   useEffect(() => {
     // Valida o token do convite
@@ -154,11 +159,16 @@ export default function ConvitePage() {
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-14 h-14 bg-navy rounded-2xl mb-4">
-            <span className="text-gold font-bold text-xl">SP</span>
-          </div>
-          <h1 className="text-xl font-bold text-gray-900 dark:text-white">Santos Press</h1>
-          <p className="text-sm text-gray-500 dark:text-gray-500 mt-1">Sistema de Gestão</p>
+          <Image
+            src={mounted && resolvedTheme === 'dark'
+              ? '/images/Logo_santospress_horizontal_negativo.png'
+              : '/images/Logo_santospress_horizontal.png'}
+            alt="Santos Press"
+            width={200}
+            height={60}
+            className="h-10 w-auto mx-auto"
+          />
+          <p className="text-sm text-gray-500 dark:text-gray-500 mt-3">Sistema de Gestão</p>
         </div>
 
         <div className="bg-white dark:bg-[#111] rounded-2xl border border-gray-100 dark:border-white/5 shadow-sm p-8">
