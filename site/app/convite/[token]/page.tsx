@@ -30,7 +30,7 @@ export default function ConvitePage() {
   useEffect(() => {
     validarConvite(token).then((res) => {
       if (!res) { setStatus('invalid'); setErro('Convite não encontrado.'); return }
-      if ('erro' in res) { setStatus('invalid'); setErro(res.erro); return }
+      if ('erro' in res) { setStatus('invalid'); setErro(res.erro ?? null); return }
       setConvite(res)
       setNome(res.nome_sugerido ?? '')
       setStatus('valid')
