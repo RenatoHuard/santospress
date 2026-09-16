@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useTheme } from 'next-themes'
-import { checkUserType } from '@/app/sistema/actions/auth'
+import { checkUserType, getMeuRole } from '@/app/sistema/actions/auth'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -43,7 +43,9 @@ export default function LoginPage() {
           googleHandledRef.current = false
           return
         }
-        router.push(tipo === 'cliente' ? '/cliente' : '/sistema')
+        if (tipo === 'cliente') { router.push('/cliente'); return }
+        const role = await getMeuRole(userId)
+        router.push(role === 'atendente' ? '/sistema/perfil' : '/sistema')
       } catch {
         router.push('/sistema')
       }
@@ -94,7 +96,9 @@ export default function LoginPage() {
         setLoading(false)
         return
       }
-      router.push(tipo === 'cliente' ? '/cliente' : '/sistema')
+      if (tipo === 'cliente') { router.push('/cliente'); return }
+      const role = await getMeuRole(userId)
+      router.push(role === 'atendente' ? '/sistema/perfil' : '/sistema')
     } catch {
       router.push('/sistema')
     }

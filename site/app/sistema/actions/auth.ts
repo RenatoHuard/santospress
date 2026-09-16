@@ -42,6 +42,16 @@ export async function isSuperAdmin(authUserId: string): Promise<boolean> {
   return !!data
 }
 
+/** Retorna o role do usuário em spress_usuarios (admin, atendente, colaborador…). */
+export async function getMeuRole(authUserId: string): Promise<string | null> {
+  const { data } = await sb()
+    .from('spress_usuarios')
+    .select('role')
+    .eq('auth_user_id', authUserId)
+    .maybeSingle()
+  return data?.role ?? null
+}
+
 /** Busca dados básicos do cliente pelo auth_user_id (chamado pelo portal). */
 export async function getClientePortalData(authUserId: string) {
   const { data } = await sb()

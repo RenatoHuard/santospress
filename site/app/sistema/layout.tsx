@@ -1,22 +1,33 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import { getMeuRole } from './actions/auth'
 
 export default function SistemaLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter()
+  const pathname = usePathname()
   const [ready, setReady] = useState(false)
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (!session) {
         router.replace('/login')
-      } else {
-        setReady(true)
+        return
       }
+
+      const role = await getMeuRole(session.user.id)
+
+      // Atendente só pode acessar /sistema/perfil
+      if (role === 'atendente' && !pathname.startsWith('/sistema/perfil')) {
+        router.replace('/sistema/perfil')
+        return
+      }
+
+      setReady(true)
     })
-  }, [router])
+  }, [router, pathname])
 
   if (!ready) {
     return (
