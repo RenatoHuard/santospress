@@ -56,6 +56,7 @@ export async function validarConvite(token: string) {
 }
 
 // Colaborador aceita o convite: cria conta + spress_usuarios pendente
+// Se o e-mail já existe em outro sistema do mesmo Supabase, vincula a conta existente
 export async function aceitarConvite(
   token: string,
   { nome, email, senha }: { nome: string; email: string; senha: string },
@@ -73,20 +74,53 @@ export async function aceitarConvite(
     if (convite.usado_em) return { success: false, erro: 'Este convite já foi utilizado.' }
     if (new Date(convite.expires_at) < new Date()) return { success: false, erro: 'Este convite expirou.' }
 
-    // Cria usuário no Supabase Auth
+    // Verifica se já tem perfil no SantosPress
+    const { data: jaExiste } = await sb
+      .from('spress_usuarios')
+      .select('id')
+      .eq('email', email)
+      .maybeSingle()
+    if (jaExiste) return { success: false, erro: 'Este e-mail já tem uma conta no SantosPress.' }
+
+    // Tenta criar novo usuário Auth
+    let userId: string
     const { data: authData, error: ae } = await sb.auth.admin.createUser({
       email,
       password: senha,
       email_confirm: true,
     })
-    if (ae || !authData.user) return { success: false, erro: ae?.message ?? 'Erro ao criar conta.' }
 
-    const userId = authData.user.id
+    if (ae) {
+      // E-mail já existe em outro sistema — tenta vincular verificando a senha
+      const emailJaExiste = ae.status === 422 ||
+        ae.message.toLowerCase().includes('already') ||
+        ae.message.toLowerCase().includes('registered')
 
-    // Cria user_system
-    const { error: use } = await sb.from('user_system').insert({ user_id: userId, sistema: 'spress' })
-    if (use) {
-      await sb.auth.admin.deleteUser(userId)
+      if (!emailJaExiste) return { success: false, erro: ae.message }
+
+      // Verifica credenciais com a senha informada
+      const anon = anonClient()
+      const { data: signIn, error: signInErr } = await anon.auth.signInWithPassword({ email, password: senha })
+
+      if (signInErr || !signIn?.user) {
+        return {
+          success: false,
+          erro: 'Este e-mail já está cadastrado em outro sistema. Informe a senha correta para vincular sua conta ao SantosPress.',
+        }
+      }
+
+      userId = signIn.user.id
+    } else {
+      if (!authData.user) return { success: false, erro: 'Erro ao criar conta.' }
+      userId = authData.user.id
+    }
+
+    // Vincula ao sistema spress (pode já existir se o usuário tem outro sistema)
+    const { error: use } = await sb
+      .from('user_system')
+      .insert({ user_id: userId, sistema: 'spress' })
+    if (use && !use.message.includes('duplicate') && !use.message.includes('unique')) {
+      if (!ae) await sb.auth.admin.deleteUser(userId)
       return { success: false, erro: 'Erro ao registrar acesso: ' + use.message }
     }
 
@@ -102,12 +136,15 @@ export async function aceitarConvite(
       pendente_aprovacao: true,
     })
     if (ue) {
-      await sb.auth.admin.deleteUser(userId)
+      if (!ae) await sb.auth.admin.deleteUser(userId)
       return { success: false, erro: 'Erro ao criar perfil: ' + ue.message }
     }
 
     // Marca convite como usado
-    await sb.from('spress_convites').update({ usado_em: new Date().toISOString(), usado_por: userId }).eq('token', token)
+    await sb
+      .from('spress_convites')
+      .update({ usado_em: new Date().toISOString(), usado_por: userId })
+      .eq('token', token)
 
     return { success: true }
   } catch (err) {

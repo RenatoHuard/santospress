@@ -160,7 +160,7 @@ export default function ConvitePage() {
                       className="w-full bg-gray-50 dark:bg-[#0a0a0a] border border-gray-200 dark:border-white/8 rounded-xl px-3 py-2.5 pr-10 text-sm outline-none focus:border-gold/50 focus:ring-2 focus:ring-gold/15 transition text-gray-900 dark:text-white"
                       value={senha}
                       onChange={(e) => setSenha(e.target.value)}
-                      placeholder="Mínimo 8 caracteres"
+                      placeholder="Mínimo 8 caracteres — use a senha existente se já tiver conta"
                       autoComplete="new-password"
                     />
                     <button type="button" onClick={() => setShowSenha((v) => !v)}
