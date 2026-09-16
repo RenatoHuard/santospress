@@ -128,7 +128,7 @@ export function TabContratos({ clienteId }: Props) {
                 {isEditing ? (
                   <ContratoForm
                     data={editing!}
-                    onChange={(d) => setEditing(d)}
+                    onChange={(d) => setEditing(d as Contrato)}
                     onSave={handleSave}
                     onCancel={cancel}
                     onUpload={handleUpload}
