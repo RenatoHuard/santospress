@@ -26,6 +26,7 @@ export default function ConvitePage() {
   const [submitting, setSubmitting] = useState(false)
   const [submitErro, setSubmitErro] = useState<string | null>(null)
   const [showSenha, setShowSenha] = useState(false)
+  const [vinculouExistente, setVinculouExistente] = useState(false)
 
   useEffect(() => {
     validarConvite(token).then((res) => {
@@ -42,13 +43,14 @@ export default function ConvitePage() {
     setSubmitErro(null)
     if (!nome.trim()) { setSubmitErro('Informe seu nome completo.'); return }
     if (!email.trim()) { setSubmitErro('Informe seu e-mail.'); return }
-    if (senha.length < 8) { setSubmitErro('A senha deve ter pelo menos 8 caracteres.'); return }
-    if (senha !== confirmacao) { setSubmitErro('As senhas não coincidem.'); return }
+    // Senha só é obrigatória se o usuário não tem conta (validada no servidor)
+    if (senha && senha !== confirmacao) { setSubmitErro('As senhas não coincidem.'); return }
 
     setSubmitting(true)
     try {
       const res = await aceitarConvite(token, { nome: nome.trim(), email: email.trim(), senha })
       if (res.success) {
+        setVinculouExistente(res.jaExistia ?? false)
         setStatus('success')
       } else {
         setSubmitErro(res.erro ?? 'Erro ao criar conta.')
@@ -103,10 +105,14 @@ export default function ConvitePage() {
                   <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                 </svg>
               </div>
-              <h2 className="text-gray-900 dark:text-white font-semibold text-lg mb-2">Conta criada!</h2>
+              <h2 className="text-gray-900 dark:text-white font-semibold text-lg mb-2">
+                {vinculouExistente ? 'Conta vinculada!' : 'Conta criada!'}
+              </h2>
               <p className="text-sm text-gray-500 dark:text-gray-500 leading-relaxed">
-                Seu cadastro foi recebido e está aguardando aprovação do administrador.<br />
-                Você receberá acesso em breve.
+                {vinculouExistente
+                  ? <>Sua conta existente foi vinculada ao SantosPress.<br />Aguardando aprovação do administrador.</>
+                  : <>Seu cadastro foi recebido e está aguardando aprovação do administrador.<br />Você receberá acesso em breve.</>
+                }
               </p>
             </div>
           )}
@@ -160,7 +166,7 @@ export default function ConvitePage() {
                       className="w-full bg-gray-50 dark:bg-[#0a0a0a] border border-gray-200 dark:border-white/8 rounded-xl px-3 py-2.5 pr-10 text-sm outline-none focus:border-gold/50 focus:ring-2 focus:ring-gold/15 transition text-gray-900 dark:text-white"
                       value={senha}
                       onChange={(e) => setSenha(e.target.value)}
-                      placeholder="Mínimo 8 caracteres — use a senha existente se já tiver conta"
+                      placeholder="Mínimo 8 caracteres (deixe em branco se já tem conta)"
                       autoComplete="new-password"
                     />
                     <button type="button" onClick={() => setShowSenha((v) => !v)}

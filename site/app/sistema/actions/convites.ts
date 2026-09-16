@@ -56,11 +56,12 @@ export async function validarConvite(token: string) {
 }
 
 // Colaborador aceita o convite: cria conta + spress_usuarios pendente
-// Se o e-mail já existe em outro sistema do mesmo Supabase, vincula a conta existente
+// Se o e-mail já existe em outro sistema (mesmo Supabase), vincula sem precisar de senha.
+// O token do convite é a autorização suficiente para sistemas internos.
 export async function aceitarConvite(
   token: string,
   { nome, email, senha }: { nome: string; email: string; senha: string },
-): Promise<{ success: boolean; erro?: string }> {
+): Promise<{ success: boolean; erro?: string; jaExistia?: boolean }> {
   try {
     const sb = serviceClient()
 
@@ -82,45 +83,36 @@ export async function aceitarConvite(
       .maybeSingle()
     if (jaExiste) return { success: false, erro: 'Este e-mail já tem uma conta no SantosPress.' }
 
-    // Tenta criar novo usuário Auth
+    // Verifica se o e-mail já existe no Auth (outro sistema, ex: Google OAuth)
+    const { data: authUserIdExistente } = await sb.rpc('get_auth_user_id_by_email', { p_email: email })
+
     let userId: string
-    const { data: authData, error: ae } = await sb.auth.admin.createUser({
-      email,
-      password: senha,
-      email_confirm: true,
-    })
+    let isNewUser = false
 
-    if (ae) {
-      // E-mail já existe em outro sistema — tenta vincular verificando a senha
-      const emailJaExiste = ae.status === 422 ||
-        ae.message.toLowerCase().includes('already') ||
-        ae.message.toLowerCase().includes('registered')
-
-      if (!emailJaExiste) return { success: false, erro: ae.message }
-
-      // Verifica credenciais com a senha informada
-      const anon = anonClient()
-      const { data: signIn, error: signInErr } = await anon.auth.signInWithPassword({ email, password: senha })
-
-      if (signInErr || !signIn?.user) {
-        return {
-          success: false,
-          erro: 'Este e-mail já está cadastrado em outro sistema. Informe a senha correta para vincular sua conta ao SantosPress.',
-        }
-      }
-
-      userId = signIn.user.id
+    if (authUserIdExistente) {
+      // Conta já existe — vincula sem criar nova (suporta Google OAuth e outros sistemas)
+      userId = authUserIdExistente as string
     } else {
-      if (!authData.user) return { success: false, erro: 'Erro ao criar conta.' }
+      // Conta nova — cria com e-mail + senha
+      if (!senha || senha.length < 8) {
+        return { success: false, erro: 'A senha deve ter pelo menos 8 caracteres.' }
+      }
+      const { data: authData, error: ae } = await sb.auth.admin.createUser({
+        email,
+        password: senha,
+        email_confirm: true,
+      })
+      if (ae || !authData.user) return { success: false, erro: ae?.message ?? 'Erro ao criar conta.' }
       userId = authData.user.id
+      isNewUser = true
     }
 
-    // Vincula ao sistema spress (pode já existir se o usuário tem outro sistema)
+    // Vincula ao sistema spress
     const { error: use } = await sb
       .from('user_system')
       .insert({ user_id: userId, sistema: 'spress' })
-    if (use && !use.message.includes('duplicate') && !use.message.includes('unique')) {
-      if (!ae) await sb.auth.admin.deleteUser(userId)
+    if (use) {
+      if (isNewUser) await sb.auth.admin.deleteUser(userId)
       return { success: false, erro: 'Erro ao registrar acesso: ' + use.message }
     }
 
@@ -136,7 +128,7 @@ export async function aceitarConvite(
       pendente_aprovacao: true,
     })
     if (ue) {
-      if (!ae) await sb.auth.admin.deleteUser(userId)
+      if (isNewUser) await sb.auth.admin.deleteUser(userId)
       return { success: false, erro: 'Erro ao criar perfil: ' + ue.message }
     }
 
@@ -146,7 +138,7 @@ export async function aceitarConvite(
       .update({ usado_em: new Date().toISOString(), usado_por: userId })
       .eq('token', token)
 
-    return { success: true }
+    return { success: true, jaExistia: !isNewUser }
   } catch (err) {
     return { success: false, erro: err instanceof Error ? err.message : 'Erro inesperado ao criar conta.' }
   }
