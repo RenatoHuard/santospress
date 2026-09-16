@@ -1,0 +1,46 @@
+*SISTEMA SANTOSPRESS — ORDEM DE ATAQUE*
+
+✅ *Já concluído*
+- Schema completo (29 tabelas no banco)
+- Site institucional (blog, equipe, login)
+- Blog/CMS com editor, upload de imagem e relatórios
+
+---
+
+*Princípio das próximas fases:*
+Arrumar a casa antes de crescer — trazer o que já existe para dentro do sistema e enxergar o cenário atual antes de pensar em nova aquisição.
+
+---
+
+*4ª Fase — Cadastro de Colaboradores*
+Tela de listagem e edição da equipe: cargo, setor, dados. Tabela já existe no banco.
+
+*5ª Fase — RH: Ponto e Frequência*
+Registro de entrada/saída, relatório mensal, férias e afastamentos. Requer novas tabelas.
+
+*6ª Fase — Cadastro de Clientes*
+Importar a base atual para dentro do sistema: ficha completa, status, contrato vinculado.
+
+*7ª Fase — Financeiro (cenário atual)*
+Contas a receber/pagar, fluxo de caixa, inadimplência. Tabelas já existem.
+
+*8ª Fase — Kanban e Demandas*
+Board por cliente ou setor, cards, checklist, comentários, histórico de movimentação.
+
+*9ª Fase — CRM e Histórico*
+Timeline de interações, follow-ups, segmentação de clientes.
+
+*10ª Fase — RP (Assessoria de Imprensa)*
+Pautas, banco de jornalistas e veículos, clipping por cliente.
+
+*11ª Fase — Conteúdo e Social Media*
+Calendário editorial, publicações planejadas por cliente e rede social.
+
+*12ª Fase — Portal do Cliente*
+Acesso externo: kanban próprio, acompanhamento e aprovação de conteúdo.
+
+*13ª Fase — Aquisição e Funil de Vendas*
+Pipeline, propostas, contratos digitais. Crescer em cima de uma casa arrumada.
+
+*14ª Fase — Contábil*
+DRE, exportação para contador, integração fiscal.

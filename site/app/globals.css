@@ -1,0 +1,18 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html {
+  scroll-behavior: smooth;
+}
+
+/* Radar rings animation - dashboard */
+@keyframes radar-pulse {
+  0%, 100% { opacity: 0.35; }
+  50% { opacity: 0.08; }
+}
+.animate-radar { animation: radar-pulse 4s ease-in-out infinite; }
+
+/* Select options — light mode default, dark mode override */
+select option { background-color: #fff; color: #1a1a1a; }
+.dark select option { background-color: #1a1a1a; color: #fff; }
