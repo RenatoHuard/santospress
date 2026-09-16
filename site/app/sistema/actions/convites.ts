@@ -219,9 +219,26 @@ export async function aprovarColaborador(usuarioId: string) {
 // Admin rejeita colaborador (remove tudo)
 export async function rejeitarColaborador(usuarioId: string) {
   const sb = serviceClient()
+
+  const { data: func } = await sb
+    .from('spress_usuarios')
+    .select('auth_user_id')
+    .eq('id', usuarioId)
+    .single()
+
   await sb.from('spress_usuarios').delete().eq('id', usuarioId)
-  await sb.from('user_system').delete().eq('user_id', usuarioId)
-  await sb.auth.admin.deleteUser(usuarioId)
+
+  if (func?.auth_user_id) {
+    await sb.from('user_system').delete().eq('user_id', func.auth_user_id).eq('sistema', 'spress')
+
+    const { count } = await sb
+      .from('user_system')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', func.auth_user_id)
+    if ((count ?? 0) === 0) {
+      await sb.auth.admin.deleteUser(func.auth_user_id)
+    }
+  }
 }
 
 // Admin lista todos os convites

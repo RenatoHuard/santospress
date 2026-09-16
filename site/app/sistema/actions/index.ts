@@ -217,3 +217,44 @@ export async function getAuditCredenciais(usuarioId: string) {
     .limit(15)
   return data ?? []
 }
+
+export async function excluirColaborador(
+  id: string,
+  feitoPor: string,
+): Promise<{ success: boolean; erro?: string }> {
+  try {
+    const sb = serviceClient()
+
+    const { data: func } = await sb
+      .from('spress_usuarios')
+      .select('auth_user_id, nome, email')
+      .eq('id', id)
+      .single()
+    if (!func?.auth_user_id) return { success: false, erro: 'Colaborador não encontrado.' }
+
+    const authUserId = func.auth_user_id
+
+    await sb.from('spress_usuarios').delete().eq('id', id)
+    await sb.from('user_system').delete().eq('user_id', authUserId).eq('sistema', 'spress')
+
+    // Remove do Auth apenas se não tiver outros sistemas vinculados
+    const { count } = await sb
+      .from('user_system')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', authUserId)
+    if ((count ?? 0) === 0) {
+      await sb.auth.admin.deleteUser(authUserId)
+    }
+
+    await sb.from('spress_audit_acoes').insert({
+      acao: 'excluir_colaborador',
+      descricao: `Colaborador ${func.nome} (${func.email}) excluído`,
+      realizado_por: feitoPor,
+      dados: { colaborador_id: id, auth_user_id: authUserId, nome: func.nome, email: func.email },
+    })
+
+    return { success: true }
+  } catch (err) {
+    return { success: false, erro: err instanceof Error ? err.message : 'Erro inesperado.' }
+  }
+}

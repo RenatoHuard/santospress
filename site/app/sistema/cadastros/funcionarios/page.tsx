@@ -3,7 +3,8 @@
 import { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { getFuncionarios, toggleFuncionarioAtivo } from '../../actions'
+import { createClient } from '@supabase/supabase-js'
+import { getFuncionarios, toggleFuncionarioAtivo, excluirColaborador } from '../../actions'
 import { getColaboradoresPendentes, aprovarColaborador, rejeitarColaborador, getSetores, getConvites, cancelarConvite } from '../../actions/convites'
 import { ConviteModal } from './ConviteModal'
 
@@ -42,6 +43,123 @@ type Convite = {
   spress_setores: { nome: string } | null
 }
 
+function DeleteModal({
+  target,
+  onClose,
+  onSuccess,
+}: {
+  target: { id: string; nome: string }
+  onClose: () => void
+  onSuccess: () => void
+}) {
+  const [senha, setSenha] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [erro, setErro] = useState<string | null>(null)
+
+  async function handleConfirmar() {
+    if (!senha) { setErro('Digite sua senha para confirmar.'); return }
+    setLoading(true)
+    setErro(null)
+
+    const sb = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    )
+
+    const { data: { user } } = await sb.auth.getUser()
+    if (!user?.email) {
+      setErro('Sessão não encontrada. Faça login novamente.')
+      setLoading(false)
+      return
+    }
+
+    const { error: authErr } = await sb.auth.signInWithPassword({ email: user.email, password: senha })
+    if (authErr) {
+      const msg = authErr.message.toLowerCase()
+      setErro(
+        msg.includes('invalid login') || msg.includes('invalid credentials')
+          ? 'Senha incorreta.'
+          : msg.includes('provider') || msg.includes('oauth')
+          ? 'Sua conta usa login com Google. Defina uma senha nas configurações para usar esta função.'
+          : authErr.message,
+      )
+      setLoading(false)
+      return
+    }
+
+    const result = await excluirColaborador(target.id, user.email)
+    if (!result.success) {
+      setErro(result.erro ?? 'Erro ao excluir colaborador.')
+      setLoading(false)
+      return
+    }
+
+    onSuccess()
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={onClose}>
+      <div
+        className="bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-white/10 rounded-2xl shadow-xl max-w-md w-full p-6"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-start gap-3 mb-5">
+          <div className="w-10 h-10 rounded-full bg-red-100 dark:bg-red-950/40 flex items-center justify-center shrink-0">
+            <svg className="w-5 h-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+            </svg>
+          </div>
+          <div>
+            <h2 className="text-gray-900 dark:text-white font-bold text-base leading-tight">Excluir colaborador</h2>
+            <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
+              Você está prestes a excluir <strong className="text-gray-900 dark:text-white">{target.nome}</strong>. Esta ação não pode ser desfeita.
+            </p>
+          </div>
+        </div>
+
+        <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5">
+          Sua senha para confirmar
+        </label>
+        <input
+          type="password"
+          value={senha}
+          onChange={(e) => { setSenha(e.target.value); setErro(null) }}
+          onKeyDown={(e) => e.key === 'Enter' && !loading && handleConfirmar()}
+          className="w-full px-3.5 py-2.5 border border-gray-200 dark:border-white/10 rounded-xl bg-white dark:bg-white/5 text-gray-900 dark:text-white text-sm focus:outline-none focus:border-gold/50 focus:ring-1 focus:ring-gold/20"
+          placeholder="••••••••"
+          autoFocus
+        />
+
+        {erro && <p className="mt-2 text-xs text-red-500">{erro}</p>}
+
+        <div className="flex gap-3 mt-5">
+          <button
+            onClick={onClose}
+            disabled={loading}
+            className="flex-1 px-4 py-2.5 border border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-400 rounded-xl text-sm font-medium hover:bg-gray-50 dark:hover:bg-white/5 transition-colors disabled:opacity-50"
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={handleConfirmar}
+            disabled={loading || !senha}
+            className="flex-1 px-4 py-2.5 bg-red-600 text-white rounded-xl text-sm font-semibold hover:bg-red-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+          >
+            {loading ? (
+              <>
+                <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                Verificando...
+              </>
+            ) : (
+              'Excluir colaborador'
+            )}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 const ROLE_STYLE: Record<string, string> = {
   admin: 'bg-gold/15 text-gold border-gold/20',
   atendente: 'bg-blue-100 text-blue-600 border-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800/30',
@@ -72,6 +190,8 @@ export default function FuncionariosPage() {
   const [loadingConvites, setLoadingConvites] = useState(true)
   const [cancelandoId, setCancelandoId] = useState<string | null>(null)
   const [copiadoId, setCopiadoId] = useState<string | null>(null)
+
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; nome: string } | null>(null)
 
   const loadConvites = useCallback(async () => {
     setLoadingConvites(true)
@@ -407,12 +527,23 @@ export default function FuncionariosPage() {
                     </button>
                   </td>
                   <td className="pr-6 py-4 text-right">
-                    <Link
-                      href={`/sistema/cadastros/funcionarios/${f.id}`}
-                      className="text-gray-400 hover:text-gray-900 dark:text-gray-500 dark:hover:text-white text-xs transition-colors"
-                    >
-                      Editar →
-                    </Link>
+                    <div className="flex items-center justify-end gap-3">
+                      <button
+                        onClick={() => setDeleteTarget({ id: f.id, nome: f.nome })}
+                        title="Excluir colaborador"
+                        className="text-gray-300 dark:text-gray-700 hover:text-red-400 dark:hover:text-red-400 transition-colors"
+                      >
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+                        </svg>
+                      </button>
+                      <Link
+                        href={`/sistema/cadastros/funcionarios/${f.id}`}
+                        className="text-gray-400 hover:text-gray-900 dark:text-gray-500 dark:hover:text-white text-xs transition-colors"
+                      >
+                        Editar →
+                      </Link>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -425,6 +556,17 @@ export default function FuncionariosPage() {
         <ConviteModal
           setores={setores}
           onClose={() => { setShowConvite(false); loadConvites() }}
+        />
+      )}
+
+      {deleteTarget && (
+        <DeleteModal
+          target={deleteTarget}
+          onClose={() => setDeleteTarget(null)}
+          onSuccess={() => {
+            setDeleteTarget(null)
+            load()
+          }}
         />
       )}
     </div>
