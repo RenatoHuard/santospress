@@ -139,6 +139,62 @@ export async function aceitarConvite(
   }
 }
 
+// Aceita convite via Google OAuth — usuário já autenticado, sem senha
+export async function aceitarConviteGoogle(
+  token: string,
+  { nome, email }: { nome: string; email: string },
+): Promise<{ success: boolean; erro?: string }> {
+  try {
+    const sb = serviceClient()
+
+    const { data: convite, error: ce } = await sb
+      .from('spress_convites')
+      .select('id, cargo_sugerido, setor_id, role, usado_em, expires_at, nome_sugerido')
+      .eq('token', token)
+      .single()
+    if (ce || !convite) return { success: false, erro: 'Convite não encontrado.' }
+    if (convite.usado_em) return { success: false, erro: 'Este convite já foi utilizado.' }
+    if (new Date(convite.expires_at) < new Date()) return { success: false, erro: 'Este convite expirou.' }
+
+    const { data: jaExiste } = await sb
+      .from('spress_usuarios')
+      .select('id')
+      .eq('email', email)
+      .maybeSingle()
+    if (jaExiste) return { success: false, erro: 'Este e-mail já tem uma conta no SantosPress.' }
+
+    const { data: authUserId } = await sb.rpc('get_auth_user_id_by_email', { p_email: email })
+    if (!authUserId) return { success: false, erro: 'Sessão não encontrada. Tente novamente.' }
+
+    const userId = authUserId as string
+    const nomeFinal = nome.trim() || (convite.nome_sugerido as string | null) || email.split('@')[0]
+
+    const { error: use } = await sb.from('user_system').insert({ user_id: userId, sistema: 'spress' })
+    if (use) return { success: false, erro: 'Erro ao registrar acesso: ' + use.message }
+
+    const { error: ue } = await sb.from('spress_usuarios').insert({
+      auth_user_id: userId,
+      nome: nomeFinal,
+      email,
+      cargo: convite.cargo_sugerido ?? null,
+      setor_id: convite.setor_id ?? null,
+      role: convite.role,
+      ativo: false,
+      pendente_aprovacao: true,
+    })
+    if (ue) return { success: false, erro: 'Erro ao criar perfil: ' + ue.message }
+
+    await sb
+      .from('spress_convites')
+      .update({ usado_em: new Date().toISOString(), usado_por: userId })
+      .eq('token', token)
+
+    return { success: true }
+  } catch (err) {
+    return { success: false, erro: err instanceof Error ? err.message : 'Erro inesperado.' }
+  }
+}
+
 // Admin lista colaboradores pendentes de aprovação
 export async function getColaboradoresPendentes() {
   const sb = serviceClient()
