@@ -1,4 +1,4 @@
-'use server'
+﻿'use server'
 
 import { createClient } from '@supabase/supabase-js'
 import { revalidatePath } from 'next/cache'
@@ -9,7 +9,7 @@ function sb() {
   return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, key)
 }
 
-// ── Cliente principal ─────────────────────────────────────────────
+// â”€â”€ Cliente principal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export async function getClientes() {
   const { data } = await sb()
@@ -57,10 +57,10 @@ export async function criarCliente(payload: ClientePayload & { senha: string }):
   const { senha, ...rest } = payload
   const admin = sb()
 
-  if (!rest.email) throw new Error('E-mail é obrigatório para criar o acesso ao portal.')
-  if (senha.length < 8) throw new Error('A senha deve ter no mínimo 8 caracteres.')
+  if (!rest.email) throw new Error('E-mail Ã© obrigatÃ³rio para criar o acesso ao portal.')
+  if (senha.length < 8) throw new Error('A senha deve ter no mÃ­nimo 8 caracteres.')
 
-  // 1. Cria usuário Auth (sem envio de e-mail de confirmação)
+  // 1. Cria usuÃ¡rio Auth (sem envio de e-mail de confirmaÃ§Ã£o)
   const { data: authData, error: authError } = await admin.auth.admin.createUser({
     email: rest.email,
     password: senha,
@@ -73,7 +73,7 @@ export async function criarCliente(payload: ClientePayload & { senha: string }):
   const { data, error } = await admin
     .from('spress_clientes')
     .insert({
-      ...nullify(rest as Record<string, unknown>),
+      ...nullify(rest as unknown as Record<string, unknown>),
       auth_user_id: authUserId,
       updated_at: new Date().toISOString(),
     })
@@ -92,7 +92,7 @@ export async function criarCliente(payload: ClientePayload & { senha: string }):
 export async function atualizarCliente(id: string, payload: ClientePayload) {
   const { error } = await sb()
     .from('spress_clientes')
-    .update({ ...nullify(payload as Record<string, unknown>), updated_at: new Date().toISOString() })
+    .update({ ...nullify(payload as unknown as Record<string, unknown>), updated_at: new Date().toISOString() })
     .eq('id', id)
   if (error) throw new Error(error.message)
   revalidatePath(`/sistema/cadastros/clientes/${id}`)
@@ -102,7 +102,7 @@ export async function toggleClienteStatus(id: string, status: string) {
   await sb().from('spress_clientes').update({ status }).eq('id', id)
 }
 
-// ── Contatos ──────────────────────────────────────────────────────
+// â”€â”€ Contatos â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export interface ContatoPayload {
   id?: string
@@ -127,7 +127,7 @@ export async function getClienteContatos(clienteId: string) {
 }
 
 export async function salvarContato(clienteId: string, payload: ContatoPayload) {
-  const row = { ...nullify(payload as Record<string, unknown>), cliente_id: clienteId }
+  const row = { ...nullify(payload as unknown as Record<string, unknown>), cliente_id: clienteId }
   if (payload.id) {
     const { error } = await sb().from('spress_clientes_contatos').update(row).eq('id', payload.id)
     if (error) throw new Error(error.message)
@@ -141,7 +141,7 @@ export async function deletarContato(id: string) {
   await sb().from('spress_clientes_contatos').delete().eq('id', id)
 }
 
-// ── Financeiro ────────────────────────────────────────────────────
+// â”€â”€ Financeiro â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export interface FinanceiroPayload {
   email_financeiro: string
@@ -165,11 +165,11 @@ export async function getClienteFinanceiro(clienteId: string) {
 export async function salvarClienteFinanceiro(clienteId: string, payload: FinanceiroPayload) {
   const { error } = await sb()
     .from('spress_clientes_financeiro')
-    .upsert({ ...nullify(payload as Record<string, unknown>), cliente_id: clienteId, updated_at: new Date().toISOString() }, { onConflict: 'cliente_id' })
+    .upsert({ ...nullify(payload as unknown as Record<string, unknown>), cliente_id: clienteId, updated_at: new Date().toISOString() }, { onConflict: 'cliente_id' })
   if (error) throw new Error(error.message)
 }
 
-// ── Contratos ─────────────────────────────────────────────────────
+// â”€â”€ Contratos â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export interface ContratoPayload {
   id?: string
@@ -193,7 +193,7 @@ export async function getClienteContratos(clienteId: string) {
 
 export async function salvarContrato(clienteId: string, payload: ContratoPayload) {
   const row = {
-    ...nullify(payload as Record<string, unknown>),
+    ...nullify(payload as unknown as Record<string, unknown>),
     cliente_id: clienteId,
     valor: payload.valor ? parseFloat(payload.valor) : null,
     updated_at: new Date().toISOString(),
@@ -222,7 +222,7 @@ export async function uploadContratoArquivo(formData: FormData): Promise<string>
   if (error) throw new Error(error.message)
 
   const { data } = await sb().storage.from('contratos-clientes').createSignedUrl(path, 3600)
-  // Armazena o path para gerar signed URLs depois; retorna URL temporária para exibição imediata
+  // Armazena o path para gerar signed URLs depois; retorna URL temporÃ¡ria para exibiÃ§Ã£o imediata
   return JSON.stringify({ path, signedUrl: data?.signedUrl ?? '' })
 }
 
@@ -231,7 +231,7 @@ export async function getContratoSignedUrl(path: string): Promise<string> {
   return data?.signedUrl ?? ''
 }
 
-// ── CRM ───────────────────────────────────────────────────────────
+// â”€â”€ CRM â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export interface CRMPayload {
   tipo: string
@@ -252,7 +252,7 @@ export async function getClienteCRM(clienteId: string) {
 
 export async function addCRMEntry(clienteId: string, payload: CRMPayload) {
   const { error } = await sb().from('spress_clientes_crm').insert({
-    ...nullify(payload as Record<string, unknown>),
+    ...nullify(payload as unknown as Record<string, unknown>),
     cliente_id: clienteId,
   })
   if (error) throw new Error(error.message)

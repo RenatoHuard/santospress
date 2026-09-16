@@ -1,4 +1,4 @@
-'use server'
+﻿'use server'
 
 import { createClient } from '@supabase/supabase-js'
 
@@ -12,7 +12,7 @@ function nullify(obj: Record<string, unknown>) {
   return Object.fromEntries(Object.entries(obj).map(([k, v]) => [k, v === '' ? null : v]))
 }
 
-// ── Dados pessoais ────────────────────────────────────────────────
+// â”€â”€ Dados pessoais â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export async function getFuncPessoal(usuarioId: string) {
   const { data } = await serviceClient()
     .from('spress_func_pessoal')
@@ -32,7 +32,7 @@ export async function saveFuncPessoal(usuarioId: string, payload: Record<string,
   if (error) throw new Error(error.message)
 }
 
-// ── Documentação ─────────────────────────────────────────────────
+// â”€â”€ DocumentaÃ§Ã£o â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export async function getFuncDocumentos(usuarioId: string) {
   const { data } = await serviceClient()
     .from('spress_func_documentos')
@@ -52,7 +52,7 @@ export async function saveFuncDocumentos(usuarioId: string, payload: Record<stri
   if (error) throw new Error(error.message)
 }
 
-// ── Dependentes ──────────────────────────────────────────────────
+// â”€â”€ Dependentes â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export async function getFuncDependentes(usuarioId: string) {
   const { data } = await serviceClient()
     .from('spress_func_dependentes')
@@ -68,7 +68,7 @@ export async function addFuncDependente(
 ) {
   const { error } = await serviceClient()
     .from('spress_func_dependentes')
-    .insert({ ...nullify(payload as Record<string, unknown>), usuario_id: usuarioId })
+    .insert({ ...nullify(payload as unknown as Record<string, unknown>), usuario_id: usuarioId })
   if (error) throw new Error(error.message)
 }
 
@@ -76,7 +76,7 @@ export async function removeFuncDependente(id: string) {
   await serviceClient().from('spress_func_dependentes').delete().eq('id', id)
 }
 
-// ── Contrato ─────────────────────────────────────────────────────
+// â”€â”€ Contrato â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export async function getFuncContrato(usuarioId: string) {
   const { data } = await serviceClient()
     .from('spress_func_contrato')
@@ -99,7 +99,7 @@ export async function saveFuncContrato(usuarioId: string, payload: Record<string
 export async function uploadFuncFoto(formData: FormData): Promise<string> {
   const file = formData.get('file') as File
   const usuarioId = formData.get('usuarioId') as string
-  if (!file || !usuarioId) throw new Error('Dados inválidos')
+  if (!file || !usuarioId) throw new Error('Dados invÃ¡lidos')
 
   const sb = serviceClient()
   const path = `${usuarioId}/avatar.jpg`
@@ -122,7 +122,7 @@ export async function getFuncionariosSimples() {
   return data ?? []
 }
 
-// ── Bancário e benefícios ─────────────────────────────────────────
+// â”€â”€ BancÃ¡rio e benefÃ­cios â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export async function getFuncBancario(usuarioId: string) {
   const { data } = await serviceClient()
     .from('spress_func_bancario')
@@ -142,7 +142,7 @@ export async function saveFuncBancario(usuarioId: string, payload: Record<string
   if (error) throw new Error(error.message)
 }
 
-// ── Saúde ────────────────────────────────────────────────────────
+// â”€â”€ SaÃºde â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export async function getFuncSaude(usuarioId: string) {
   const { data } = await serviceClient()
     .from('spress_func_saude')
@@ -162,7 +162,7 @@ export async function saveFuncSaude(usuarioId: string, payload: Record<string, u
   if (error) throw new Error(error.message)
 }
 
-// ── Ocorrências ──────────────────────────────────────────────────
+// â”€â”€ OcorrÃªncias â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export async function getFuncOcorrencias(usuarioId: string) {
   const { data } = await serviceClient()
     .from('spress_func_ocorrencias')
@@ -178,7 +178,7 @@ export async function addFuncOcorrencia(
 ) {
   const { error } = await serviceClient()
     .from('spress_func_ocorrencias')
-    .insert({ ...nullify(payload as Record<string, unknown>), usuario_id: usuarioId })
+    .insert({ ...nullify(payload as unknown as Record<string, unknown>), usuario_id: usuarioId })
   if (error) throw new Error(error.message)
 }
 
@@ -186,12 +186,12 @@ export async function removeFuncOcorrencia(id: string) {
   await serviceClient().from('spress_func_ocorrencias').delete().eq('id', id)
 }
 
-// ── Upload de documento do colaborador ────────────────────────────
+// â”€â”€ Upload de documento do colaborador â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export async function uploadColaboradorDoc(formData: FormData): Promise<string> {
   const file = formData.get('file') as File
   const usuarioId = formData.get('usuarioId') as string
   const tipo = formData.get('tipo') as string
-  if (!file || !usuarioId || !tipo) throw new Error('Dados inválidos')
+  if (!file || !usuarioId || !tipo) throw new Error('Dados invÃ¡lidos')
 
   const sb = serviceClient()
   const ext = file.name.split('.').pop() ?? 'pdf'
@@ -207,7 +207,7 @@ export async function uploadColaboradorDoc(formData: FormData): Promise<string> 
   return data.publicUrl
 }
 
-// ── Atestados médicos ─────────────────────────────────────────────
+// â”€â”€ Atestados mÃ©dicos â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export async function getFuncAtestados(usuarioId: string) {
   const { data } = await serviceClient()
     .from('spress_func_atestados')
@@ -223,7 +223,7 @@ export async function addFuncAtestado(
 ) {
   const { error } = await serviceClient()
     .from('spress_func_atestados')
-    .insert({ ...nullify(payload as Record<string, unknown>), usuario_id: usuarioId })
+    .insert({ ...nullify(payload as unknown as Record<string, unknown>), usuario_id: usuarioId })
   if (error) throw new Error(error.message)
 }
 
@@ -231,7 +231,7 @@ export async function removeFuncAtestado(id: string) {
   await serviceClient().from('spress_func_atestados').delete().eq('id', id)
 }
 
-// ── Notas de serviço ──────────────────────────────────────────────
+// â”€â”€ Notas de serviÃ§o â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export async function getFuncNotasServico(usuarioId: string) {
   const { data } = await serviceClient()
     .from('spress_func_notas_servico')
@@ -247,7 +247,7 @@ export async function addFuncNotaServico(
 ) {
   const { error } = await serviceClient()
     .from('spress_func_notas_servico')
-    .insert({ ...nullify(payload as Record<string, unknown>), usuario_id: usuarioId })
+    .insert({ ...nullify(payload as unknown as Record<string, unknown>), usuario_id: usuarioId })
   if (error) throw new Error(error.message)
 }
 
@@ -255,7 +255,7 @@ export async function removeFuncNotaServico(id: string) {
   await serviceClient().from('spress_func_notas_servico').delete().eq('id', id)
 }
 
-// ── Role do colaborador atual (para controle de visibilidade) ─────
+// â”€â”€ Role do colaborador atual (para controle de visibilidade) â”€â”€â”€â”€â”€
 export async function getColaboradorRole(authUserId: string): Promise<{
   role: string
   acesso_financeiro: boolean
@@ -275,7 +275,7 @@ export async function getColaboradorRole(authUserId: string): Promise<{
   }
 }
 
-// ── Busca o spress_usuarios.id a partir do auth_user_id ──────────
+// â”€â”€ Busca o spress_usuarios.id a partir do auth_user_id â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export async function getMeuUsuarioId(authUserId: string): Promise<string | null> {
   const { data } = await serviceClient()
     .from('spress_usuarios')
