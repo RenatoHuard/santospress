@@ -56,12 +56,10 @@ export async function validarConvite(token: string) {
 }
 
 // Colaborador aceita o convite: cria conta + spress_usuarios pendente
-// Se o e-mail já existe em outro sistema (mesmo Supabase), vincula sem precisar de senha.
-// O token do convite é a autorização suficiente para sistemas internos.
 export async function aceitarConvite(
   token: string,
   { nome, email, senha }: { nome: string; email: string; senha: string },
-): Promise<{ success: boolean; erro?: string; jaExistia?: boolean }> {
+): Promise<{ success: boolean; erro?: string }> {
   try {
     const sb = serviceClient()
 
@@ -83,20 +81,17 @@ export async function aceitarConvite(
       .maybeSingle()
     if (jaExiste) return { success: false, erro: 'Este e-mail já tem uma conta no SantosPress.' }
 
-    // Verifica se o e-mail já existe no Auth (outro sistema, ex: Google OAuth)
+    // Se o e-mail já existe no Auth (ex: conta em outro sistema),
+    // vincula silenciosamente — o token do convite é a autorização.
+    // Caso contrário, cria nova conta com a senha informada.
     const { data: authUserIdExistente } = await sb.rpc('get_auth_user_id_by_email', { p_email: email })
 
     let userId: string
     let isNewUser = false
 
     if (authUserIdExistente) {
-      // Conta já existe — vincula sem criar nova (suporta Google OAuth e outros sistemas)
       userId = authUserIdExistente as string
     } else {
-      // Conta nova — cria com e-mail + senha
-      if (!senha || senha.length < 8) {
-        return { success: false, erro: 'A senha deve ter pelo menos 8 caracteres.' }
-      }
       const { data: authData, error: ae } = await sb.auth.admin.createUser({
         email,
         password: senha,
@@ -138,7 +133,7 @@ export async function aceitarConvite(
       .update({ usado_em: new Date().toISOString(), usado_por: userId })
       .eq('token', token)
 
-    return { success: true, jaExistia: !isNewUser }
+    return { success: true }
   } catch (err) {
     return { success: false, erro: err instanceof Error ? err.message : 'Erro inesperado ao criar conta.' }
   }
