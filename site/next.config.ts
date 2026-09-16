@@ -6,6 +6,16 @@ const config: NextConfig = {
       bodySizeLimit: '10mb',
     },
   },
+  async redirects() {
+    return [
+      {
+        source: '/',
+        has: [{ type: 'host', value: 'sistema.santospress.com.br' }],
+        destination: '/sistema',
+        permanent: false,
+      },
+    ]
+  },
   images: {
     remotePatterns: [
       {
