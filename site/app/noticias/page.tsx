@@ -2,7 +2,7 @@ import { supabase } from '@/lib/supabase'
 import { BlogCard } from '@/components/BlogCard'
 import type { BlogPost } from '@/lib/types'
 
-export const revalidate = 60
+export const dynamic = 'force-dynamic'
 
 export const metadata = {
   title: 'Notícias | SantosPress Comunicação Integrada',

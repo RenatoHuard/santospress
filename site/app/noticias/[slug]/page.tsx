@@ -6,7 +6,7 @@ import type { Metadata } from 'next'
 import { ViewTracker } from './ViewTracker'
 import { ShareButtons } from './ShareButtons'
 
-export const revalidate = 60
+export const dynamic = 'force-dynamic'
 
 // Next.js 15: params é uma Promise
 interface Props {
