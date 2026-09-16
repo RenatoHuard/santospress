@@ -77,7 +77,7 @@ export function MeuContrato({ usuarioId }: { usuarioId: string }) {
         <InfoRow label="Local de trabalho" value={data.local_trabalho as string} />
       </Section>
 
-      {(salario || insalub || perig || comissao || data.observacoes_remuneracao) && (
+      {!!(salario || insalub || perig || comissao || data.observacoes_remuneracao) && (
         <>
           <div className="border-t border-gray-100 dark:border-white/5" />
           <Section title="Remuneração">
@@ -86,7 +86,7 @@ export function MeuContrato({ usuarioId }: { usuarioId: string }) {
             {perig    != null && perig > 0   && <InfoRow label="Adicional periculosidade" value={`R$ ${perig.toFixed(2)}`} />}
             {comissao != null && comissao > 0 && <InfoRow label="Comissão"                value={`${comissao}%`} />}
           </Section>
-          {data.observacoes_remuneracao && (
+          {!!(data.observacoes_remuneracao) && (
             <div>
               <p className="text-xs text-gray-400 dark:text-gray-500 mb-1">Observações</p>
               <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-line">
