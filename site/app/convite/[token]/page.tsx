@@ -47,8 +47,12 @@ export default function ConvitePage() {
 
     setSubmitting(true)
     try {
-      await aceitarConvite(token, { nome: nome.trim(), email: email.trim(), senha })
-      setStatus('success')
+      const res = await aceitarConvite(token, { nome: nome.trim(), email: email.trim(), senha })
+      if (res.success) {
+        setStatus('success')
+      } else {
+        setSubmitErro(res.erro ?? 'Erro ao criar conta.')
+      }
     } catch (err) {
       setSubmitErro(err instanceof Error ? err.message : 'Erro ao criar conta.')
     } finally {

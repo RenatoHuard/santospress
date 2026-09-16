@@ -59,50 +59,60 @@ export async function validarConvite(token: string) {
 export async function aceitarConvite(
   token: string,
   { nome, email, senha }: { nome: string; email: string; senha: string },
-) {
-  const sb = serviceClient()
+): Promise<{ success: boolean; erro?: string }> {
+  try {
+    const sb = serviceClient()
 
-  // Busca convite
-  const { data: convite, error: ce } = await sb
-    .from('spress_convites')
-    .select('id, cargo_sugerido, setor_id, role, usado_em, expires_at')
-    .eq('token', token)
-    .single()
-  if (ce || !convite) throw new Error('Convite não encontrado.')
-  if (convite.usado_em) throw new Error('Este convite já foi utilizado.')
-  if (new Date(convite.expires_at) < new Date()) throw new Error('Este convite expirou.')
+    // Busca convite
+    const { data: convite, error: ce } = await sb
+      .from('spress_convites')
+      .select('id, cargo_sugerido, setor_id, role, usado_em, expires_at')
+      .eq('token', token)
+      .single()
+    if (ce || !convite) return { success: false, erro: 'Convite não encontrado.' }
+    if (convite.usado_em) return { success: false, erro: 'Este convite já foi utilizado.' }
+    if (new Date(convite.expires_at) < new Date()) return { success: false, erro: 'Este convite expirou.' }
 
-  // Cria usuário no Supabase Auth
-  const { data: authData, error: ae } = await sb.auth.admin.createUser({
-    email,
-    password: senha,
-    email_confirm: true,
-  })
-  if (ae || !authData.user) throw new Error(ae?.message ?? 'Erro ao criar conta.')
+    // Cria usuário no Supabase Auth
+    const { data: authData, error: ae } = await sb.auth.admin.createUser({
+      email,
+      password: senha,
+      email_confirm: true,
+    })
+    if (ae || !authData.user) return { success: false, erro: ae?.message ?? 'Erro ao criar conta.' }
 
-  const userId = authData.user.id
+    const userId = authData.user.id
 
-  // Cria user_system
-  await sb.from('user_system').insert({ user_id: userId, sistema: 'spress' })
+    // Cria user_system
+    const { error: use } = await sb.from('user_system').insert({ user_id: userId, sistema: 'spress' })
+    if (use) {
+      await sb.auth.admin.deleteUser(userId)
+      return { success: false, erro: 'Erro ao registrar acesso: ' + use.message }
+    }
 
-  // Cria spress_usuarios com pendente_aprovacao = true
-  const { error: ue } = await sb.from('spress_usuarios').insert({
-    id: userId,
-    nome,
-    email,
-    cargo: convite.cargo_sugerido ?? null,
-    setor_id: convite.setor_id ?? null,
-    role: convite.role,
-    ativo: false,
-    pendente_aprovacao: true,
-  })
-  if (ue) {
-    await sb.auth.admin.deleteUser(userId)
-    throw new Error('Erro ao criar perfil: ' + ue.message)
+    // Cria spress_usuarios com pendente_aprovacao = true
+    const { error: ue } = await sb.from('spress_usuarios').insert({
+      auth_user_id: userId,
+      nome,
+      email,
+      cargo: convite.cargo_sugerido ?? null,
+      setor_id: convite.setor_id ?? null,
+      role: convite.role,
+      ativo: false,
+      pendente_aprovacao: true,
+    })
+    if (ue) {
+      await sb.auth.admin.deleteUser(userId)
+      return { success: false, erro: 'Erro ao criar perfil: ' + ue.message }
+    }
+
+    // Marca convite como usado
+    await sb.from('spress_convites').update({ usado_em: new Date().toISOString(), usado_por: userId }).eq('token', token)
+
+    return { success: true }
+  } catch (err) {
+    return { success: false, erro: err instanceof Error ? err.message : 'Erro inesperado ao criar conta.' }
   }
-
-  // Marca convite como usado
-  await sb.from('spress_convites').update({ usado_em: new Date().toISOString(), usado_por: userId }).eq('token', token)
 }
 
 // Admin lista colaboradores pendentes de aprovação
