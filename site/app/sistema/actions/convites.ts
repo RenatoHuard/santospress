@@ -144,14 +144,12 @@ export async function rejeitarColaborador(usuarioId: string) {
   await sb.auth.admin.deleteUser(usuarioId)
 }
 
-// Admin lista convites ativos (ainda não usados)
-export async function getConvitesAtivos() {
+// Admin lista todos os convites
+export async function getConvites() {
   const sb = serviceClient()
   const { data } = await sb
     .from('spress_convites')
-    .select('id, token, nome_sugerido, cargo_sugerido, role, expires_at, criado_por, spress_setores(nome)')
-    .is('usado_em', null)
-    .gt('expires_at', new Date().toISOString())
+    .select('id, token, nome_sugerido, cargo_sugerido, role, usado_em, expires_at, created_at, spress_setores(nome)')
     .order('created_at', { ascending: false })
   return data ?? []
 }

@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { getFuncionarios, toggleFuncionarioAtivo } from '../../actions'
-import { getColaboradoresPendentes, aprovarColaborador, rejeitarColaborador, getSetores } from '../../actions/convites'
+import { getColaboradoresPendentes, aprovarColaborador, rejeitarColaborador, getSetores, getConvites, cancelarConvite } from '../../actions/convites'
 import { ConviteModal } from './ConviteModal'
 
 type Funcionario = {
@@ -29,6 +29,18 @@ type Pendente = {
 }
 
 type Setor = { id: string; nome: string }
+
+type Convite = {
+  id: string
+  token: string
+  nome_sugerido: string | null
+  cargo_sugerido: string | null
+  role: string
+  usado_em: string | null
+  expires_at: string
+  created_at: string
+  spress_setores: { nome: string } | null
+}
 
 const ROLE_STYLE: Record<string, string> = {
   admin: 'bg-gold/15 text-gold border-gold/20',
@@ -56,6 +68,45 @@ export default function FuncionariosPage() {
   const [showConvite, setShowConvite] = useState(false)
   const [setores, setSetores] = useState<Setor[]>([])
 
+  const [convites, setConvites] = useState<Convite[]>([])
+  const [loadingConvites, setLoadingConvites] = useState(true)
+  const [cancelandoId, setCancelandoId] = useState<string | null>(null)
+  const [copiadoId, setCopiadoId] = useState<string | null>(null)
+
+  const loadConvites = useCallback(async () => {
+    setLoadingConvites(true)
+    try {
+      const data = await getConvites()
+      setConvites(data as unknown as Convite[])
+    } finally {
+      setLoadingConvites(false)
+    }
+  }, [])
+
+  function conviteStatus(c: Convite): 'ativo' | 'utilizado' | 'expirado' {
+    if (c.usado_em) return 'utilizado'
+    if (new Date(c.expires_at) < new Date()) return 'expirado'
+    return 'ativo'
+  }
+
+  async function handleCancelar(id: string) {
+    if (!confirm('Cancelar este convite? O link deixará de funcionar.')) return
+    setCancelandoId(id)
+    try {
+      await cancelarConvite(id)
+      setConvites((prev) => prev.filter((c) => c.id !== id))
+    } finally {
+      setCancelandoId(null)
+    }
+  }
+
+  function handleCopiar(token: string, id: string) {
+    const url = `${window.location.origin}/convite/${token}`
+    navigator.clipboard.writeText(url)
+    setCopiadoId(id)
+    setTimeout(() => setCopiadoId(null), 2000)
+  }
+
   const load = useCallback(async () => {
     setLoading(true)
     setError(null)
@@ -82,8 +133,9 @@ export default function FuncionariosPage() {
   useEffect(() => {
     load()
     loadPendentes()
+    loadConvites()
     getSetores().then(setSetores)
-  }, [load, loadPendentes])
+  }, [load, loadPendentes, loadConvites])
 
   async function handleToggle(id: string, current: boolean) {
     await toggleFuncionarioAtivo(id, !current)
@@ -199,6 +251,90 @@ export default function FuncionariosPage() {
         </div>
       )}
 
+      {/* Convites gerados */}
+      {!loadingConvites && convites.length > 0 && (
+        <div className="mb-8">
+          <div className="flex items-center gap-2 mb-3">
+            <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" />
+            </svg>
+            <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Convites</h2>
+            <span className="text-xs bg-gray-100 dark:bg-white/10 text-gray-500 dark:text-gray-400 rounded-full px-2 py-0.5 font-semibold">
+              {convites.length}
+            </span>
+          </div>
+
+          <div className="bg-white dark:bg-[#111] border border-gray-100 dark:border-white/5 rounded-2xl overflow-hidden">
+            {convites.map((c, i) => {
+              const status = conviteStatus(c)
+              const statusStyle = {
+                ativo: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800/30',
+                utilizado: 'bg-gray-100 text-gray-500 dark:bg-white/5 dark:text-gray-500 border-gray-200 dark:border-white/10',
+                expirado: 'bg-red-50 text-red-500 dark:bg-red-950/30 dark:text-red-400 border-red-100 dark:border-red-900/30',
+              }[status]
+              const statusLabel = { ativo: 'Ativo', utilizado: 'Utilizado', expirado: 'Expirado' }[status]
+              return (
+                <div
+                  key={c.id}
+                  className={`flex items-center gap-4 px-6 py-3.5 ${i > 0 ? 'border-t border-gray-50 dark:border-white/[0.04]' : ''}`}
+                >
+                  <div className="flex-1 min-w-0">
+                    <p className="text-gray-900 dark:text-white text-sm font-medium leading-tight">
+                      {c.nome_sugerido ?? <span className="text-gray-400 italic">Sem nome sugerido</span>}
+                    </p>
+                    <p className="text-gray-400 dark:text-gray-600 text-xs mt-0.5">
+                      {c.cargo_sugerido && `${c.cargo_sugerido} · `}
+                      {c.spress_setores?.nome && `${c.spress_setores.nome} · `}
+                      {new Date(c.created_at).toLocaleDateString('pt-BR')}
+                      {c.usado_em && ` · usado em ${new Date(c.usado_em).toLocaleDateString('pt-BR')}`}
+                    </p>
+                  </div>
+                  <span className={`text-[11px] font-semibold px-2.5 py-1 rounded-full border shrink-0 ${ROLE_STYLE[c.role] ?? ROLE_STYLE.cliente}`}>
+                    {ROLE_LABEL[c.role] ?? c.role}
+                  </span>
+                  <span className={`text-[11px] font-semibold px-2.5 py-1 rounded-full border shrink-0 ${statusStyle}`}>
+                    {statusLabel}
+                  </span>
+                  <div className="flex items-center gap-2 shrink-0">
+                    {status === 'ativo' && (
+                      <button
+                        onClick={() => handleCopiar(c.token, c.id)}
+                        className="px-3 py-1.5 text-xs border border-gray-200 dark:border-white/10 text-gray-500 dark:text-gray-400 hover:border-gold/40 hover:text-gold rounded-lg font-medium transition-colors flex items-center gap-1.5"
+                      >
+                        {copiadoId === c.id ? (
+                          <>
+                            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                            </svg>
+                            Copiado
+                          </>
+                        ) : (
+                          <>
+                            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 01-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 011.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 00-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 01-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 00-3.375-3.375h-1.5a1.125 1.125 0 01-1.125-1.125v-1.5a3.375 3.375 0 00-3.375-3.375H9.75" />
+                            </svg>
+                            Copiar link
+                          </>
+                        )}
+                      </button>
+                    )}
+                    {status !== 'utilizado' && (
+                      <button
+                        onClick={() => handleCancelar(c.id)}
+                        disabled={cancelandoId === c.id}
+                        className="px-3 py-1.5 text-xs text-red-500 hover:text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg transition-colors disabled:opacity-50"
+                      >
+                        {cancelandoId === c.id ? '...' : 'Excluir'}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
       {error && (
         <div className="bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-800/30 rounded-xl p-4 mb-6 text-red-600 dark:text-red-400 text-sm">
           {error === 'SERVICE_KEY_NOT_SET'
@@ -288,7 +424,7 @@ export default function FuncionariosPage() {
       {showConvite && (
         <ConviteModal
           setores={setores}
-          onClose={() => setShowConvite(false)}
+          onClose={() => { setShowConvite(false); loadConvites() }}
         />
       )}
     </div>
