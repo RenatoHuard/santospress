@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabase'
+import { createClient } from '@supabase/supabase-js'
 import { BlogCard } from '@/components/BlogCard'
 import type { BlogPost } from '@/lib/types'
 
@@ -10,7 +10,11 @@ export const metadata = {
 }
 
 async function getAllPosts(): Promise<BlogPost[]> {
-  const { data } = await supabase
+  const sb = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  )
+  const { data } = await sb
     .from('spress_blog_posts')
     .select('id, titulo, slug, resumo, capa_url, publicado_em')
     .eq('status', 'publicado')

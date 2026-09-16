@@ -1,4 +1,11 @@
-import { supabase } from '@/lib/supabase'
+import { createClient } from '@supabase/supabase-js'
+
+function sb() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  )
+}
 import { notFound } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
@@ -23,7 +30,7 @@ type PostCard = {
 }
 
 async function getPost(slug: string) {
-  const { data } = await supabase
+  const { data } = await sb()
     .from('spress_blog_posts')
     .select('*, autor:spress_usuarios(nome)')
     .eq('slug', slug)
@@ -33,7 +40,7 @@ async function getPost(slug: string) {
 }
 
 async function getMostReadPost(excludeId: string): Promise<PostCard | null> {
-  const { data: counts } = await supabase
+  const { data: counts } = await sb()
     .from('spress_blog_post_view_counts')
     .select('post_id, views')
     .neq('post_id', excludeId)
@@ -41,7 +48,7 @@ async function getMostReadPost(excludeId: string): Promise<PostCard | null> {
     .limit(1)
 
   if (counts && counts.length > 0) {
-    const { data } = await supabase
+    const { data } = await sb()
       .from('spress_blog_posts')
       .select('id, titulo, slug, resumo, capa_url, publicado_em')
       .eq('id', counts[0].post_id)
@@ -51,7 +58,7 @@ async function getMostReadPost(excludeId: string): Promise<PostCard | null> {
   }
 
   // Fallback: post mais recente
-  const { data } = await supabase
+  const { data } = await sb()
     .from('spress_blog_posts')
     .select('id, titulo, slug, resumo, capa_url, publicado_em')
     .eq('status', 'publicado')
@@ -63,7 +70,7 @@ async function getMostReadPost(excludeId: string): Promise<PostCard | null> {
 }
 
 async function getAdjacentPost(publishedAt: string, excludeId: string): Promise<PostCard | null> {
-  const { data: prev } = await supabase
+  const { data: prev } = await sb()
     .from('spress_blog_posts')
     .select('id, titulo, slug, resumo, capa_url, publicado_em')
     .eq('status', 'publicado')
@@ -74,7 +81,7 @@ async function getAdjacentPost(publishedAt: string, excludeId: string): Promise<
     .single()
   if (prev) return prev as PostCard
 
-  const { data: next } = await supabase
+  const { data: next } = await sb()
     .from('spress_blog_posts')
     .select('id, titulo, slug, resumo, capa_url, publicado_em')
     .eq('status', 'publicado')
@@ -87,7 +94,7 @@ async function getAdjacentPost(publishedAt: string, excludeId: string): Promise<
 }
 
 export async function generateStaticParams() {
-  const { data } = await supabase
+  const { data } = await sb()
     .from('spress_blog_posts')
     .select('slug')
     .eq('status', 'publicado')
