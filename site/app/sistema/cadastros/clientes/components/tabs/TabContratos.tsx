@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useCallback, useEffect, useState, useTransition } from 'react'
 import {
@@ -21,7 +21,7 @@ function blankContrato(): ContratoPayload {
 
 function formatBRL(value: string) {
   const n = parseFloat(value)
-  if (isNaN(n)) return '—'
+  if (isNaN(n)) return 'â€”'
   return n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 }
 
@@ -110,7 +110,7 @@ export function TabContratos({ clienteId }: Props) {
       const url = await getContratoSignedUrl(path)
       window.open(url, '_blank')
     } catch {
-      setError('Não foi possível abrir o arquivo.')
+      setError('NÃ£o foi possÃ­vel abrir o arquivo.')
     }
   }
 
@@ -151,7 +151,7 @@ export function TabContratos({ clienteId }: Props) {
                       </div>
                       <div className="flex flex-wrap gap-x-4 text-xs text-gray-400 mt-1">
                         {c.valor && <span className="font-medium text-gray-600 dark:text-gray-300">{formatBRL(String(c.valor))}</span>}
-                        {c.data_inicio && <span>Início: {c.data_inicio}</span>}
+                        {c.data_inicio && <span>InÃ­cio: {c.data_inicio}</span>}
                         {c.data_fim    && <span>Vence: {c.data_fim}</span>}
                       </div>
                     </div>
@@ -185,12 +185,12 @@ export function TabContratos({ clienteId }: Props) {
         </div>
       )}
 
-      {/* Formulário novo */}
+      {/* FormulÃ¡rio novo */}
       {adding && editing && (
         <Section title="Novo Contrato">
           <ContratoForm
             data={editing}
-            onChange={(d) => setEditing(d)}
+            onChange={(d) => setEditing(d as Contrato)}
             onSave={handleSave}
             onCancel={cancel}
             onUpload={handleUpload}
@@ -219,7 +219,7 @@ export function TabContratos({ clienteId }: Props) {
   )
 }
 
-// ── Formulário de contrato ─────────────────────────────────────────
+// â”€â”€ FormulÃ¡rio de contrato â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function ContratoForm({
   data, onChange, onSave, onCancel, onUpload, uploading, saving, error,
@@ -250,7 +250,7 @@ function ContratoForm({
   return (
     <form onSubmit={onSave} className="space-y-5">
       <G2>
-        <Field label="Título" full>
+        <Field label="TÃ­tulo" full>
           {inp('titulo', 'Nome do contrato')}
         </Field>
       </G2>
@@ -267,20 +267,20 @@ function ContratoForm({
         </Field>
       </G3>
       <G2>
-        <Field label="Data de Início">
+        <Field label="Data de InÃ­cio">
           {inp('data_inicio', '', 'date')}
         </Field>
         <Field label="Data de Vencimento">
           {inp('data_fim', '', 'date')}
         </Field>
       </G2>
-      <Field label="Descrição">
+      <Field label="DescriÃ§Ã£o">
         <textarea
           value={data.descricao}
           onChange={(e) => set('descricao', e.target.value)}
           rows={2}
           className={inputCls}
-          placeholder="Escopo, observações..."
+          placeholder="Escopo, observaÃ§Ãµes..."
         />
       </Field>
 
