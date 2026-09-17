@@ -16,3 +16,7 @@ html {
 /* Select options — light mode default, dark mode override */
 select option { background-color: #fff; color: #1a1a1a; }
 .dark select option { background-color: #1a1a1a; color: #fff; }
+
+/* Dark mode: clareia textos em gray-500/600 que ficariam ilegíveis */
+.dark .dark\:text-gray-500 { color: #9ca3af !important; } /* gray-400 */
+.dark .dark\:text-gray-600 { color: #9ca3af !important; } /* gray-400 */

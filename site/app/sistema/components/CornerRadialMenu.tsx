@@ -147,7 +147,7 @@ export function CornerRadialMenu({ items, parentItems, backHref, backLabel = 'Vo
             <span
               className={[
                 'mt-1.5 text-[9px] font-bold uppercase tracking-widest whitespace-nowrap select-none',
-                item.isCurrent ? 'text-gold' : 'text-gray-600 dark:text-gray-400',
+                item.isCurrent ? 'text-gold' : 'text-gray-600 dark:text-gray-200',
               ].join(' ')}
             >
               {item.label}
