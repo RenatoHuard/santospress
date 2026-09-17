@@ -24,8 +24,8 @@ export default function EquipesLayout({ children }: { children: React.ReactNode 
       <main className="flex-1 overflow-auto">{children}</main>
       <CornerRadialMenu
         items={ITEMS}
-        backHref="/sistema"
-        backLabel="Voltar"
+        backHref="/sistema/cadastros"
+        backLabel="Cadastros"
       />
     </div>
   )
