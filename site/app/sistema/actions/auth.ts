@@ -42,15 +42,43 @@ export async function isSuperAdmin(authUserId: string): Promise<boolean> {
   return !!data
 }
 
-/** Retorna o role do usuário em spress_usuarios (admin, atendente, colaborador…). */
-export async function getMeuRole(authUserId: string): Promise<string | null> {
+/** Retorna o array de roles do usuário (novo sistema multi-role). */
+export async function getMeusRoles(authUserId: string): Promise<string[]> {
   const { data } = await sb()
     .from('spress_usuarios')
-    .select('role')
+    .select('roles')
     .eq('auth_user_id', authUserId)
     .maybeSingle()
-  return data?.role ?? null
+  return data?.roles ?? []
 }
+
+/** Compatibilidade — retorna o primeiro role ou o campo legado. */
+export async function getMeuRole(authUserId: string): Promise<string | null> {
+  const roles = await getMeusRoles(authUserId)
+  return roles[0] ?? null
+}
+
+// ── Helpers síncronos (use após carregar getMeusRoles) ──────────────
+
+export const hasRole   = (roles: string[], role: string) => roles.includes(role)
+export const isAdmin   = (roles: string[]) => roles.includes('admin')
+export const isRH      = (roles: string[]) => roles.includes('rh')
+export const isGestor  = (roles: string[]) => roles.includes('gestor')
+export const isColaborador = (roles: string[]) => roles.includes('colaborador')
+export const isAtendente   = (roles: string[]) => roles.includes('atendente')
+
+/** Pode ver abas de RH (salário, contrato, benefícios) de outros. */
+export const podeVerRH = (roles: string[]) => isAdmin(roles) || isRH(roles) || isGestor(roles)
+
+/** Pode editar dados de RH de outros. */
+export const podeEditarRH = (roles: string[]) => isAdmin(roles) || isRH(roles)
+
+/** Pode acessar o painel administrativo (RadialMenu). */
+export const podeAcessarAdmin = (roles: string[]) => isAdmin(roles)
+
+/** Usuário é apenas atendente/colaborador simples sem poderes extras. */
+export const apenasPerfilProprio = (roles: string[]) =>
+  !isAdmin(roles) && !isRH(roles) && !isGestor(roles)
 
 /** Busca dados básicos do cliente pelo auth_user_id (chamado pelo portal). */
 export async function getClientePortalData(authUserId: string) {

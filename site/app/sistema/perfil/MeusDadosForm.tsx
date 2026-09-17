@@ -9,21 +9,25 @@ import { MinhaFinanceiro } from './MinhaFinanceiro'
 
 type TabKey = 'pessoal' | 'documentacao' | 'contrato' | 'saude' | 'financeiro'
 
-const TABS: { key: TabKey; label: string }[] = [
-  { key: 'pessoal',      label: 'Dados Pessoais' },
-  { key: 'documentacao', label: 'Documentação' },
-  { key: 'contrato',     label: 'Meu Contrato' },
-  { key: 'saude',        label: 'Saúde' },
-  { key: 'financeiro',   label: 'Notas de Serviço' },
+const TABS_BASE: { key: TabKey; label: string; rhOnly: boolean }[] = [
+  { key: 'pessoal',      label: 'Dados Pessoais', rhOnly: false },
+  { key: 'documentacao', label: 'Documentação',   rhOnly: false },
+  { key: 'contrato',     label: 'Meu Contrato',   rhOnly: true  },
+  { key: 'saude',        label: 'Saúde',           rhOnly: true  },
+  { key: 'financeiro',   label: 'Notas de Serviço',rhOnly: true  },
 ]
 
 interface Props {
   usuarioId: string
   readOnly?: boolean
   onDirty?: () => void
+  /** Roles do usuário logado — controla quais abas aparecem */
+  userRoles?: string[]
 }
 
-export function MeusDadosForm({ usuarioId, readOnly = false, onDirty }: Props) {
+export function MeusDadosForm({ usuarioId, readOnly = false, onDirty, userRoles = [] }: Props) {
+  const podeVerRH = userRoles.some(r => ['admin', 'rh', 'gestor'].includes(r))
+  const TABS = TABS_BASE.filter(t => !t.rhOnly || podeVerRH)
   const [active, setActive] = useState<TabKey>('pessoal')
 
   return (

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { getMeuUsuarioId } from '../actions/rh'
+import { getMeusRoles } from '../actions/auth'
 import { TopNav } from '../components/TopNav'
 import { MeusDadosForm } from './MeusDadosForm'
 
@@ -12,6 +13,7 @@ type Modo = 'ver' | 'editar'
 export default function MeusDadosPage() {
   const router = useRouter()
   const [usuarioId, setUsuarioId] = useState<string | null>(null)
+  const [userRoles, setUserRoles] = useState<string[]>([])
   const [loading, setLoading] = useState(true)
   const [modo, setModo] = useState<Modo>('ver')
   const [isDirty, setIsDirty] = useState(false)
@@ -23,9 +25,13 @@ export default function MeusDadosPage() {
 
     supabase.auth.getUser().then(async ({ data: { user } }) => {
       if (!user) { router.replace('/login'); return }
-      const id = await getMeuUsuarioId(user.id)
+      const [id, roles] = await Promise.all([
+        getMeuUsuarioId(user.id),
+        getMeusRoles(user.id),
+      ])
       if (!id) { router.replace('/sistema'); return }
       setUsuarioId(id)
+      setUserRoles(roles)
       setLoading(false)
     })
   }, [router])
@@ -146,6 +152,7 @@ export default function MeusDadosPage() {
           usuarioId={usuarioId!}
           readOnly={modo === 'ver'}
           onDirty={() => setIsDirty(true)}
+          userRoles={userRoles}
         />
       </main>
     </div>

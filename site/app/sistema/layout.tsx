@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import { getMeuRole } from './actions/auth'
+import { getMeusRoles, apenasPerfilProprio } from './actions/auth'
 
 export default function SistemaLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter()
@@ -17,11 +17,11 @@ export default function SistemaLayout({ children }: { children: React.ReactNode 
         return
       }
 
-      const role = await getMeuRole(session.user.id)
+      const roles = await getMeusRoles(session.user.id)
 
-      // Atendente só pode acessar /sistema (landing) e /sistema/perfil
+      // Usuários sem acesso admin só podem acessar /sistema e /sistema/perfil
       if (
-        role === 'atendente' &&
+        apenasPerfilProprio(roles) &&
         pathname !== '/sistema' &&
         !pathname.startsWith('/sistema/perfil')
       ) {
