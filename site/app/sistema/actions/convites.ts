@@ -19,20 +19,22 @@ export interface ConviteInput {
   nome_sugerido?: string
   cargo_sugerido?: string
   setor_id?: string
-  role: string
+  roles: string[]
   criado_por?: string
 }
 
 // Admin cria convite e retorna o token
 export async function criarConvite(data: ConviteInput): Promise<string> {
   const sb = serviceClient()
+  const roles = data.roles.length > 0 ? data.roles : ['colaborador']
   const { data: row, error } = await sb
     .from('spress_convites')
     .insert({
       nome_sugerido: data.nome_sugerido || null,
       cargo_sugerido: data.cargo_sugerido || null,
       setor_id: data.setor_id || null,
-      role: data.role,
+      role: roles[0],
+      roles,
       criado_por: data.criado_por ?? null,
     })
     .select('token')
@@ -46,13 +48,14 @@ export async function validarConvite(token: string) {
   const sb = anonClient()
   const { data, error } = await sb
     .from('spress_convites')
-    .select('id, nome_sugerido, cargo_sugerido, role, expires_at, usado_em')
+    .select('id, nome_sugerido, cargo_sugerido, role, roles, expires_at, usado_em')
     .eq('token', token)
     .single()
   if (error || !data) return null
   if (data.usado_em) return { erro: 'Este convite já foi utilizado.' }
   if (new Date(data.expires_at) < new Date()) return { erro: 'Este convite expirou.' }
-  return { id: data.id, nome_sugerido: data.nome_sugerido, cargo_sugerido: data.cargo_sugerido, role: data.role }
+  const roles: string[] = (data.roles && data.roles.length > 0) ? data.roles : [data.role]
+  return { id: data.id, nome_sugerido: data.nome_sugerido, cargo_sugerido: data.cargo_sugerido, roles }
 }
 
 // Colaborador aceita o convite: cria conta + spress_usuarios pendente
@@ -66,12 +69,13 @@ export async function aceitarConvite(
     // Busca convite
     const { data: convite, error: ce } = await sb
       .from('spress_convites')
-      .select('id, cargo_sugerido, setor_id, role, usado_em, expires_at')
+      .select('id, cargo_sugerido, setor_id, role, roles, usado_em, expires_at')
       .eq('token', token)
       .single()
     if (ce || !convite) return { success: false, erro: 'Convite não encontrado.' }
     if (convite.usado_em) return { success: false, erro: 'Este convite já foi utilizado.' }
     if (new Date(convite.expires_at) < new Date()) return { success: false, erro: 'Este convite expirou.' }
+    const conviteRoles: string[] = (convite.roles?.length > 0) ? convite.roles : [convite.role]
 
     // Verifica se já tem perfil no SantosPress
     const { data: jaExiste } = await sb
@@ -118,7 +122,8 @@ export async function aceitarConvite(
       email,
       cargo: convite.cargo_sugerido ?? null,
       setor_id: convite.setor_id ?? null,
-      role: convite.role,
+      role: conviteRoles[0],
+      roles: conviteRoles,
       ativo: false,
       pendente_aprovacao: true,
     })
@@ -149,11 +154,12 @@ export async function aceitarConviteGoogle(
 
     const { data: convite, error: ce } = await sb
       .from('spress_convites')
-      .select('id, cargo_sugerido, setor_id, role, usado_em, expires_at, nome_sugerido')
+      .select('id, cargo_sugerido, setor_id, role, roles, usado_em, expires_at, nome_sugerido')
       .eq('token', token)
       .single()
     if (ce || !convite) return { success: false, erro: 'Convite não encontrado.' }
     if (convite.usado_em) return { success: false, erro: 'Este convite já foi utilizado.' }
+    const conviteRolesG: string[] = (convite.roles?.length > 0) ? convite.roles : [convite.role]
     if (new Date(convite.expires_at) < new Date()) return { success: false, erro: 'Este convite expirou.' }
 
     const { data: jaExiste } = await sb
@@ -178,7 +184,8 @@ export async function aceitarConviteGoogle(
       email,
       cargo: convite.cargo_sugerido ?? null,
       setor_id: convite.setor_id ?? null,
-      role: convite.role,
+      role: conviteRolesG[0],
+      roles: conviteRolesG,
       ativo: false,
       pendente_aprovacao: true,
     })

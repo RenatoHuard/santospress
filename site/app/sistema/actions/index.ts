@@ -42,7 +42,7 @@ export async function getFuncionarios() {
   const sb = serviceClient()
   const { data } = await sb
     .from('spress_usuarios')
-    .select('id, nome, email, cargo, role, ativo, foto_url, setor_id, spress_setores(nome)')
+    .select('id, nome, email, cargo, role, roles, ativo, foto_url, setor_id, spress_setores(nome)')
     .order('nome')
   return data ?? []
 }
@@ -51,7 +51,7 @@ export async function getFuncionario(id: string) {
   const sb = serviceClient()
   const { data } = await sb
     .from('spress_usuarios')
-    .select('id, nome, nome_site, email, cargo, role, ativo, foto_url, setor_id, descricao_site')
+    .select('id, nome, nome_site, email, cargo, role, roles, ativo, foto_url, setor_id, descricao_site')
     .eq('id', id)
     .single()
   return data
@@ -64,14 +64,13 @@ export async function criarFuncionario(payload: {
   senha: string
   cargo: string
   setor_id: string
-  role: string
+  roles: string[]
   ativo: boolean
   foto_url: string
   descricao_site: string
 }): Promise<string> {
   const sb = serviceClient()
 
-  // Cria o usuário Auth com senha definida e e-mail já confirmado
   const { data: authData, error: authError } = await sb.auth.admin.createUser({
     email: payload.email,
     password: payload.senha,
@@ -82,6 +81,7 @@ export async function criarFuncionario(payload: {
 
   await sb.from('user_system').insert({ user_id: userId, sistema: 'spress' })
 
+  const roles = payload.roles.length > 0 ? payload.roles : ['colaborador']
   const { data: func, error: funcError } = await sb
     .from('spress_usuarios')
     .insert({
@@ -91,7 +91,8 @@ export async function criarFuncionario(payload: {
       email: payload.email,
       cargo: payload.cargo || null,
       setor_id: payload.setor_id || null,
-      role: payload.role,
+      role: roles[0],
+      roles,
       ativo: payload.ativo,
       foto_url: payload.foto_url || null,
       descricao_site: payload.descricao_site || null,
@@ -110,13 +111,14 @@ export async function atualizarFuncionario(
     nome_site: string
     cargo: string
     setor_id: string
-    role: string
+    roles: string[]
     ativo: boolean
     foto_url: string
     descricao_site: string
   }
 ) {
   const sb = serviceClient()
+  const roles = payload.roles.length > 0 ? payload.roles : ['colaborador']
   const { error } = await sb
     .from('spress_usuarios')
     .update({
@@ -124,7 +126,8 @@ export async function atualizarFuncionario(
       nome_site: payload.nome_site || null,
       cargo: payload.cargo || null,
       setor_id: payload.setor_id || null,
-      role: payload.role,
+      role: roles[0],
+      roles,
       ativo: payload.ativo,
       foto_url: payload.foto_url || null,
       descricao_site: payload.descricao_site || null,

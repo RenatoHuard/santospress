@@ -10,7 +10,7 @@ import { validarConvite, aceitarConvite, aceitarConviteGoogle } from '@/app/sist
 type ConviteInfo = {
   nome_sugerido?: string | null
   cargo_sugerido?: string | null
-  role: string
+  roles: string[]
 }
 
 function getBrowserClient() {

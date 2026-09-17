@@ -18,6 +18,7 @@ interface Funcionario {
   cargo: string | null
   setor_id: string | null
   role: string
+  roles: string[]
   ativo: boolean
   foto_url: string | null
   descricao_site: string | null

@@ -5,10 +5,12 @@ import { criarConvite } from '@/app/sistema/actions/convites'
 
 type Setor = { id: string; nome: string }
 
-const ROLES = [
-  { value: 'colaborador', label: 'Colaborador' },
-  { value: 'atendente',   label: 'Atendente' },
-  { value: 'admin',       label: 'Admin' },
+const ALL_ROLES = [
+  { value: 'colaborador', label: 'Colaborador',   desc: 'Acesso ao próprio perfil' },
+  { value: 'atendente',   label: 'Atendente',     desc: 'Perfil básico, sem dados de RH' },
+  { value: 'gestor',      label: 'Gestor',        desc: 'Visualiza perfis da equipe' },
+  { value: 'rh',          label: 'RH',            desc: 'Edita salário e benefícios da equipe' },
+  { value: 'admin',       label: 'Administrador', desc: 'Acesso total ao sistema' },
 ]
 
 interface Props {
@@ -20,7 +22,15 @@ export function ConviteModal({ setores, onClose }: Props) {
   const [nome, setNome] = useState('')
   const [cargo, setCargo] = useState('')
   const [setorId, setSetorId] = useState('')
-  const [role, setRole] = useState('colaborador')
+  const [roles, setRoles] = useState<string[]>(['colaborador'])
+
+  function toggleRole(value: string) {
+    setRoles(prev => {
+      const has = prev.includes(value)
+      const next = has ? prev.filter(r => r !== value) : [...prev, value]
+      return next.length > 0 ? next : [value]
+    })
+  }
   const [loading, setLoading] = useState(false)
   const [link, setLink] = useState<string | null>(null)
   const [copiado, setCopiado] = useState(false)
@@ -34,7 +44,7 @@ export function ConviteModal({ setores, onClose }: Props) {
         nome_sugerido: nome.trim() || undefined,
         cargo_sugerido: cargo.trim() || undefined,
         setor_id: setorId || undefined,
-        role,
+        roles,
       })
       const base = window.location.origin
       setLink(`${base}/convite/${token}`)
@@ -83,23 +93,35 @@ export function ConviteModal({ setores, onClose }: Props) {
                 value={cargo} onChange={(e) => setCargo(e.target.value)} />
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className={LABEL}>Setor</label>
-                <select className={INPUT} value={setorId} onChange={(e) => setSetorId(e.target.value)}>
-                  <option value="">Nenhum</option>
-                  {setores.map((s) => (
-                    <option key={s.id} value={s.id}>{s.nome}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className={LABEL}>Role</label>
-                <select className={INPUT} value={role} onChange={(e) => setRole(e.target.value)}>
-                  {ROLES.map((r) => (
-                    <option key={r.value} value={r.value}>{r.label}</option>
-                  ))}
-                </select>
+            <div>
+              <label className={LABEL}>Setor</label>
+              <select className={INPUT} value={setorId} onChange={(e) => setSetorId(e.target.value)}>
+                <option value="">Nenhum</option>
+                {setores.map((s) => (
+                  <option key={s.id} value={s.id}>{s.nome}</option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className={LABEL}>Permissões <span className="normal-case font-normal text-gray-400">(selecione uma ou mais)</span></label>
+              <div className="grid grid-cols-2 gap-1.5 mt-1">
+                {ALL_ROLES.map((r) => {
+                  const checked = roles.includes(r.value)
+                  return (
+                    <label
+                      key={r.value}
+                      className={`flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer transition-colors text-sm ${
+                        checked
+                          ? 'border-gold/60 bg-gold/8 dark:bg-gold/12 text-gray-900 dark:text-white'
+                          : 'border-gray-200 dark:border-white/8 text-gray-500 dark:text-gray-400 hover:border-gray-300'
+                      }`}
+                    >
+                      <input type="checkbox" checked={checked} onChange={() => toggleRole(r.value)} className="accent-gold shrink-0" />
+                      <span className="font-medium">{r.label}</span>
+                    </label>
+                  )
+                })}
               </div>
             </div>
 

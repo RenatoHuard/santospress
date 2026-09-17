@@ -22,6 +22,7 @@ interface Funcionario {
   cargo: string | null
   setor_id: string | null
   role: string
+  roles: string[]
   ativo: boolean
   foto_url: string | null
   descricao_site: string | null
@@ -41,10 +42,12 @@ interface Props {
   initialData?: Funcionario
 }
 
-const ROLES = [
-  { value: 'colaborador', label: 'Colaborador' },
-  { value: 'atendente', label: 'Atendente' },
-  { value: 'admin', label: 'Administrador' },
+const ALL_ROLES = [
+  { value: 'colaborador', label: 'Colaborador',  desc: 'Acesso ao próprio perfil' },
+  { value: 'atendente',   label: 'Atendente',    desc: 'Perfil básico, sem dados de RH' },
+  { value: 'gestor',      label: 'Gestor',       desc: 'Visualiza perfis da equipe' },
+  { value: 'rh',          label: 'RH',           desc: 'Edita salário e benefícios da equipe' },
+  { value: 'admin',       label: 'Administrador',desc: 'Acesso total ao sistema' },
 ]
 
 function fmtDate(iso: string) {
@@ -76,11 +79,19 @@ export function TabAcesso({ mode, setores, initialData }: Props) {
     confirmarSenha: '',
     cargo: initialData?.cargo ?? '',
     setor_id: initialData?.setor_id ?? '',
-    role: initialData?.role ?? 'colaborador',
+    roles: (initialData?.roles?.length ? initialData.roles : [initialData?.role ?? 'colaborador']) as string[],
     ativo: initialData?.ativo ?? true,
     foto_url: initialData?.foto_url ?? '',
     descricao_site: initialData?.descricao_site ?? '',
   })
+
+  function toggleRole(value: string) {
+    setForm(prev => {
+      const has = prev.roles.includes(value)
+      const next = has ? prev.roles.filter(r => r !== value) : [...prev.roles, value]
+      return { ...prev, roles: next.length > 0 ? next : [value] }
+    })
+  }
 
   function set(field: string, value: string | boolean) {
     setForm((prev) => ({ ...prev, [field]: value }))
@@ -197,23 +208,42 @@ export function TabAcesso({ mode, setores, initialData }: Props) {
         )}
 
         <Section title="Acesso ao Sistema">
-          <G2>
-            <Field label="Setor">
-              <select className={inputCls} value={form.setor_id} onChange={(e) => set('setor_id', e.target.value)}>
-                <option value="">Sem setor</option>
-                {setores.map((s) => (
-                  <option key={s.id} value={s.id}>{s.nome}</option>
-                ))}
-              </select>
-            </Field>
-            <Field label="Nível de acesso">
-              <select className={inputCls} value={form.role} onChange={(e) => set('role', e.target.value)}>
-                {ROLES.map((r) => (
-                  <option key={r.value} value={r.value}>{r.label}</option>
-                ))}
-              </select>
-            </Field>
-          </G2>
+          <Field label="Setor">
+            <select className={inputCls} value={form.setor_id} onChange={(e) => set('setor_id', e.target.value)}>
+              <option value="">Sem setor</option>
+              {setores.map((s) => (
+                <option key={s.id} value={s.id}>{s.nome}</option>
+              ))}
+            </select>
+          </Field>
+          <Field label="Permissões" note="selecione uma ou mais">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-1">
+              {ALL_ROLES.map((r) => {
+                const checked = form.roles.includes(r.value)
+                return (
+                  <label
+                    key={r.value}
+                    className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-colors ${
+                      checked
+                        ? 'border-gold/60 bg-gold/5 dark:bg-gold/10'
+                        : 'border-gray-200 dark:border-white/8 hover:border-gray-300 dark:hover:border-white/15'
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={() => toggleRole(r.value)}
+                      className="mt-0.5 accent-gold shrink-0"
+                    />
+                    <div>
+                      <p className="text-sm font-medium text-gray-900 dark:text-white leading-none">{r.label}</p>
+                      <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">{r.desc}</p>
+                    </div>
+                  </label>
+                )
+              })}
+            </div>
+          </Field>
         </Section>
 
         <Section title="Página Equipe (site público)">
