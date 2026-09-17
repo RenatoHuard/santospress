@@ -5,6 +5,7 @@ import { useRouter, usePathname } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { getMeusRoles } from './actions/auth'
 import { apenasPerfilProprio } from './lib/roles'
+import { VersionBanner } from './components/VersionBanner'
 
 export default function SistemaLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter()
@@ -45,5 +46,10 @@ export default function SistemaLayout({ children }: { children: React.ReactNode 
     )
   }
 
-  return <div className="min-h-screen bg-gray-50 dark:bg-[#0a0a0a] text-gray-900 dark:text-white">{children}</div>
+  return (
+    <div className="min-h-screen bg-gray-50 dark:bg-[#0a0a0a] text-gray-900 dark:text-white">
+      <VersionBanner />
+      {children}
+    </div>
+  )
 }
