@@ -58,28 +58,6 @@ export async function getMeuRole(authUserId: string): Promise<string | null> {
   return roles[0] ?? null
 }
 
-// ── Helpers síncronos (use após carregar getMeusRoles) ──────────────
-
-export const hasRole   = (roles: string[], role: string) => roles.includes(role)
-export const isAdmin   = (roles: string[]) => roles.includes('admin')
-export const isRH      = (roles: string[]) => roles.includes('rh')
-export const isGestor  = (roles: string[]) => roles.includes('gestor')
-export const isColaborador = (roles: string[]) => roles.includes('colaborador')
-export const isAtendente   = (roles: string[]) => roles.includes('atendente')
-
-/** Pode ver abas de RH (salário, contrato, benefícios) de outros. */
-export const podeVerRH = (roles: string[]) => isAdmin(roles) || isRH(roles) || isGestor(roles)
-
-/** Pode editar dados de RH de outros. */
-export const podeEditarRH = (roles: string[]) => isAdmin(roles) || isRH(roles)
-
-/** Pode acessar o painel administrativo (RadialMenu). */
-export const podeAcessarAdmin = (roles: string[]) => isAdmin(roles)
-
-/** Usuário é apenas atendente/colaborador simples sem poderes extras. */
-export const apenasPerfilProprio = (roles: string[]) =>
-  !isAdmin(roles) && !isRH(roles) && !isGestor(roles)
-
 /** Busca dados básicos do cliente pelo auth_user_id (chamado pelo portal). */
 export async function getClientePortalData(authUserId: string) {
   const { data } = await sb()

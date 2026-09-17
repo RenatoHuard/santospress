@@ -3,7 +3,8 @@
 import { useEffect, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import { getMeusRoles, apenasPerfilProprio } from './actions/auth'
+import { getMeusRoles } from './actions/auth'
+import { apenasPerfilProprio } from './lib/roles'
 
 export default function SistemaLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter()
