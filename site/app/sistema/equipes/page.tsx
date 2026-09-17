@@ -2,7 +2,6 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import Image from 'next/image'
-import { TopNav } from '../components/TopNav'
 import {
   getEquipes, getTodosUsuarios, criarEquipe, atualizarEquipe,
   excluirEquipe, adicionarMembro, atualizarMembro, removerMembro,
@@ -331,9 +330,7 @@ export default function EquipesPage() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen">
-      <TopNav />
-      <main className="flex-1 max-w-5xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-10">
+    <div className="max-w-5xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-10">
 
         <div className="flex items-center justify-between mb-8">
           <div>
@@ -434,8 +431,6 @@ export default function EquipesPage() {
             ))}
           </div>
         )}
-      </main>
-
       {modal && (
         <EquipeModal
           equipe={modal === 'new' ? null : modal}
