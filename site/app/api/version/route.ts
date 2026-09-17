@@ -3,7 +3,10 @@ import { NextResponse } from 'next/server'
 export const dynamic = 'force-dynamic'
 
 export function GET() {
-  return NextResponse.json({
-    version: process.env.NEXT_PUBLIC_VERCEL_DEPLOYMENT_ID ?? 'dev',
-  })
+  // VERCEL_DEPLOYMENT_ID é resolvido em runtime — sempre retorna o deploy atual
+  const version =
+    process.env.VERCEL_DEPLOYMENT_ID ??
+    process.env.VERCEL_GIT_COMMIT_SHA ??
+    'dev'
+  return NextResponse.json({ version })
 }

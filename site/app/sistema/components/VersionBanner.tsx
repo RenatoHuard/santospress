@@ -1,28 +1,35 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 
 const POLL_INTERVAL_MS = 5 * 60 * 1000 // 5 minutos
-const CURRENT_VERSION  = process.env.NEXT_PUBLIC_VERCEL_DEPLOYMENT_ID ?? 'dev'
+
+async function fetchVersion(): Promise<string | null> {
+  try {
+    const res = await fetch('/api/version', { cache: 'no-store' })
+    const data = await res.json()
+    return data.version ?? null
+  } catch {
+    return null
+  }
+}
 
 export function VersionBanner() {
   const [outdated, setOutdated] = useState(false)
+  const initialVersion = useRef<string | null>(null)
 
   useEffect(() => {
-    // Sem sentido checar em dev local
-    if (CURRENT_VERSION === 'dev') return
+    // Carrega a versão atual ao montar — serve como baseline
+    fetchVersion().then(v => {
+      if (v && v !== 'dev') initialVersion.current = v
+    })
 
-    async function check() {
-      try {
-        const res  = await fetch('/api/version', { cache: 'no-store' })
-        const data = await res.json()
-        if (data.version && data.version !== CURRENT_VERSION) setOutdated(true)
-      } catch {
-        // falha silenciosa — não incomoda o usuário
-      }
-    }
+    const id = setInterval(async () => {
+      if (!initialVersion.current) return
+      const v = await fetchVersion()
+      if (v && v !== initialVersion.current) setOutdated(true)
+    }, POLL_INTERVAL_MS)
 
-    const id = setInterval(check, POLL_INTERVAL_MS)
     return () => clearInterval(id)
   }, [])
 
