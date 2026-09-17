@@ -7,7 +7,6 @@ import { useRouter } from 'next/navigation'
 import { useTheme } from 'next-themes'
 import { supabase } from '@/lib/supabase'
 import { ThemeToggle } from '@/components/ThemeToggle'
-import { getMeuRole } from '../actions/auth'
 import type { User } from '@supabase/supabase-js'
 
 export function TopNav() {
@@ -15,17 +14,10 @@ export function TopNav() {
   const { resolvedTheme } = useTheme()
   const [user, setUser] = useState<User | null>(null)
   const [mounted, setMounted] = useState(false)
-  const [homeHref, setHomeHref] = useState('/sistema')
 
   useEffect(() => {
     setMounted(true)
-    supabase.auth.getUser().then(async ({ data }) => {
-      setUser(data.user)
-      if (data.user) {
-        const role = await getMeuRole(data.user.id)
-        if (role === 'atendente') setHomeHref('/sistema/perfil')
-      }
-    })
+    supabase.auth.getUser().then(({ data }) => setUser(data.user))
   }, [])
 
   async function handleLogout() {
@@ -39,7 +31,7 @@ export function TopNav() {
 
   return (
     <header className="h-14 border-b border-gray-100 dark:border-white/5 bg-white dark:bg-[#0d0d0d] flex items-center px-6 gap-4 shrink-0">
-      <Link href={homeHref} className="flex items-center">
+      <Link href="/sistema" className="flex items-center">
         <Image
           src={logoSrc}
           alt="Santos Press"

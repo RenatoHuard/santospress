@@ -17,7 +17,13 @@ const TABS: { key: TabKey; label: string }[] = [
   { key: 'financeiro',   label: 'Notas de Serviço' },
 ]
 
-export function MeusDadosForm({ usuarioId }: { usuarioId: string }) {
+interface Props {
+  usuarioId: string
+  readOnly?: boolean
+  onDirty?: () => void
+}
+
+export function MeusDadosForm({ usuarioId, readOnly = false, onDirty }: Props) {
   const [active, setActive] = useState<TabKey>('pessoal')
 
   return (
@@ -40,14 +46,20 @@ export function MeusDadosForm({ usuarioId }: { usuarioId: string }) {
         ))}
       </div>
 
-      {/* Tab content */}
-      <div className="p-6 sm:p-8">
-        {active === 'pessoal'      && <TabPessoal      usuarioId={usuarioId} />}
-        {active === 'documentacao' && <TabDocumentacao usuarioId={usuarioId} />}
-        {active === 'contrato'     && <MeuContrato     usuarioId={usuarioId} />}
-        {active === 'saude'        && <MinhaSaude      usuarioId={usuarioId} />}
-        {active === 'financeiro'   && <MinhaFinanceiro usuarioId={usuarioId} />}
-      </div>
+      {/* Tab content — fieldset disabled bloqueia todos os controles em modo leitura */}
+      <fieldset
+        disabled={readOnly}
+        className="block"
+        onInput={!readOnly ? onDirty : undefined}
+      >
+        <div className="p-6 sm:p-8">
+          {active === 'pessoal'      && <TabPessoal      usuarioId={usuarioId} />}
+          {active === 'documentacao' && <TabDocumentacao usuarioId={usuarioId} />}
+          {active === 'contrato'     && <MeuContrato     usuarioId={usuarioId} />}
+          {active === 'saude'        && <MinhaSaude      usuarioId={usuarioId} />}
+          {active === 'financeiro'   && <MinhaFinanceiro usuarioId={usuarioId} />}
+        </div>
+      </fieldset>
     </div>
   )
 }

@@ -19,9 +19,13 @@ export default function SistemaLayout({ children }: { children: React.ReactNode 
 
       const role = await getMeuRole(session.user.id)
 
-      // Atendente só pode acessar /sistema/perfil
-      if (role === 'atendente' && !pathname.startsWith('/sistema/perfil')) {
-        router.replace('/sistema/perfil')
+      // Atendente só pode acessar /sistema (landing) e /sistema/perfil
+      if (
+        role === 'atendente' &&
+        pathname !== '/sistema' &&
+        !pathname.startsWith('/sistema/perfil')
+      ) {
+        router.replace('/sistema')
         return
       }
 
