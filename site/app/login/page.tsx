@@ -65,9 +65,10 @@ export default function LoginPage() {
     setError(null)
     setGoogleLoading(true)
     sessionStorage.setItem('google_login_pending', '1')
+    const base = process.env.NEXT_PUBLIC_SITE_URL ?? window.location.origin
     await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: `${window.location.origin}/login` },
+      options: { redirectTo: `${base}/login` },
     })
   }
 
