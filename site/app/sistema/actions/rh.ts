@@ -284,3 +284,12 @@ export async function getMeuUsuarioId(authUserId: string): Promise<string | null
     .maybeSingle()
   return data?.id ?? null
 }
+
+export async function getMeusDadosBasicos(authUserId: string): Promise<{ id: string; nome: string } | null> {
+  const { data } = await serviceClient()
+    .from('spress_usuarios')
+    .select('id, nome')
+    .eq('auth_user_id', authUserId)
+    .maybeSingle()
+  return data ?? null
+}

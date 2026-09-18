@@ -19,19 +19,34 @@ const TABS_BASE: { key: TabKey; label: string; rhOnly: boolean }[] = [
 
 interface Props {
   usuarioId: string
+  nome?: string
   readOnly?: boolean
   onDirty?: () => void
   /** Roles do usuário logado — controla quais abas aparecem */
   userRoles?: string[]
 }
 
-export function MeusDadosForm({ usuarioId, readOnly = false, onDirty, userRoles = [] }: Props) {
+export function MeusDadosForm({ usuarioId, nome, readOnly = false, onDirty, userRoles = [] }: Props) {
   const podeVerRH = userRoles.some(r => ['admin', 'rh', 'gestor'].includes(r))
   const TABS = TABS_BASE.filter(t => !t.rhOnly || podeVerRH)
   const [active, setActive] = useState<TabKey>('pessoal')
 
   return (
     <div className="bg-white dark:bg-[#111] border border-gray-100 dark:border-white/5 rounded-2xl shadow-sm dark:shadow-none overflow-hidden">
+
+      {/* Nome — sempre visível, nunca editável aqui */}
+      {nome && (
+        <div className="px-6 sm:px-8 pt-6 pb-4 border-b border-gray-100 dark:border-white/5">
+          <p className="text-[10px] font-semibold tracking-widest uppercase text-gray-400 dark:text-gray-500 mb-1">Nome completo</p>
+          <div className="flex items-center justify-between gap-4">
+            <p className="text-base font-semibold text-gray-900 dark:text-white">{nome}</p>
+            <span className="text-[10px] text-gray-400 dark:text-gray-500 bg-gray-50 dark:bg-white/5 border border-gray-100 dark:border-white/8 rounded-lg px-2.5 py-1 whitespace-nowrap">
+              Alteração via RH
+            </span>
+          </div>
+        </div>
+      )}
+
       {/* Tab bar */}
       <div className="flex border-b border-gray-100 dark:border-white/5 overflow-x-auto">
         {TABS.map((tab) => (
