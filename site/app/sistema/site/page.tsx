@@ -2,7 +2,6 @@
 
 import { useEffect, useState, useTransition } from 'react'
 import Link from 'next/link'
-import { TopNav } from '@/app/sistema/components/TopNav'
 import { getConteudoSite, salvarSecaoSite, type ConteudoSite } from '@/app/sistema/actions/site'
 
 // ── Configuração das seções ─────────────────────────────────────────
@@ -111,9 +110,7 @@ export default function EditarSitePage() {
   const fields = FIELDS[activeSection] ?? []
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-[#0a0a0a]">
-      <TopNav />
-
+    <div className="flex flex-col h-full">
       <div className="flex flex-1">
         {/* ── Sidebar ──────────────────────────────────────── */}
         <aside className="w-56 shrink-0 border-r border-gray-100 dark:border-white/5 bg-white dark:bg-[#0d0d0d] flex flex-col">
