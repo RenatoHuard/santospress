@@ -6,13 +6,13 @@ import { Footer } from './Footer'
 
 export function ConditionalLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
-  const isSistema = pathname.startsWith('/sistema')
+  const isApp = pathname.startsWith('/sistema') || pathname.startsWith('/cliente')
 
   return (
     <>
-      {!isSistema && <Navbar />}
+      {!isApp && <Navbar />}
       {children}
-      {!isSistema && <Footer />}
+      {!isApp && <Footer />}
     </>
   )
 }

@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
+import { ClienteNav } from './ClienteNav'
 
 export const metadata = { title: 'Portal do Cliente | Santos Press' }
 
@@ -23,6 +24,8 @@ export default function ClienteLayout({ children }: { children: ReactNode }) {
           </span>
         </div>
       </header>
+
+      <ClienteNav />
 
       <main className="flex-1 max-w-5xl mx-auto w-full px-6 py-10">
         {children}
