@@ -1,6 +1,7 @@
 import type { NextConfig } from 'next'
 
 const config: NextConfig = {
+  transpilePackages: ['@dnd-kit/core', '@dnd-kit/sortable', '@dnd-kit/utilities'],
   experimental: {
     serverActions: {
       bodySizeLimit: '10mb',
