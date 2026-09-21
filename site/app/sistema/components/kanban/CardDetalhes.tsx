@@ -22,6 +22,7 @@ const PALETTE = [
 
 interface Props {
   card: KanbanCard | null
+  colunaNome?: string
   quadroId: string
   etiquetasBoard: Etiqueta[]
   usuarios: UsuarioSimples[]
@@ -35,7 +36,7 @@ interface Props {
 }
 
 export function CardDetalhes({
-  card, quadroId, etiquetasBoard, usuarios, clientes, currentUser, authUserId,
+  card, colunaNome, quadroId, etiquetasBoard, usuarios, clientes, currentUser, authUserId,
   onClose, onUpdate, onDelete, onEtiquetaBoardChange,
 }: Props) {
   const [titulo, setTitulo] = useState('')
@@ -226,10 +227,22 @@ export function CardDetalhes({
   return (
     <>
       {/* Overlay */}
-      <div className="fixed inset-0 z-40 bg-black/20 dark:bg-black/40" onClick={onClose} />
+      <div className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm" onClick={onClose} />
 
-      {/* Panel */}
-      <div className="fixed right-0 top-0 bottom-0 z-50 w-full max-w-md bg-white dark:bg-[#111] shadow-2xl flex flex-col overflow-hidden">
+      {/* Modal */}
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
+      <div className="bg-white dark:bg-[#111] rounded-2xl shadow-2xl w-full max-w-xl max-h-[92vh] flex flex-col overflow-hidden pointer-events-auto">
+
+        {/* Column breadcrumb */}
+        {colunaNome && (
+          <div className="flex items-center gap-1.5 px-5 pt-4 pb-0">
+            <svg className="w-3.5 h-3.5 text-gray-300 dark:text-gray-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2" />
+            </svg>
+            <span className="text-[11px] text-gray-400">em</span>
+            <span className="text-[11px] font-semibold text-gray-600 dark:text-gray-300">{colunaNome}</span>
+          </div>
+        )}
 
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-white/5 shrink-0">
@@ -600,6 +613,7 @@ export function CardDetalhes({
             </button>
           )}
         </div>
+      </div>
       </div>
     </>
   )

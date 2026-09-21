@@ -62,6 +62,7 @@ export interface UsuarioSimples {
   nome: string
   cargo: string | null
   foto_url: string | null
+  roles?: string[]
 }
 
 export interface ClienteSimples {
@@ -398,7 +399,7 @@ export async function deleteComentario(comentarioId: string): Promise<void> {
 export async function getUsuarioByAuthId(authUserId: string): Promise<UsuarioSimples | null> {
   const { data } = await sb()
     .from('spress_usuarios')
-    .select('id, nome, cargo, foto_url')
+    .select('id, nome, cargo, foto_url, roles')
     .eq('auth_user_id', authUserId)
     .maybeSingle()
   return data ?? null
