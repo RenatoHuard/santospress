@@ -94,6 +94,20 @@ export function KanbanCard({ card, onClick, overlay = false }: Props) {
         </p>
       </div>
 
+      {/* Etiquetas */}
+      {card.etiquetas && card.etiquetas.length > 0 && (
+        <div className="flex flex-wrap gap-1 mt-2 ml-5">
+          {card.etiquetas.map(e => (
+            <span
+              key={e.id}
+              className="h-2 w-8 rounded-full"
+              style={{ backgroundColor: e.cor }}
+              title={e.nome ?? e.cor}
+            />
+          ))}
+        </div>
+      )}
+
       {/* Cliente */}
       {card.cliente_nome && (
         <p className="text-[11px] text-gold font-medium mt-1.5 ml-5 truncate">{card.cliente_nome}</p>

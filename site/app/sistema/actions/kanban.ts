@@ -11,6 +11,23 @@ function sb() {
 
 // ── Tipos ────────────────────────────────────────────────────────────
 
+export interface Etiqueta {
+  id: string
+  quadro_id: string
+  nome: string | null
+  cor: string
+}
+
+export interface Comentario {
+  id: string
+  demanda_id: string
+  usuario_id: string | null
+  usuario_nome: string | null
+  usuario_foto: string | null
+  conteudo: string
+  created_at: string
+}
+
 export interface KanbanCard {
   id: string
   titulo: string
@@ -30,6 +47,7 @@ export interface KanbanCard {
   responsavel_foto: string | null
   coluna_id: string
   created_at: string
+  etiquetas: Etiqueta[]
 }
 
 export interface KanbanColuna {
@@ -56,6 +74,7 @@ export interface KanbanData {
   colunas: KanbanColuna[]
   usuarios: UsuarioSimples[]
   clientes: ClienteSimples[]
+  etiquetas: Etiqueta[]
 }
 
 export interface Quadro {
@@ -127,7 +146,7 @@ export async function deletarQuadro(quadroId: string): Promise<void> {
 export async function getKanbanData(quadroId: string): Promise<KanbanData | null> {
   const client = sb()
 
-  const [{ data: quadro }, { data: colunas }, { data: demandas }, { data: usuarios }, { data: clientesRaw }] =
+  const [{ data: quadro }, { data: colunas }, { data: demandas }, { data: usuarios }, { data: clientesRaw }, { data: etiquetasBoard }] =
     await Promise.all([
       client.from('spress_quadros').select('id, nome, cliente_id').eq('id', quadroId).maybeSingle(),
       client.from('spress_colunas').select('id, nome, ordem').eq('quadro_id', quadroId).order('ordem'),
@@ -137,6 +156,7 @@ export async function getKanbanData(quadroId: string): Promise<KanbanData | null
         .order('ordem'),
       client.from('spress_usuarios').select('id, nome, cargo, foto_url').order('nome'),
       client.from('spress_clientes').select('id, nome_fantasia, razao_social').eq('status', 'ativo').order('nome_fantasia'),
+      client.from('spress_etiquetas').select('id, quadro_id, nome, cor').eq('quadro_id', quadroId),
     ])
 
   if (!quadro || !colunas) return null
@@ -155,6 +175,20 @@ export async function getKanbanData(quadroId: string): Promise<KanbanData | null
 
   const clienteMap = Object.fromEntries((cardClientes ?? []).map(c => [c.id, c.nome_fantasia || c.razao_social]))
   const respMap = Object.fromEntries((responsaveis ?? []).map(u => [u.id, u]))
+  const etiquetaMap = Object.fromEntries((etiquetasBoard ?? []).map(e => [e.id, e]))
+
+  const demandaIds = (demandas ?? []).map(d => d.id)
+  const { data: demandaEtiquetas } = demandaIds.length
+    ? await client.from('spress_demanda_etiquetas').select('demanda_id, etiqueta_id').in('demanda_id', demandaIds)
+    : { data: [] }
+
+  const cardEtiquetasMap: Record<string, Etiqueta[]> = {}
+  for (const de of demandaEtiquetas ?? []) {
+    const etiqueta = etiquetaMap[de.etiqueta_id]
+    if (!etiqueta) continue
+    if (!cardEtiquetasMap[de.demanda_id]) cardEtiquetasMap[de.demanda_id] = []
+    cardEtiquetasMap[de.demanda_id].push(etiqueta)
+  }
 
   const cardsByColunaId: Record<string, KanbanCard[]> = {}
   for (const d of demandas ?? []) {
@@ -165,6 +199,7 @@ export async function getKanbanData(quadroId: string): Promise<KanbanData | null
       cliente_nome: d.cliente_id ? (clienteMap[d.cliente_id] ?? null) : null,
       responsavel_nome: d.responsavel_id ? (respMap[d.responsavel_id]?.nome ?? null) : null,
       responsavel_foto: d.responsavel_id ? (respMap[d.responsavel_id]?.foto_url ?? null) : null,
+      etiquetas: cardEtiquetasMap[d.id] ?? [],
     })
   }
 
@@ -173,6 +208,7 @@ export async function getKanbanData(quadroId: string): Promise<KanbanData | null
     colunas: colunas.map(col => ({ ...col, cards: cardsByColunaId[col.id] ?? [] })),
     usuarios: usuarios ?? [],
     clientes: (clientesRaw ?? []).map(c => ({ id: c.id, nome: c.nome_fantasia || c.razao_social || 'Cliente' })),
+    etiquetas: etiquetasBoard ?? [],
   }
 }
 
@@ -266,7 +302,73 @@ export async function criarCard(
     cliente_nome: null,
     responsavel_nome: null,
     responsavel_foto: null,
+    etiquetas: [],
   }
+}
+
+// ── Etiquetas ────────────────────────────────────────────────────────
+
+export async function getEtiquetasBoard(quadroId: string): Promise<Etiqueta[]> {
+  const { data } = await sb().from('spress_etiquetas').select('id, quadro_id, nome, cor').eq('quadro_id', quadroId)
+  return data ?? []
+}
+
+export async function criarEtiqueta(quadroId: string, cor: string, nome?: string): Promise<Etiqueta | null> {
+  const { data, error } = await sb()
+    .from('spress_etiquetas')
+    .insert({ quadro_id: quadroId, cor, nome: nome || null })
+    .select('id, quadro_id, nome, cor')
+    .single()
+  if (error) return null
+  return data
+}
+
+export async function atualizarEtiqueta(etiquetaId: string, dados: { nome?: string | null; cor?: string }): Promise<void> {
+  await sb().from('spress_etiquetas').update(dados).eq('id', etiquetaId)
+}
+
+export async function deletarEtiqueta(etiquetaId: string): Promise<void> {
+  await sb().from('spress_etiquetas').delete().eq('id', etiquetaId)
+}
+
+export async function toggleEtiquetaCard(demandaId: string, etiquetaId: string, ativo: boolean): Promise<void> {
+  const client = sb()
+  if (ativo) {
+    await client.from('spress_demanda_etiquetas').insert({ demanda_id: demandaId, etiqueta_id: etiquetaId })
+  } else {
+    await client.from('spress_demanda_etiquetas').delete().eq('demanda_id', demandaId).eq('etiqueta_id', etiquetaId)
+  }
+}
+
+// ── Comentários ──────────────────────────────────────────────────────
+
+export async function getComentarios(demandaId: string): Promise<Comentario[]> {
+  const { data } = await sb()
+    .from('spress_demanda_comentarios')
+    .select('id, demanda_id, usuario_id, usuario_nome, usuario_foto, conteudo, created_at')
+    .eq('demanda_id', demandaId)
+    .order('created_at', { ascending: true })
+  return data ?? []
+}
+
+export async function addComentario(
+  demandaId: string,
+  conteudo: string,
+  usuarioId?: string | null,
+  usuarioNome?: string | null,
+  usuarioFoto?: string | null,
+): Promise<Comentario | null> {
+  const { data, error } = await sb()
+    .from('spress_demanda_comentarios')
+    .insert({ demanda_id: demandaId, conteudo, usuario_id: usuarioId ?? null, usuario_nome: usuarioNome ?? null, usuario_foto: usuarioFoto ?? null })
+    .select('id, demanda_id, usuario_id, usuario_nome, usuario_foto, conteudo, created_at')
+    .single()
+  if (error) return null
+  return data
+}
+
+export async function deleteComentario(comentarioId: string): Promise<void> {
+  await sb().from('spress_demanda_comentarios').delete().eq('id', comentarioId)
 }
 
 export async function moverCard(cardId: string, colunaId: string, ordem: number): Promise<void> {

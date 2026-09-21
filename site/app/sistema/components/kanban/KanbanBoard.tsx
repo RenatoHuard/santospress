@@ -24,6 +24,7 @@ import {
   type KanbanData,
   type KanbanColuna,
   type KanbanCard as KanbanCardType,
+  type Etiqueta,
 } from '../../actions/kanban'
 
 interface Props {
@@ -32,6 +33,7 @@ interface Props {
 
 export function KanbanBoard({ initialData }: Props) {
   const [colunas, setColunas] = useState<KanbanColuna[]>(initialData.colunas)
+  const [etiquetasBoard, setEtiquetasBoard] = useState<Etiqueta[]>(initialData.etiquetas ?? [])
   const [activeCard, setActiveCard] = useState<KanbanCardType | null>(null)
   const [activeColunaId, setActiveColunaId] = useState<string | null>(null)
   const [selectedCard, setSelectedCard] = useState<KanbanCardType | null>(null)
@@ -251,11 +253,14 @@ export function KanbanBoard({ initialData }: Props) {
       {selectedCard && (
         <CardDetalhes
           card={selectedCard}
+          quadroId={initialData.quadro.id}
+          etiquetasBoard={etiquetasBoard}
           usuarios={initialData.usuarios}
           clientes={initialData.clientes}
           onClose={() => setSelectedCard(null)}
           onUpdate={handleCardUpdate}
           onDelete={handleCardDelete}
+          onEtiquetaBoardChange={setEtiquetasBoard}
         />
       )}
     </>
