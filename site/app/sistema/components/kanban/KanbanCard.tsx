@@ -71,13 +71,21 @@ export function KanbanCard({ card, onClick, overlay = false }: Props) {
       ref={overlay ? undefined : setNodeRef}
       style={overlay ? undefined : style}
       className={`
-        group bg-white dark:bg-[#1a1a1a] border rounded-xl p-3 cursor-pointer
+        group relative bg-white dark:bg-[#1a1a1a] border rounded-xl p-3 cursor-pointer
         hover:border-gold/40 hover:shadow-md transition-all select-none
-        ${overlay ? 'shadow-2xl rotate-2 scale-105 border-gold/60' : 'border-gray-100 dark:border-white/8 shadow-sm'}
-        ${isConcluida ? 'opacity-60' : ''}
+        ${overlay ? 'shadow-2xl rotate-2 scale-105 border-gold/60' : isConcluida ? 'border-emerald-200 dark:border-emerald-800/40 bg-emerald-50/40 dark:bg-emerald-950/20' : 'border-gray-100 dark:border-white/8 shadow-sm'}
       `}
       onClick={overlay ? undefined : onClick}
     >
+      {/* Concluded badge */}
+      {isConcluida && (
+        <span className="absolute top-2 right-2 flex items-center justify-center w-5 h-5 rounded-full bg-emerald-500 text-white">
+          <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+          </svg>
+        </span>
+      )}
+
       {/* Drag handle + title row */}
       <div className="flex items-start gap-2">
         <div
@@ -89,7 +97,7 @@ export function KanbanCard({ card, onClick, overlay = false }: Props) {
             <path d="M7 2a2 2 0 1 0 .001 4.001A2 2 0 0 0 7 2zm0 6a2 2 0 1 0 .001 4.001A2 2 0 0 0 7 8zm0 6a2 2 0 1 0 .001 4.001A2 2 0 0 0 7 14zm6-8a2 2 0 1 0-.001-4.001A2 2 0 0 0 13 6zm0 2a2 2 0 1 0 .001 4.001A2 2 0 0 0 13 8zm0 6a2 2 0 1 0 .001 4.001A2 2 0 0 0 13 14z" />
           </svg>
         </div>
-        <p className={`text-sm font-medium text-gray-900 dark:text-white leading-snug flex-1 ${isConcluida ? 'line-through' : ''}`}>
+        <p className={`text-sm font-medium leading-snug flex-1 pr-4 ${isConcluida ? 'line-through text-gray-400 dark:text-gray-500' : 'text-gray-900 dark:text-white'}`}>
           {card.titulo}
         </p>
       </div>

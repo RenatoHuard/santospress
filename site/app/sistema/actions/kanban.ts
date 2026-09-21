@@ -357,18 +357,29 @@ export async function addComentario(
   usuarioId?: string | null,
   usuarioNome?: string | null,
   usuarioFoto?: string | null,
-): Promise<Comentario | null> {
+): Promise<{ data: Comentario | null; error: string | null }> {
   const { data, error } = await sb()
     .from('spress_demanda_comentarios')
     .insert({ demanda_id: demandaId, conteudo, usuario_id: usuarioId ?? null, usuario_nome: usuarioNome ?? null, usuario_foto: usuarioFoto ?? null })
     .select('id, demanda_id, usuario_id, usuario_nome, usuario_foto, conteudo, created_at')
     .single()
-  if (error) return null
-  return data
+  if (error) return { data: null, error: error.message }
+  return { data, error: null }
 }
 
 export async function deleteComentario(comentarioId: string): Promise<void> {
   await sb().from('spress_demanda_comentarios').delete().eq('id', comentarioId)
+}
+
+// ── Auth ─────────────────────────────────────────────────────────────
+
+export async function getUsuarioByAuthId(authUserId: string): Promise<UsuarioSimples | null> {
+  const { data } = await sb()
+    .from('spress_usuarios')
+    .select('id, nome, cargo, foto_url')
+    .eq('auth_user_id', authUserId)
+    .maybeSingle()
+  return data ?? null
 }
 
 export async function moverCard(cardId: string, colunaId: string, ordem: number): Promise<void> {

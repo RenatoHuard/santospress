@@ -8,6 +8,7 @@ import {
   type KanbanCard, type UsuarioSimples, type ClienteSimples, type Etiqueta, type Comentario,
 } from '../../actions/kanban'
 
+
 const INPUT = 'w-full bg-gray-50 dark:bg-[#0a0a0a] border border-gray-200 dark:border-white/8 text-gray-900 dark:text-white rounded-xl px-3 py-2.5 text-sm outline-none focus:border-gold/50 focus:ring-2 focus:ring-gold/15 transition'
 const SELECT = INPUT + ' cursor-pointer'
 const LABEL = 'block text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1.5'
@@ -25,6 +26,7 @@ interface Props {
   etiquetasBoard: Etiqueta[]
   usuarios: UsuarioSimples[]
   clientes: ClienteSimples[]
+  currentUser: UsuarioSimples | null
   onClose: () => void
   onUpdate: (cardId: string, dados: Partial<KanbanCard>) => void
   onDelete: (cardId: string) => void
@@ -32,7 +34,7 @@ interface Props {
 }
 
 export function CardDetalhes({
-  card, quadroId, etiquetasBoard, usuarios, clientes,
+  card, quadroId, etiquetasBoard, usuarios, clientes, currentUser,
   onClose, onUpdate, onDelete, onEtiquetaBoardChange,
 }: Props) {
   const [titulo, setTitulo] = useState('')
@@ -63,6 +65,7 @@ export function CardDetalhes({
   const [loadingComentarios, setLoadingComentarios] = useState(false)
   const [novoComentario, setNovoComentario] = useState('')
   const [submittingComentario, setSubmittingComentario] = useState(false)
+  const [comentarioErro, setComentarioErro] = useState<string | null>(null)
 
   useEffect(() => {
     if (!card) return
@@ -185,10 +188,19 @@ export function CardDetalhes({
   async function handleAddComentario() {
     if (!novoComentario.trim() || !card) return
     setSubmittingComentario(true)
-    const novo = await addComentario(card.id, novoComentario.trim())
+    setComentarioErro(null)
+    const { data: novo, error } = await addComentario(
+      card.id,
+      novoComentario.trim(),
+      currentUser?.id ?? null,
+      currentUser?.nome ?? null,
+      currentUser?.foto_url ?? null,
+    )
     if (novo) {
       setComentarios(prev => [...prev, novo])
       setNovoComentario('')
+    } else {
+      setComentarioErro(error ?? 'Erro ao salvar comentário')
     }
     setSubmittingComentario(false)
   }
@@ -531,6 +543,9 @@ export function CardDetalhes({
                   </button>
                   <span className="text-[10px] text-gray-400 ml-auto">Ctrl+Enter</span>
                 </div>
+              )}
+              {comentarioErro && (
+                <p className="text-xs text-red-500 mt-1">{comentarioErro}</p>
               )}
             </div>
           </div>

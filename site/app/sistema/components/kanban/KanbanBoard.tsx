@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import {
   DndContext,
   DragOverlay,
@@ -17,14 +17,17 @@ import { SortableContext, arrayMove, horizontalListSortingStrategy } from '@dnd-
 import { KanbanColumn } from './KanbanColumn'
 import { KanbanCard } from './KanbanCard'
 import { CardDetalhes } from './CardDetalhes'
+import { supabase } from '@/lib/supabase'
 import {
   criarColuna,
   reordenarColunas,
   reordenarCards,
+  getUsuarioByAuthId,
   type KanbanData,
   type KanbanColuna,
   type KanbanCard as KanbanCardType,
   type Etiqueta,
+  type UsuarioSimples,
 } from '../../actions/kanban'
 
 interface Props {
@@ -34,11 +37,20 @@ interface Props {
 export function KanbanBoard({ initialData }: Props) {
   const [colunas, setColunas] = useState<KanbanColuna[]>(initialData.colunas)
   const [etiquetasBoard, setEtiquetasBoard] = useState<Etiqueta[]>(initialData.etiquetas ?? [])
+  const [currentUser, setCurrentUser] = useState<UsuarioSimples | null>(null)
   const [activeCard, setActiveCard] = useState<KanbanCardType | null>(null)
   const [activeColunaId, setActiveColunaId] = useState<string | null>(null)
   const [selectedCard, setSelectedCard] = useState<KanbanCardType | null>(null)
   const [addingColuna, setAddingColuna] = useState(false)
   const [novaColunaNome, setNovaColunaNome] = useState('')
+
+  useEffect(() => {
+    supabase.auth.getUser().then(async ({ data: { user } }) => {
+      if (!user) return
+      const u = await getUsuarioByAuthId(user.id)
+      setCurrentUser(u)
+    })
+  }, [])
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -257,6 +269,7 @@ export function KanbanBoard({ initialData }: Props) {
           etiquetasBoard={etiquetasBoard}
           usuarios={initialData.usuarios}
           clientes={initialData.clientes}
+          currentUser={currentUser}
           onClose={() => setSelectedCard(null)}
           onUpdate={handleCardUpdate}
           onDelete={handleCardDelete}
