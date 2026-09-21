@@ -37,7 +37,7 @@ export function KanbanColumn({
     transform,
     transition,
     isDragging,
-  } = useSortable({ id: coluna.id, data: { type: 'coluna' } })
+  } = useSortable({ id: coluna.id, data: { type: 'coluna', colunaId: coluna.id } })
 
   // Column cards area is a drop target
   const { setNodeRef: setDropRef, isOver } = useDroppable({

@@ -38,6 +38,7 @@ export function KanbanBoard({ initialData }: Props) {
   const [colunas, setColunas] = useState<KanbanColuna[]>(initialData.colunas)
   const [etiquetasBoard, setEtiquetasBoard] = useState<Etiqueta[]>(initialData.etiquetas ?? [])
   const [currentUser, setCurrentUser] = useState<UsuarioSimples | null>(null)
+  const [authUserId, setAuthUserId] = useState<string | null>(null)
   const [activeCard, setActiveCard] = useState<KanbanCardType | null>(null)
   const [activeColunaId, setActiveColunaId] = useState<string | null>(null)
   const [selectedCard, setSelectedCard] = useState<KanbanCardType | null>(null)
@@ -47,6 +48,7 @@ export function KanbanBoard({ initialData }: Props) {
   useEffect(() => {
     supabase.auth.getUser().then(async ({ data: { user } }) => {
       if (!user) return
+      setAuthUserId(user.id)
       const u = await getUsuarioByAuthId(user.id)
       setCurrentUser(u)
     })
@@ -108,7 +110,8 @@ export function KanbanBoard({ initialData }: Props) {
       }
 
       if (isOverColuna) {
-        const overColunaId = over.data.current?.colunaId as string
+        // over.id can be the column sortable id OR 'col-drop-{id}'; colunaId covers both
+        const overColunaId = (over.data.current?.colunaId ?? over.id) as string
         const overColIdx = prev.findIndex(col => col.id === overColunaId)
         if (overColIdx === -1 || activeColIdx === overColIdx) return prev
 
@@ -270,6 +273,7 @@ export function KanbanBoard({ initialData }: Props) {
           usuarios={initialData.usuarios}
           clientes={initialData.clientes}
           currentUser={currentUser}
+          authUserId={authUserId}
           onClose={() => setSelectedCard(null)}
           onUpdate={handleCardUpdate}
           onDelete={handleCardDelete}

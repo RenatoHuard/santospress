@@ -21,10 +21,10 @@ export interface Etiqueta {
 export interface Comentario {
   id: string
   demanda_id: string
-  usuario_id: string | null
-  usuario_nome: string | null
-  usuario_foto: string | null
-  conteudo: string
+  autor_id: string
+  autor_nome: string | null
+  autor_foto: string | null
+  texto: string
   created_at: string
 }
 
@@ -343,28 +343,50 @@ export async function toggleEtiquetaCard(demandaId: string, etiquetaId: string, 
 // ── Comentários ──────────────────────────────────────────────────────
 
 export async function getComentarios(demandaId: string): Promise<Comentario[]> {
-  const { data } = await sb()
+  const client = sb()
+  const { data: rows } = await client
     .from('spress_demanda_comentarios')
-    .select('id, demanda_id, usuario_id, usuario_nome, usuario_foto, conteudo, created_at')
+    .select('id, demanda_id, autor_id, texto, created_at')
     .eq('demanda_id', demandaId)
     .order('created_at', { ascending: true })
-  return data ?? []
+
+  if (!rows?.length) return []
+
+  const autorIds = [...new Set(rows.map(r => r.autor_id))]
+  const { data: usuarios } = await client
+    .from('spress_usuarios')
+    .select('auth_user_id, nome, foto_url')
+    .in('auth_user_id', autorIds)
+
+  const userMap = Object.fromEntries((usuarios ?? []).map(u => [u.auth_user_id, u]))
+
+  return rows.map(r => ({
+    id: r.id,
+    demanda_id: r.demanda_id,
+    autor_id: r.autor_id,
+    autor_nome: userMap[r.autor_id]?.nome ?? null,
+    autor_foto: userMap[r.autor_id]?.foto_url ?? null,
+    texto: r.texto,
+    created_at: r.created_at,
+  }))
 }
 
 export async function addComentario(
   demandaId: string,
-  conteudo: string,
-  usuarioId?: string | null,
-  usuarioNome?: string | null,
-  usuarioFoto?: string | null,
+  texto: string,
+  autorId: string,
+  autorNome?: string | null,
 ): Promise<{ data: Comentario | null; error: string | null }> {
   const { data, error } = await sb()
     .from('spress_demanda_comentarios')
-    .insert({ demanda_id: demandaId, conteudo, usuario_id: usuarioId ?? null, usuario_nome: usuarioNome ?? null, usuario_foto: usuarioFoto ?? null })
-    .select('id, demanda_id, usuario_id, usuario_nome, usuario_foto, conteudo, created_at')
+    .insert({ demanda_id: demandaId, texto, autor_id: autorId })
+    .select('id, demanda_id, autor_id, texto, created_at')
     .single()
   if (error) return { data: null, error: error.message }
-  return { data, error: null }
+  return {
+    data: { ...data, autor_nome: autorNome ?? null, autor_foto: null },
+    error: null,
+  }
 }
 
 export async function deleteComentario(comentarioId: string): Promise<void> {

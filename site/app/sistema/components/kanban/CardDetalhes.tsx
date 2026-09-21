@@ -27,6 +27,7 @@ interface Props {
   usuarios: UsuarioSimples[]
   clientes: ClienteSimples[]
   currentUser: UsuarioSimples | null
+  authUserId: string | null
   onClose: () => void
   onUpdate: (cardId: string, dados: Partial<KanbanCard>) => void
   onDelete: (cardId: string) => void
@@ -34,7 +35,7 @@ interface Props {
 }
 
 export function CardDetalhes({
-  card, quadroId, etiquetasBoard, usuarios, clientes, currentUser,
+  card, quadroId, etiquetasBoard, usuarios, clientes, currentUser, authUserId,
   onClose, onUpdate, onDelete, onEtiquetaBoardChange,
 }: Props) {
   const [titulo, setTitulo] = useState('')
@@ -187,14 +188,14 @@ export function CardDetalhes({
 
   async function handleAddComentario() {
     if (!novoComentario.trim() || !card) return
+    if (!authUserId) { setComentarioErro('Usuário não identificado. Recarregue a página.'); return }
     setSubmittingComentario(true)
     setComentarioErro(null)
     const { data: novo, error } = await addComentario(
       card.id,
       novoComentario.trim(),
-      currentUser?.id ?? null,
+      authUserId,
       currentUser?.nome ?? null,
-      currentUser?.foto_url ?? null,
     )
     if (novo) {
       setComentarios(prev => [...prev, novo])
@@ -495,21 +496,23 @@ export function CardDetalhes({
                 {comentarios.map(c => (
                   <div key={c.id} className="flex gap-2.5 group">
                     <div className="w-7 h-7 rounded-full bg-navy/80 text-white text-[9px] font-bold flex items-center justify-center shrink-0 mt-0.5">
-                      {c.usuario_nome ? c.usuario_nome.split(' ').map((p: string) => p[0]).slice(0, 2).join('').toUpperCase() : '?'}
+                      {c.autor_nome ? c.autor_nome.split(' ').map((p: string) => p[0]).slice(0, 2).join('').toUpperCase() : '?'}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-0.5">
-                        <span className="text-xs font-semibold text-gray-700 dark:text-gray-200">{c.usuario_nome ?? 'Sistema'}</span>
+                        <span className="text-xs font-semibold text-gray-700 dark:text-gray-200">{c.autor_nome ?? 'Usuário'}</span>
                         <span className="text-[10px] text-gray-400">{formatDate(c.created_at)}</span>
-                        <button
-                          onClick={() => handleDeleteComentario(c.id)}
-                          className="ml-auto opacity-0 group-hover:opacity-100 text-[10px] text-red-400 hover:text-red-600 transition-all"
-                        >
-                          excluir
-                        </button>
+                        {c.autor_id === authUserId && (
+                          <button
+                            onClick={() => handleDeleteComentario(c.id)}
+                            className="ml-auto opacity-0 group-hover:opacity-100 text-[10px] text-red-400 hover:text-red-600 transition-all"
+                          >
+                            excluir
+                          </button>
+                        )}
                       </div>
                       <div className="bg-gray-50 dark:bg-[#0a0a0a] border border-gray-100 dark:border-white/5 rounded-xl px-3 py-2 text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap break-words">
-                        {c.conteudo}
+                        {c.texto}
                       </div>
                     </div>
                   </div>
@@ -575,9 +578,9 @@ export function CardDetalhes({
             className="ml-auto flex items-center gap-1.5 text-sm font-semibold text-white bg-gold hover:bg-gold/90 px-5 py-2 rounded-xl transition-colors"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
             </svg>
-            Fechar
+            Salvar
           </button>
 
           {confirmDelete ? (

@@ -70,10 +70,11 @@ export function KanbanCard({ card, onClick, overlay = false }: Props) {
     <div
       ref={overlay ? undefined : setNodeRef}
       style={overlay ? undefined : style}
+      {...(overlay ? {} : { ...attributes, ...listeners })}
       className={`
-        group relative bg-white dark:bg-[#1a1a1a] border rounded-xl p-3 cursor-pointer
+        group relative bg-white dark:bg-[#1a1a1a] border rounded-xl p-3 cursor-grab active:cursor-grabbing
         hover:border-gold/40 hover:shadow-md transition-all select-none
-        ${overlay ? 'shadow-2xl rotate-2 scale-105 border-gold/60' : isConcluida ? 'border-emerald-200 dark:border-emerald-800/40 bg-emerald-50/40 dark:bg-emerald-950/20' : 'border-gray-100 dark:border-white/8 shadow-sm'}
+        ${overlay ? 'shadow-2xl rotate-2 scale-105 border-gold/60 cursor-grabbing' : isConcluida ? 'border-emerald-200 dark:border-emerald-800/40 bg-emerald-50/40 dark:bg-emerald-950/20' : 'border-gray-100 dark:border-white/8 shadow-sm'}
       `}
       onClick={overlay ? undefined : onClick}
     >
@@ -86,17 +87,8 @@ export function KanbanCard({ card, onClick, overlay = false }: Props) {
         </span>
       )}
 
-      {/* Drag handle + title row */}
+      {/* Title row */}
       <div className="flex items-start gap-2">
-        <div
-          {...(overlay ? {} : { ...attributes, ...listeners })}
-          className="mt-0.5 shrink-0 cursor-grab active:cursor-grabbing opacity-0 group-hover:opacity-40 transition-opacity"
-          onClick={e => e.stopPropagation()}
-        >
-          <svg className="w-3.5 h-3.5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
-            <path d="M7 2a2 2 0 1 0 .001 4.001A2 2 0 0 0 7 2zm0 6a2 2 0 1 0 .001 4.001A2 2 0 0 0 7 8zm0 6a2 2 0 1 0 .001 4.001A2 2 0 0 0 7 14zm6-8a2 2 0 1 0-.001-4.001A2 2 0 0 0 13 6zm0 2a2 2 0 1 0 .001 4.001A2 2 0 0 0 13 8zm0 6a2 2 0 1 0 .001 4.001A2 2 0 0 0 13 14z" />
-          </svg>
-        </div>
         <p className={`text-sm font-medium leading-snug flex-1 pr-4 ${isConcluida ? 'line-through text-gray-400 dark:text-gray-500' : 'text-gray-900 dark:text-white'}`}>
           {card.titulo}
         </p>
