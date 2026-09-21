@@ -1,9 +1,11 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { type ReactNode } from 'react'
+import { supabase } from '@/lib/supabase'
+import { getUnseenSolicitacoesCount } from '../actions/solicitacoes'
 
 // ── Tipos ──────────────────────────────────────────────────────────
 
@@ -42,6 +44,7 @@ interface LinkItem {
   label: string
   href: string
   icon: ReactNode
+  badge?: number
 }
 
 interface GroupItem {
@@ -123,6 +126,12 @@ const IconEquipes = () => (
   </svg>
 )
 
+const IconSolicitacoes = () => (
+  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M8.625 9.75a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375m-13.5 3.01c0 1.6 1.123 2.994 2.707 3.227 1.087.16 2.185.283 3.293.369V21l4.184-4.183a1.14 1.14 0 01.778-.332 48.294 48.294 0 005.83-.498c1.585-.233 2.708-1.626 2.708-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0012 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018z" />
+  </svg>
+)
+
 const IconBack = () => (
   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
     <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
@@ -150,6 +159,15 @@ export function RadialMenu() {
   const [activeGroup, setActiveGroup] = useState<GroupId | null>(null)
   const [activeSubGroup, setActiveSubGroup] = useState<SubGroupId | null>(null)
   const [hasOpened, setHasOpened] = useState(false)
+  const [unseenCount, setUnseenCount] = useState(0)
+
+  useEffect(() => {
+    supabase.auth.getUser().then(async ({ data: { user } }) => {
+      if (!user) return
+      const count = await getUnseenSolicitacoesCount(user.id)
+      setUnseenCount(count)
+    })
+  }, [])
 
   const noticiaSubItems = useMemo<SubItem[]>(() => [
     { id: 'nova-noticia', label: 'Nova Notícia', href: '/sistema/blog/novo',         icon: <IconNovaNoticia /> },
@@ -160,6 +178,14 @@ export function RadialMenu() {
 
   // Estrutura de itens
   const MAIN_ITEMS = useMemo<AnyItem[]>(() => [
+    {
+      type: 'link',
+      id: 'solicitacoes',
+      label: 'Solicitações',
+      href: '/sistema/solicitacoes',
+      icon: <IconSolicitacoes />,
+      badge: unseenCount,
+    },
     {
       type: 'group',
       id: 'cadastros',
@@ -190,7 +216,7 @@ export function RadialMenu() {
         } as SubGroupItem,
       ],
     },
-  ], [noticiaSubItems])
+  ], [noticiaSubItems, unseenCount])
 
   const mainPositions = getPositions(MAIN_ITEMS.length)
 
@@ -325,9 +351,16 @@ export function RadialMenu() {
               </>
             ) : (
               <>
-                <Link href={(item as LinkItem).href} onClick={close} className={`w-16 h-16 ${ITEM_BTN}`}>
-                  {item.icon}
-                </Link>
+                <div className="relative">
+                  <Link href={(item as LinkItem).href} onClick={close} className={`w-16 h-16 ${ITEM_BTN}`}>
+                    {item.icon}
+                  </Link>
+                  {(item as LinkItem).badge != null && (item as LinkItem).badge! > 0 && (
+                    <span className="absolute -top-1.5 -right-1.5 min-w-[20px] h-5 px-1 flex items-center justify-center rounded-full bg-gold text-white text-[10px] font-bold shadow-lg pointer-events-none">
+                      {(item as LinkItem).badge! > 99 ? '99+' : (item as LinkItem).badge}
+                    </span>
+                  )}
+                </div>
                 <span className={LABEL}>{item.label}</span>
               </>
             )}
