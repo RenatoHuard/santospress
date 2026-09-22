@@ -1,11 +1,13 @@
 'use client'
 
 import { useState, useTransition, useEffect, useRef } from 'react'
+import Link from 'next/link'
 import {
   atualizarCard, deletarCard,
   toggleEtiquetaCard, criarEtiqueta, atualizarEtiqueta, deletarEtiqueta,
   getComentarios, addComentario, deleteComentario,
-  type KanbanCard, type UsuarioSimples, type ClienteSimples, type Etiqueta, type Comentario,
+  getChecklist, addChecklistItem, toggleChecklistItem, deleteChecklistItem,
+  type KanbanCard, type UsuarioSimples, type ClienteSimples, type Etiqueta, type Comentario, type ChecklistItem,
 } from '../../actions/kanban'
 
 
@@ -23,6 +25,7 @@ const PALETTE = [
 interface Props {
   card: KanbanCard | null
   colunaNome?: string
+  boardLink?: string
   quadroId: string
   etiquetasBoard: Etiqueta[]
   usuarios: UsuarioSimples[]
@@ -36,7 +39,7 @@ interface Props {
 }
 
 export function CardDetalhes({
-  card, colunaNome, quadroId, etiquetasBoard, usuarios, clientes, currentUser, authUserId,
+  card, colunaNome, boardLink, quadroId, etiquetasBoard, usuarios, clientes, currentUser, authUserId,
   onClose, onUpdate, onDelete, onEtiquetaBoardChange,
 }: Props) {
   const [titulo, setTitulo] = useState('')
@@ -69,6 +72,12 @@ export function CardDetalhes({
   const [submittingComentario, setSubmittingComentario] = useState(false)
   const [comentarioErro, setComentarioErro] = useState<string | null>(null)
 
+  // checklist
+  const [checklistItems, setChecklistItems] = useState<ChecklistItem[]>([])
+  const [loadingChecklist, setLoadingChecklist] = useState(false)
+  const [novoChecklistItem, setNovoChecklistItem] = useState('')
+  const checklistDone = checklistItems.filter(i => i.concluido).length
+
   useEffect(() => {
     if (!card) return
     setTitulo(card.titulo)
@@ -85,9 +94,15 @@ export function CardDetalhes({
     setCriandoEtiqueta(false)
     setNovoComentario('')
     setLoadingComentarios(true)
+    setNovoChecklistItem('')
+    setLoadingChecklist(true)
     getComentarios(card.id).then(data => {
       setComentarios(data)
       setLoadingComentarios(false)
+    })
+    getChecklist(card.id).then(items => {
+      setChecklistItems(items)
+      setLoadingChecklist(false)
     })
   }, [card?.id])
 
@@ -212,6 +227,35 @@ export function CardDetalhes({
     setComentarios(prev => prev.filter(c => c.id !== id))
   }
 
+  // ── Checklist ──
+
+  async function handleAddChecklistItem() {
+    const texto = novoChecklistItem.trim()
+    if (!texto || !card) return
+    const item = await addChecklistItem(card.id, texto)
+    if (!item) return
+    const updated = [...checklistItems, item]
+    setChecklistItems(updated)
+    setNovoChecklistItem('')
+    onUpdate(card.id, { checklist_total: updated.length, checklist_done: updated.filter(i => i.concluido).length })
+  }
+
+  async function handleToggleChecklistItem(item: ChecklistItem) {
+    if (!card) return
+    await toggleChecklistItem(item.id, !item.concluido)
+    const updated = checklistItems.map(i => i.id === item.id ? { ...i, concluido: !i.concluido } : i)
+    setChecklistItems(updated)
+    onUpdate(card.id, { checklist_total: updated.length, checklist_done: updated.filter(i => i.concluido).length })
+  }
+
+  async function handleDeleteChecklistItem(itemId: string) {
+    if (!card) return
+    await deleteChecklistItem(itemId)
+    const updated = checklistItems.filter(i => i.id !== itemId)
+    setChecklistItems(updated)
+    onUpdate(card.id, { checklist_total: updated.length, checklist_done: updated.filter(i => i.concluido).length })
+  }
+
   function formatDate(iso: string) {
     const d = new Date(iso)
     const now = new Date()
@@ -234,13 +278,25 @@ export function CardDetalhes({
       <div className="bg-white dark:bg-[#111] rounded-2xl shadow-2xl w-full max-w-xl max-h-[92vh] flex flex-col overflow-hidden pointer-events-auto">
 
         {/* Column breadcrumb */}
-        {colunaNome && (
+        {(colunaNome || boardLink) && (
           <div className="flex items-center gap-1.5 px-5 pt-4 pb-0">
             <svg className="w-3.5 h-3.5 text-gray-300 dark:text-gray-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2" />
             </svg>
-            <span className="text-[11px] text-gray-400">em</span>
-            <span className="text-[11px] font-semibold text-gray-600 dark:text-gray-300">{colunaNome}</span>
+            {colunaNome && (
+              <>
+                <span className="text-[11px] text-gray-400">em</span>
+                <span className="text-[11px] font-semibold text-gray-600 dark:text-gray-300">{colunaNome}</span>
+              </>
+            )}
+            {boardLink && (
+              <Link href={boardLink} className="ml-auto text-[11px] text-gold hover:text-gold/80 font-medium flex items-center gap-1 transition-colors">
+                Ver no Kanban
+                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+                </svg>
+              </Link>
+            )}
           </div>
         )}
 
@@ -494,6 +550,84 @@ export function CardDetalhes({
               value={prazo}
               onChange={e => { setPrazo(e.target.value); salvar({ prazo: e.target.value || null }) }}
             />
+          </div>
+
+          {/* ── Checklist ── */}
+          <div className="pt-2 border-t border-gray-100 dark:border-white/5">
+            <div className="flex items-center justify-between mb-3">
+              <label className={LABEL + ' mb-0'}>Checklist</label>
+              {checklistItems.length > 0 && (
+                <span className="text-[11px] text-gray-400">
+                  {checklistDone}/{checklistItems.length} — {Math.round(checklistDone / checklistItems.length * 100)}%
+                </span>
+              )}
+            </div>
+
+            {checklistItems.length > 0 && (
+              <div className="h-1.5 bg-gray-100 dark:bg-white/5 rounded-full overflow-hidden mb-3">
+                <div
+                  className={`h-full rounded-full transition-all ${checklistDone === checklistItems.length ? 'bg-emerald-400' : 'bg-gold'}`}
+                  style={{ width: `${Math.round(checklistDone / checklistItems.length * 100)}%` }}
+                />
+              </div>
+            )}
+
+            {loadingChecklist ? (
+              <div className="flex justify-center py-2">
+                <span className="w-4 h-4 border border-gold border-t-transparent rounded-full animate-spin" />
+              </div>
+            ) : (
+              <div className="space-y-1 mb-3">
+                {checklistItems.map(item => (
+                  <div key={item.id} className="flex items-center gap-2.5 group py-1 rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 px-1 -mx-1 transition-colors">
+                    <button
+                      onClick={() => handleToggleChecklistItem(item)}
+                      className={`w-4 h-4 rounded border shrink-0 flex items-center justify-center transition-colors ${
+                        item.concluido
+                          ? 'bg-emerald-500 border-emerald-500'
+                          : 'border-gray-300 dark:border-white/20 hover:border-emerald-400'
+                      }`}
+                    >
+                      {item.concluido && (
+                        <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                        </svg>
+                      )}
+                    </button>
+                    <span className={`flex-1 text-sm leading-snug ${item.concluido ? 'line-through text-gray-400 dark:text-gray-500' : 'text-gray-700 dark:text-gray-200'}`}>
+                      {item.texto}
+                    </span>
+                    <button
+                      onClick={() => handleDeleteChecklistItem(item.id)}
+                      className="opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-400 transition-all shrink-0"
+                    >
+                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div className="flex items-center gap-2">
+              <input
+                className="flex-1 bg-gray-50 dark:bg-[#0a0a0a] border border-gray-200 dark:border-white/8 rounded-xl px-3 py-2 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 outline-none focus:border-gold/50 focus:ring-2 focus:ring-gold/15 transition"
+                placeholder="Adicionar item..."
+                value={novoChecklistItem}
+                onChange={e => setNovoChecklistItem(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') handleAddChecklistItem() }}
+              />
+              <button
+                onClick={handleAddChecklistItem}
+                disabled={!novoChecklistItem.trim()}
+                className="flex items-center justify-center w-9 h-9 rounded-xl bg-gold text-white hover:bg-gold/90 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shrink-0"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                </svg>
+              </button>
+            </div>
           </div>
 
           {/* ── Comentários ── */}

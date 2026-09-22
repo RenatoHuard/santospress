@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import type { KanbanCard as KanbanCardType } from '../../actions/kanban'
@@ -15,25 +16,24 @@ const PRIORIDADE_LABEL: Record<string, string> = {
   baixa: 'Baixa', media: 'Média', alta: 'Alta', urgente: 'Urgente',
 }
 
-function dataRelativa(iso: string): string {
-  const diff = Date.now() - new Date(iso).getTime()
-  const d = Math.floor(diff / 86400000)
-  if (d < 1) return 'hoje'
-  if (d === 1) return 'ontem'
-  if (d < 7) return `${d}d atrás`
-  return new Date(iso).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })
-}
-
-function prazoLabel(iso: string): { label: string; overdue: boolean } {
-  const date = new Date(iso)
-  const now = new Date()
-  now.setHours(0, 0, 0, 0)
-  date.setHours(0, 0, 0, 0)
+function prazoStatus(iso: string): { label: string; cls: string } {
+  const date = new Date(iso); date.setHours(0, 0, 0, 0)
+  const now  = new Date();    now.setHours(0, 0, 0, 0)
   const diff = Math.floor((date.getTime() - now.getTime()) / 86400000)
-  const overdue = diff < 0
-  const label = diff === 0 ? 'Hoje' : diff === 1 ? 'Amanhã' : diff === -1 ? 'Ontem' :
-    overdue ? `${Math.abs(diff)}d atraso` : `${diff}d`
-  return { label, overdue }
+
+  let label: string
+  if (diff === 0)  label = 'Hoje'
+  else if (diff === 1)  label = 'Amanhã'
+  else if (diff === -1) label = 'Ontem'
+  else if (diff < 0)   label = `${Math.abs(diff)}d atraso`
+  else                  label = `${diff}d`
+
+  let cls: string
+  if (diff < 0)      cls = 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400'
+  else if (diff <= 3) cls = 'bg-amber-50 text-amber-600 dark:bg-amber-900/20 dark:text-amber-400'
+  else               cls = 'bg-emerald-50 text-emerald-600 dark:bg-emerald-900/20 dark:text-emerald-400'
+
+  return { label, cls }
 }
 
 interface Props {
@@ -43,28 +43,23 @@ interface Props {
 }
 
 export function KanbanCard({ card, onClick, overlay = false }: Props) {
+  const [tooltipId, setTooltipId] = useState<string | null>(null)
+
   const {
-    setNodeRef,
-    attributes,
-    listeners,
-    transform,
-    transition,
-    isDragging,
+    setNodeRef, attributes, listeners, transform, transition, isDragging,
   } = useSortable({ id: card.id, data: { type: 'card', card } })
 
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-  }
+  const style = { transform: CSS.Transform.toString(transform), transition }
 
   if (isDragging && !overlay) {
-    return (
-      <div ref={setNodeRef} style={style} className="h-[72px] rounded-xl border-2 border-dashed border-gold/30 bg-gold/5" />
-    )
+    return <div ref={setNodeRef} style={style} className="h-[72px] rounded-xl border-2 border-dashed border-gold/30 bg-gold/5" />
   }
 
   const isConcluida = !!card.concluida_em
-  const prazo = card.prazo ? prazoLabel(card.prazo) : null
+  const prazo = card.prazo ? prazoStatus(card.prazo) : null
+  const checklistPct = card.checklist_total > 0
+    ? Math.round((card.checklist_done / card.checklist_total) * 100)
+    : null
 
   return (
     <div
@@ -74,7 +69,11 @@ export function KanbanCard({ card, onClick, overlay = false }: Props) {
       className={`
         group relative bg-white dark:bg-[#1a1a1a] border rounded-xl p-3 cursor-grab active:cursor-grabbing
         hover:border-gold/40 hover:shadow-md transition-all select-none
-        ${overlay ? 'shadow-2xl rotate-2 scale-105 border-gold/60 cursor-grabbing' : isConcluida ? 'border-emerald-200 dark:border-emerald-800/40 bg-emerald-50/40 dark:bg-emerald-950/20' : 'border-gray-100 dark:border-white/8 shadow-sm'}
+        ${overlay
+          ? 'shadow-2xl rotate-2 scale-105 border-gold/60 cursor-grabbing'
+          : isConcluida
+          ? 'border-emerald-200 dark:border-emerald-800/40 bg-emerald-50/40 dark:bg-emerald-950/20'
+          : 'border-gray-100 dark:border-white/8 shadow-sm'}
       `}
       onClick={overlay ? undefined : onClick}
     >
@@ -87,37 +86,61 @@ export function KanbanCard({ card, onClick, overlay = false }: Props) {
         </span>
       )}
 
-      {/* Title row */}
-      <div className="flex items-start gap-2">
-        <p className={`text-sm font-medium leading-snug flex-1 pr-4 ${isConcluida ? 'line-through text-gray-400 dark:text-gray-500' : 'text-gray-900 dark:text-white'}`}>
-          {card.titulo}
-        </p>
-      </div>
+      {/* Title */}
+      <p className={`text-sm font-medium leading-snug pr-5 ${isConcluida ? 'line-through text-gray-400 dark:text-gray-500' : 'text-gray-900 dark:text-white'}`}>
+        {card.titulo}
+      </p>
 
-      {/* Etiquetas */}
+      {/* Etiquetas — click mostra nome */}
       {card.etiquetas && card.etiquetas.length > 0 && (
-        <div className="flex flex-wrap gap-1 mt-2 ml-5">
+        <div className="flex flex-wrap gap-1 mt-2">
           {card.etiquetas.map(e => (
-            <span
-              key={e.id}
-              className="h-2 w-8 rounded-full"
-              style={{ backgroundColor: e.cor }}
-              title={e.nome ?? e.cor}
-            />
+            <div key={e.id} className="relative">
+              <button
+                className="h-2 w-8 rounded-full transition-transform hover:scale-110 focus:outline-none"
+                style={{ backgroundColor: e.cor }}
+                title={e.nome ?? e.cor}
+                onClick={ev => {
+                  ev.stopPropagation()
+                  setTooltipId(tooltipId === e.id ? null : e.id)
+                }}
+              />
+              {tooltipId === e.id && (
+                <div className="absolute bottom-4 left-0 z-50 px-2 py-1 bg-gray-900 dark:bg-gray-700 text-white text-[10px] font-medium rounded shadow-lg whitespace-nowrap pointer-events-none">
+                  {e.nome ?? e.cor}
+                  <div className="absolute top-full left-2 border-4 border-transparent border-t-gray-900 dark:border-t-gray-700" />
+                </div>
+              )}
+            </div>
           ))}
         </div>
       )}
 
       {/* Cliente */}
       {card.cliente_nome && (
-        <p className="text-[11px] text-gold font-medium mt-1.5 ml-5 truncate">{card.cliente_nome}</p>
+        <p className="text-[11px] text-gold font-medium mt-1.5 truncate">{card.cliente_nome}</p>
       )}
       {!card.cliente_nome && card.origem === 'interno' && (
-        <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-1.5 ml-5">Interno</p>
+        <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-1.5">Interno</p>
+      )}
+
+      {/* Checklist progress */}
+      {checklistPct !== null && (
+        <div className="mt-2 flex items-center gap-2">
+          <div className="flex-1 h-1 bg-gray-100 dark:bg-white/10 rounded-full overflow-hidden">
+            <div
+              className={`h-full rounded-full transition-all ${checklistPct === 100 ? 'bg-emerald-400' : 'bg-gold'}`}
+              style={{ width: `${checklistPct}%` }}
+            />
+          </div>
+          <span className="text-[10px] text-gray-400 dark:text-gray-500 shrink-0">
+            {card.checklist_done}/{card.checklist_total}
+          </span>
+        </div>
       )}
 
       {/* Footer badges */}
-      <div className="flex items-center gap-2 mt-2.5 ml-5 flex-wrap">
+      <div className="flex items-center gap-2 mt-2.5 flex-wrap">
         <span className="flex items-center gap-1 text-[11px] text-gray-400 dark:text-gray-500">
           <span className={`w-2 h-2 rounded-full shrink-0 ${PRIORIDADE_DOT[card.prioridade] ?? PRIORIDADE_DOT.media}`} />
           {PRIORIDADE_LABEL[card.prioridade] ?? card.prioridade}
@@ -130,7 +153,7 @@ export function KanbanCard({ card, onClick, overlay = false }: Props) {
         )}
 
         {prazo && (
-          <span className={`text-[11px] px-2 py-0.5 rounded-full font-medium ${prazo.overdue ? 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400' : 'bg-gray-100 text-gray-500 dark:bg-white/5 dark:text-gray-400'}`}>
+          <span className={`text-[11px] px-2 py-0.5 rounded-full font-medium ${prazo.cls}`}>
             {prazo.label}
           </span>
         )}

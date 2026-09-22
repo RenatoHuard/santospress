@@ -28,6 +28,15 @@ export interface Comentario {
   created_at: string
 }
 
+export interface ChecklistItem {
+  id: string
+  demanda_id: string
+  texto: string
+  concluido: boolean
+  ordem: number
+  created_at: string
+}
+
 export interface KanbanCard {
   id: string
   titulo: string
@@ -48,6 +57,8 @@ export interface KanbanCard {
   coluna_id: string
   created_at: string
   etiquetas: Etiqueta[]
+  checklist_total: number
+  checklist_done: number
 }
 
 export interface KanbanColuna {
@@ -179,9 +190,15 @@ export async function getKanbanData(quadroId: string): Promise<KanbanData | null
   const etiquetaMap = Object.fromEntries((etiquetasBoard ?? []).map(e => [e.id, e]))
 
   const demandaIds = (demandas ?? []).map(d => d.id)
-  const { data: demandaEtiquetas } = demandaIds.length
-    ? await client.from('spress_demanda_etiquetas').select('demanda_id, etiqueta_id').in('demanda_id', demandaIds)
-    : { data: [] }
+
+  const [{ data: demandaEtiquetas }, { data: checklistRaw }] = await Promise.all([
+    demandaIds.length
+      ? client.from('spress_demanda_etiquetas').select('demanda_id, etiqueta_id').in('demanda_id', demandaIds)
+      : Promise.resolve({ data: [] }),
+    demandaIds.length
+      ? client.from('spress_checklist_items').select('demanda_id, concluido').in('demanda_id', demandaIds)
+      : Promise.resolve({ data: [] }),
+  ])
 
   const cardEtiquetasMap: Record<string, Etiqueta[]> = {}
   for (const de of demandaEtiquetas ?? []) {
@@ -189,6 +206,13 @@ export async function getKanbanData(quadroId: string): Promise<KanbanData | null
     if (!etiqueta) continue
     if (!cardEtiquetasMap[de.demanda_id]) cardEtiquetasMap[de.demanda_id] = []
     cardEtiquetasMap[de.demanda_id].push(etiqueta)
+  }
+
+  const checklistCountMap: Record<string, { total: number; done: number }> = {}
+  for (const ci of checklistRaw ?? []) {
+    if (!checklistCountMap[ci.demanda_id]) checklistCountMap[ci.demanda_id] = { total: 0, done: 0 }
+    checklistCountMap[ci.demanda_id].total++
+    if (ci.concluido) checklistCountMap[ci.demanda_id].done++
   }
 
   const cardsByColunaId: Record<string, KanbanCard[]> = {}
@@ -201,6 +225,8 @@ export async function getKanbanData(quadroId: string): Promise<KanbanData | null
       responsavel_nome: d.responsavel_id ? (respMap[d.responsavel_id]?.nome ?? null) : null,
       responsavel_foto: d.responsavel_id ? (respMap[d.responsavel_id]?.foto_url ?? null) : null,
       etiquetas: cardEtiquetasMap[d.id] ?? [],
+      checklist_total: checklistCountMap[d.id]?.total ?? 0,
+      checklist_done:  checklistCountMap[d.id]?.done  ?? 0,
     })
   }
 
@@ -304,7 +330,46 @@ export async function criarCard(
     responsavel_nome: null,
     responsavel_foto: null,
     etiquetas: [],
+    checklist_total: 0,
+    checklist_done: 0,
   }
+}
+
+// ── Checklist ────────────────────────────────────────────────────────
+
+export async function getChecklist(demandaId: string): Promise<ChecklistItem[]> {
+  const { data } = await sb()
+    .from('spress_checklist_items')
+    .select('id, demanda_id, texto, concluido, ordem, created_at')
+    .eq('demanda_id', demandaId)
+    .order('ordem')
+  return data ?? []
+}
+
+export async function addChecklistItem(demandaId: string, texto: string): Promise<ChecklistItem | null> {
+  const client = sb()
+  const { data: last } = await client
+    .from('spress_checklist_items')
+    .select('ordem')
+    .eq('demanda_id', demandaId)
+    .order('ordem', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+  const ordem = (last?.ordem ?? -1) + 1
+  const { data } = await client
+    .from('spress_checklist_items')
+    .insert({ demanda_id: demandaId, texto, ordem })
+    .select('id, demanda_id, texto, concluido, ordem, created_at')
+    .single()
+  return data ?? null
+}
+
+export async function toggleChecklistItem(itemId: string, concluido: boolean): Promise<void> {
+  await sb().from('spress_checklist_items').update({ concluido }).eq('id', itemId)
+}
+
+export async function deleteChecklistItem(itemId: string): Promise<void> {
+  await sb().from('spress_checklist_items').delete().eq('id', itemId)
 }
 
 // ── Etiquetas ────────────────────────────────────────────────────────
@@ -392,6 +457,108 @@ export async function addComentario(
 
 export async function deleteComentario(comentarioId: string): Promise<void> {
   await sb().from('spress_demanda_comentarios').delete().eq('id', comentarioId)
+}
+
+// ── Calendário ───────────────────────────────────────────────────────
+
+export interface CalendarioCard extends KanbanCard {
+  quadro_id: string
+  quadro_nome: string | null
+  coluna_nome: string | null
+}
+
+export interface CalendarioData {
+  cards: CalendarioCard[]
+  usuarios: UsuarioSimples[]
+  clientes: ClienteSimples[]
+  etiquetasByQuadro: Record<string, Etiqueta[]>
+}
+
+export async function getCalendarioData(): Promise<CalendarioData> {
+  const client = sb()
+
+  const [
+    { data: demandas },
+    { data: usuarios },
+    { data: clientesRaw },
+    { data: quadros },
+    { data: colunas },
+    { data: etiquetas },
+    { data: demandaEtiquetas },
+    { data: checklistAllRaw },
+  ] = await Promise.all([
+    client.from('spress_demandas')
+      .select('id, titulo, descricao, tipo, prioridade, origem, ordem, visto_em, concluida_em, prazo, cliente_id, atendente_id, responsavel_id, coluna_id, quadro_id, created_at')
+      .not('prazo', 'is', null),
+    client.from('spress_usuarios').select('id, nome, cargo, foto_url, roles').order('nome'),
+    client.from('spress_clientes').select('id, nome_fantasia, razao_social').eq('status', 'ativo'),
+    client.from('spress_quadros').select('id, nome'),
+    client.from('spress_colunas').select('id, nome'),
+    client.from('spress_etiquetas').select('id, quadro_id, nome, cor'),
+    client.from('spress_demanda_etiquetas').select('demanda_id, etiqueta_id'),
+    client.from('spress_checklist_items').select('demanda_id, concluido'),
+  ])
+
+  const clienteMap  = Object.fromEntries((clientesRaw ?? []).map(c => [c.id, c.nome_fantasia || c.razao_social]))
+  const quadroMap   = Object.fromEntries((quadros ?? []).map(q => [q.id, q.nome]))
+  const colunaMap   = Object.fromEntries((colunas ?? []).map(c => [c.id, c.nome]))
+  const etiquetaMap = Object.fromEntries((etiquetas ?? []).map(e => [e.id, e]))
+  const respMap     = Object.fromEntries((usuarios ?? []).map(u => [u.id, u]))
+
+  const cardEtiquetasMap: Record<string, Etiqueta[]> = {}
+  for (const de of demandaEtiquetas ?? []) {
+    const et = etiquetaMap[de.etiqueta_id]
+    if (!et) continue
+    if (!cardEtiquetasMap[de.demanda_id]) cardEtiquetasMap[de.demanda_id] = []
+    cardEtiquetasMap[de.demanda_id].push(et)
+  }
+
+  const checklistCountMap: Record<string, { total: number; done: number }> = {}
+  for (const ci of checklistAllRaw ?? []) {
+    if (!checklistCountMap[ci.demanda_id]) checklistCountMap[ci.demanda_id] = { total: 0, done: 0 }
+    checklistCountMap[ci.demanda_id].total++
+    if (ci.concluido) checklistCountMap[ci.demanda_id].done++
+  }
+
+  const etiquetasByQuadro: Record<string, Etiqueta[]> = {}
+  for (const e of etiquetas ?? []) {
+    if (!etiquetasByQuadro[e.quadro_id]) etiquetasByQuadro[e.quadro_id] = []
+    etiquetasByQuadro[e.quadro_id].push(e)
+  }
+
+  const cards: CalendarioCard[] = (demandas ?? []).map(d => ({
+    id: d.id,
+    titulo: d.titulo,
+    descricao: d.descricao ?? null,
+    tipo: d.tipo ?? null,
+    prioridade: d.prioridade,
+    origem: d.origem,
+    ordem: d.ordem,
+    visto_em: d.visto_em ?? null,
+    concluida_em: d.concluida_em ?? null,
+    prazo: d.prazo,
+    cliente_id: d.cliente_id ?? null,
+    cliente_nome: d.cliente_id ? (clienteMap[d.cliente_id] ?? null) : null,
+    atendente_id: d.atendente_id ?? null,
+    responsavel_id: d.responsavel_id ?? null,
+    responsavel_nome: d.responsavel_id ? (respMap[d.responsavel_id]?.nome ?? null) : null,
+    responsavel_foto: d.responsavel_id ? (respMap[d.responsavel_id]?.foto_url ?? null) : null,
+    coluna_id: d.coluna_id,
+    created_at: d.created_at,
+    etiquetas: cardEtiquetasMap[d.id] ?? [],
+    checklist_total: checklistCountMap[d.id]?.total ?? 0,
+    checklist_done:  checklistCountMap[d.id]?.done  ?? 0,
+    quadro_id: d.quadro_id,
+    quadro_nome: d.quadro_id ? (quadroMap[d.quadro_id] ?? null) : null,
+    coluna_nome: d.coluna_id ? (colunaMap[d.coluna_id] ?? null) : null,
+  }))
+
+  return {
+    cards,
+    usuarios: usuarios ?? [],
+    clientes: (clientesRaw ?? []).map(c => ({ id: c.id, nome: c.nome_fantasia || c.razao_social || 'Cliente' })),
+    etiquetasByQuadro,
+  }
 }
 
 // ── Auth ─────────────────────────────────────────────────────────────
