@@ -62,12 +62,29 @@ export function KanbanBoard({ initialData }: Props) {
 
   const isAdminGestor = !!(currentUser?.roles?.includes('admin') || currentUser?.roles?.includes('gestor'))
 
+  const clientesComCards = useMemo(() => {
+    const ids = new Set(colunas.flatMap(c => c.cards).map(c => c.cliente_id).filter(Boolean))
+    return initialData.clientes.filter(c => ids.has(c.id))
+  }, [colunas, initialData.clientes])
+
+  const hasInternalCards = useMemo(
+    () => colunas.flatMap(c => c.cards).some(c => !c.cliente_id),
+    [colunas],
+  )
+
+  const usuariosComCards = useMemo(() => {
+    const ids = new Set(colunas.flatMap(c => c.cards).map(c => c.responsavel_id).filter(Boolean))
+    return initialData.usuarios.filter(u => ids.has(u.id))
+  }, [colunas, initialData.usuarios])
+
   const filteredColunas = useMemo<KanbanColuna[]>(() => {
     if (!filterClienteId && !filterResponsavelId) return colunas
     return colunas.map(col => ({
       ...col,
       cards: col.cards.filter(c => {
-        const okCliente = !filterClienteId || c.cliente_id === filterClienteId
+        const okCliente = !filterClienteId || (
+          filterClienteId === '__interno__' ? !c.cliente_id : c.cliente_id === filterClienteId
+        )
         const okResp = !filterResponsavelId || c.responsavel_id === filterResponsavelId
         return okCliente && okResp
       }),
@@ -207,13 +224,13 @@ export function KanbanBoard({ initialData }: Props) {
 
           <select className={SELECT} value={filterClienteId} onChange={e => setFilterClienteId(e.target.value)}>
             <option value="">Todos os clientes</option>
-            <option value="__interno__">— Interno —</option>
-            {initialData.clientes.map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}
+            {hasInternalCards && <option value="__interno__">— Interno —</option>}
+            {clientesComCards.map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}
           </select>
 
           <select className={SELECT} value={filterResponsavelId} onChange={e => setFilterResponsavelId(e.target.value)}>
             <option value="">Todos os colaboradores</option>
-            {initialData.usuarios.map(u => <option key={u.id} value={u.id}>{u.nome}</option>)}
+            {usuariosComCards.map(u => <option key={u.id} value={u.id}>{u.nome}</option>)}
           </select>
 
           {hasFilter && (
