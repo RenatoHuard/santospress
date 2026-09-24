@@ -3,19 +3,31 @@
 import { useEffect, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { getQuadros, criarQuadro, deletarQuadro, type Quadro } from '../actions/kanban'
+import { supabase } from '@/lib/supabase'
+import { getQuadros, getQuadrosParaColaborador, getUsuarioByAuthId, criarQuadro, deletarQuadro, type Quadro } from '../actions/kanban'
 
 export default function KanbanListPage() {
   const router = useRouter()
   const [quadros, setQuadros] = useState<Quadro[]>([])
   const [loading, setLoading] = useState(true)
+  const [isAdminGestor, setIsAdminGestor] = useState(true)
   const [criando, setCriando] = useState(false)
   const [nomeNovo, setNomeNovo] = useState('')
   const [isPending, startTransition] = useTransition()
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
 
   useEffect(() => {
-    getQuadros().then(data => { setQuadros(data); setLoading(false) })
+    supabase.auth.getUser().then(async ({ data: { user } }) => {
+      if (!user) { getQuadros().then(d => { setQuadros(d); setLoading(false) }); return }
+      const u = await getUsuarioByAuthId(user.id)
+      const admin = !!(u?.roles?.includes('admin') || u?.roles?.includes('gestor') || u?.roles?.includes('rh'))
+      setIsAdminGestor(admin)
+      if (admin) {
+        getQuadros().then(d => { setQuadros(d); setLoading(false) })
+      } else {
+        getQuadrosParaColaborador(u?.id ?? '').then(d => { setQuadros(d); setLoading(false) })
+      }
+    })
   }, [])
 
   function handleCriar() {
@@ -42,15 +54,17 @@ export default function KanbanListPage() {
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Quadros Kanban</h1>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Gerencie tarefas e demandas por quadro.</p>
         </div>
-        <button
-          onClick={() => setCriando(true)}
-          className="flex items-center gap-2 bg-gold hover:bg-gold/90 text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors"
-        >
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-          </svg>
-          Novo quadro
-        </button>
+        {isAdminGestor && (
+          <button
+            onClick={() => setCriando(true)}
+            className="flex items-center gap-2 bg-gold hover:bg-gold/90 text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+            </svg>
+            Novo quadro
+          </button>
+        )}
       </div>
 
       {/* Novo quadro inline */}
@@ -111,13 +125,13 @@ export default function KanbanListPage() {
                 </p>
               </Link>
 
-              {/* Delete */}
-              {confirmDelete === q.id ? (
+              {/* Delete (admin/gestor only) */}
+              {isAdminGestor && confirmDelete === q.id ? (
                 <div className="absolute top-3 right-3 flex items-center gap-1">
                   <button onClick={() => setConfirmDelete(null)} className="text-[10px] text-gray-400 px-1.5 py-0.5 rounded bg-gray-100 dark:bg-white/5 hover:bg-gray-200">✕</button>
                   <button onClick={() => handleDelete(q.id)} className="text-[10px] text-white bg-red-500 hover:bg-red-600 px-1.5 py-0.5 rounded font-semibold">✓</button>
                 </div>
-              ) : (
+              ) : isAdminGestor ? (
                 <button
                   onClick={e => { e.preventDefault(); setConfirmDelete(q.id) }}
                   className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 text-gray-300 dark:text-gray-600 hover:text-red-400 transition-all p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5"
@@ -126,7 +140,7 @@ export default function KanbanListPage() {
                     <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
                   </svg>
                 </button>
-              )}
+              ) : null}
             </div>
           ))}
         </div>

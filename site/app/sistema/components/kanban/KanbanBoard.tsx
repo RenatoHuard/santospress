@@ -78,18 +78,19 @@ export function KanbanBoard({ initialData }: Props) {
   }, [colunas, initialData.usuarios])
 
   const filteredColunas = useMemo<KanbanColuna[]>(() => {
-    if (!filterClienteId && !filterResponsavelId) return colunas
+    const responsavelFilter = isAdminGestor ? filterResponsavelId : (currentUser?.id ?? null)
+    if (!filterClienteId && !responsavelFilter) return colunas
     return colunas.map(col => ({
       ...col,
       cards: col.cards.filter(c => {
         const okCliente = !filterClienteId || (
           filterClienteId === '__interno__' ? !c.cliente_id : c.cliente_id === filterClienteId
         )
-        const okResp = !filterResponsavelId || c.responsavel_id === filterResponsavelId
+        const okResp = !responsavelFilter || c.responsavel_id === responsavelFilter
         return okCliente && okResp
       }),
     }))
-  }, [colunas, filterClienteId, filterResponsavelId])
+  }, [colunas, filterClienteId, filterResponsavelId, isAdminGestor, currentUser])
 
   const selectedColunaNome = useMemo(
     () => selectedCard ? colunas.find(col => col.cards.some(c => c.id === selectedCard.id))?.nome : undefined,

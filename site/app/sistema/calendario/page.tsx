@@ -60,17 +60,24 @@ export default function CalendarioPage() {
     getCalendarioData().then(d => { setData(d); setLoading(false) })
   }, [])
 
+  const isAdminGestor = !!(currentUser?.roles?.includes('admin') || currentUser?.roles?.includes('gestor') || currentUser?.roles?.includes('rh'))
+
+  const visibleCards = useMemo(() => {
+    if (!data) return []
+    if (isAdminGestor || !currentUser) return data.cards
+    return data.cards.filter(c => c.responsavel_id === currentUser.id)
+  }, [data, isAdminGestor, currentUser])
+
   const cardsByDate = useMemo(() => {
-    if (!data) return {} as Record<string, CalendarioCard[]>
     const map: Record<string, CalendarioCard[]> = {}
-    for (const card of data.cards) {
+    for (const card of visibleCards) {
       if (!card.prazo) continue
       const key = isoToLocalDate(card.prazo)
       if (!map[key]) map[key] = []
       map[key].push(card)
     }
     return map
-  }, [data])
+  }, [visibleCards])
 
   const { year, month, calendarDays } = useMemo(() => {
     const y = currentMonth.getFullYear()
@@ -133,7 +140,7 @@ export default function CalendarioPage() {
     })
   }
 
-  const totalCards = data?.cards.length ?? 0
+  const totalCards = visibleCards.length
 
   return (
     <div className="flex flex-col h-[calc(100vh-64px)]">
@@ -232,7 +239,7 @@ export default function CalendarioPage() {
         </div>
       ) : viewMode === 'projeto' ? (
         <CalendarioGantt
-          cards={data?.cards ?? []}
+          cards={visibleCards}
           rangeStart={ganttStart}
           rangeEnd={ganttEnd}
           onCardClick={setSelectedCard}

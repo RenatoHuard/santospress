@@ -134,6 +134,62 @@ export async function getQuadros(): Promise<Quadro[]> {
   }))
 }
 
+export async function getQuadrosParaColaborador(usuarioId: string): Promise<Quadro[]> {
+  if (!usuarioId) return []
+  const client = sb()
+
+  // quadros via cards atribuídos
+  const { data: demandas } = await client
+    .from('spress_demandas')
+    .select('quadro_id')
+    .eq('responsavel_id', usuarioId)
+
+  // quadros via membership explícita
+  const { data: memberships } = await client
+    .from('spress_quadro_membros')
+    .select('quadro_id')
+    .eq('usuario_id', usuarioId)
+
+  const quadroIds = [...new Set([
+    ...(demandas ?? []).map(d => d.quadro_id),
+    ...(memberships ?? []).map(m => m.quadro_id),
+  ].filter(Boolean))]
+
+  if (!quadroIds.length) return []
+
+  const { data: quadros } = await client
+    .from('spress_quadros')
+    .select('id, nome, cliente_id, created_at')
+    .in('id', quadroIds)
+    .order('created_at', { ascending: false })
+
+  if (!quadros?.length) return []
+
+  const clienteIds = [...new Set(quadros.map(q => q.cliente_id).filter(Boolean))]
+  const { data: clientes } = clienteIds.length
+    ? await client.from('spress_clientes').select('id, nome_fantasia, razao_social').in('id', clienteIds)
+    : { data: [] }
+
+  const clienteMap = Object.fromEntries((clientes ?? []).map(c => [c.id, c.nome_fantasia || c.razao_social]))
+
+  const { data: counts } = await client
+    .from('spress_demandas')
+    .select('quadro_id')
+    .in('quadro_id', quadroIds)
+    .eq('responsavel_id', usuarioId)
+
+  const countMap: Record<string, number> = {}
+  for (const c of counts ?? []) {
+    countMap[c.quadro_id] = (countMap[c.quadro_id] ?? 0) + 1
+  }
+
+  return quadros.map(q => ({
+    ...q,
+    cliente_nome: q.cliente_id ? (clienteMap[q.cliente_id] ?? null) : null,
+    total_cards: countMap[q.id] ?? 0,
+  }))
+}
+
 export async function criarQuadro(nome: string, clienteId?: string): Promise<{ id: string } | null> {
   const { data, error } = await sb()
     .from('spress_quadros')
@@ -559,6 +615,41 @@ export async function getCalendarioData(): Promise<CalendarioData> {
     clientes: (clientesRaw ?? []).map(c => ({ id: c.id, nome: c.nome_fantasia || c.razao_social || 'Cliente' })),
     etiquetasByQuadro,
   }
+}
+
+// ── Membros do Quadro ────────────────────────────────────────────────
+
+export async function getMembrosQuadro(quadroId: string): Promise<UsuarioSimples[]> {
+  const client = sb()
+  const { data } = await client
+    .from('spress_quadro_membros')
+    .select('usuario_id')
+    .eq('quadro_id', quadroId)
+
+  const ids = (data ?? []).map(r => r.usuario_id)
+  if (!ids.length) return []
+
+  const { data: usuarios } = await client
+    .from('spress_usuarios')
+    .select('id, nome, cargo, foto_url, roles')
+    .in('id', ids)
+    .order('nome')
+
+  return usuarios ?? []
+}
+
+export async function adicionarMembroQuadro(quadroId: string, usuarioId: string): Promise<void> {
+  await sb()
+    .from('spress_quadro_membros')
+    .upsert({ quadro_id: quadroId, usuario_id: usuarioId })
+}
+
+export async function removerMembroQuadro(quadroId: string, usuarioId: string): Promise<void> {
+  await sb()
+    .from('spress_quadro_membros')
+    .delete()
+    .eq('quadro_id', quadroId)
+    .eq('usuario_id', usuarioId)
 }
 
 // ── Auth ─────────────────────────────────────────────────────────────

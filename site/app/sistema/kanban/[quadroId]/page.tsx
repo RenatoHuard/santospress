@@ -3,8 +3,10 @@
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { getKanbanData, renomearQuadro, type KanbanData } from '../../actions/kanban'
+import { supabase } from '@/lib/supabase'
+import { getKanbanData, getUsuarioByAuthId, renomearQuadro, type KanbanData, type UsuarioSimples } from '../../actions/kanban'
 import { KanbanBoard } from '../../components/kanban/KanbanBoard'
+import { QuadroMembros } from '../../components/kanban/QuadroMembros'
 
 export default function KanbanBoardPage() {
   const { quadroId } = useParams<{ quadroId: string }>()
@@ -13,6 +15,7 @@ export default function KanbanBoardPage() {
   const [loading, setLoading] = useState(true)
   const [editingNome, setEditingNome] = useState(false)
   const [nomeInput, setNomeInput] = useState('')
+  const [currentUser, setCurrentUser] = useState<UsuarioSimples | null>(null)
 
   useEffect(() => {
     getKanbanData(quadroId).then(d => {
@@ -21,7 +24,12 @@ export default function KanbanBoardPage() {
       setNomeInput(d.quadro.nome)
       setLoading(false)
     })
+    supabase.auth.getUser().then(async ({ data: { user } }) => {
+      if (user) setCurrentUser(await getUsuarioByAuthId(user.id))
+    })
   }, [quadroId, router])
+
+  const isAdminGestor = !!(currentUser?.roles?.includes('admin') || currentUser?.roles?.includes('gestor') || currentUser?.roles?.includes('rh'))
 
   async function handleRenameBlur() {
     setEditingNome(false)
@@ -81,6 +89,14 @@ export default function KanbanBoardPage() {
         <span className="text-xs text-gray-400 dark:text-gray-500">
           {data.colunas.reduce((acc, c) => acc + c.cards.length, 0)} cards · {data.colunas.length} colunas
         </span>
+
+        <div className="ml-4">
+          <QuadroMembros
+            quadroId={quadroId}
+            todosUsuarios={data.usuarios}
+            isAdminGestor={isAdminGestor}
+          />
+        </div>
 
         <Link
           href="/sistema/calendario"
