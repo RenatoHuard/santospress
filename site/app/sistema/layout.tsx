@@ -21,11 +21,17 @@ export default function SistemaLayout({ children }: { children: React.ReactNode 
 
       const roles = await getMeusRoles(session.user.id)
 
-      // Usuários sem acesso admin só podem acessar /sistema e /sistema/perfil
+      // Colaboradores/atendentes só acessam seu perfil, blog, kanban e calendário
+      const rotasPermitidas = [
+        '/sistema/perfil',
+        '/sistema/blog',
+        '/sistema/kanban',
+        '/sistema/calendario',
+      ]
       if (
         apenasPerfilProprio(roles) &&
         pathname !== '/sistema' &&
-        !pathname.startsWith('/sistema/perfil')
+        !rotasPermitidas.some(r => pathname.startsWith(r))
       ) {
         router.replace('/sistema')
         return
