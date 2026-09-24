@@ -40,5 +40,33 @@ export async function salvarSecaoSite(secao: string, dados: Record<string, strin
   if (error) throw new Error(error.message)
 
   revalidatePath('/')
+  revalidatePath('/missao-visao-valores')
+  revalidatePath('/sistema/site')
+}
+
+// Replace-all strategy para MVV (suporta add/remove de valores)
+export async function salvarMvvCompleto(dados: Record<string, string>) {
+  const sb = serviceClient()
+
+  const { error: delError } = await sb
+    .from('spress_conteudo_site')
+    .delete()
+    .eq('secao', 'mvv')
+
+  if (delError) throw new Error(delError.message)
+
+  const rows = Object.entries(dados).map(([chave, valor]) => ({
+    secao: 'mvv',
+    chave,
+    valor: valor || null,
+  }))
+
+  if (rows.length > 0) {
+    const { error } = await sb.from('spress_conteudo_site').insert(rows)
+    if (error) throw new Error(error.message)
+  }
+
+  revalidatePath('/')
+  revalidatePath('/missao-visao-valores')
   revalidatePath('/sistema/site')
 }

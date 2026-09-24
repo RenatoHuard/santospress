@@ -142,6 +142,58 @@ export default async function Home() {
         </div>
       </section>
 
+      {/* ── Missão, Visão e Valores ──────────────────────── */}
+      <section id="pilares" className="bg-gray-50 dark:bg-[#161616] py-24">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <span className="text-gold font-semibold text-xs uppercase tracking-widest">Pilares da Agência</span>
+            <h2 className="text-3xl md:text-4xl font-bold text-navy dark:text-white mt-3">Missão, Visão e Valores</h2>
+          </div>
+
+          {/* Missão + Visão */}
+          <div className="grid md:grid-cols-2 gap-8 mb-12">
+            <div className="bg-white dark:bg-[#1a1a1a] rounded-2xl p-8 border border-gray-100 dark:border-white/5">
+              <h3 className="text-lg font-bold text-gold uppercase tracking-widest mb-4">Missão</h3>
+              <p className="text-gray-600 dark:text-gray-300 leading-relaxed italic">
+                {g(content, 'mvv', 'missao', 'Conectar marcas e pessoas por meio de estratégias de comunicação inovadoras, integradas e de vanguarda, tratando cada cliente como nosso maior ativo e gerando resultados sustentáveis que impulsionam negócios para o futuro.')}
+              </p>
+            </div>
+            <div className="bg-white dark:bg-[#1a1a1a] rounded-2xl p-8 border border-gray-100 dark:border-white/5">
+              <h3 className="text-lg font-bold text-gold uppercase tracking-widest mb-4">Visão</h3>
+              <p className="text-gray-600 dark:text-gray-300 leading-relaxed italic">
+                {g(content, 'mvv', 'visao', 'Ser a agência líder e referência de mercado em comunicação integrada na Baixada Santista, reconhecida pela excelência estratégica, pioneirismo e por atrair e reter os profissionais mais apaixonados do setor.')}
+              </p>
+            </div>
+          </div>
+
+          {/* Valores */}
+          <div className="mb-10">
+            <h3 className="text-lg font-bold text-navy dark:text-white uppercase tracking-widest text-center mb-8">Valores</h3>
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[
+                { titulo: g(content, 'mvv', 'valor1_titulo', 'Paixão e Compromisso'), descricao: g(content, 'mvv', 'valor1_descricao', 'Atuamos com brilho nos olhos, dedicação total à profissão e orgulho das histórias que ajudamos a construir.') },
+                { titulo: g(content, 'mvv', 'valor2_titulo', 'Foco no Cliente'), descricao: g(content, 'mvv', 'valor2_descricao', 'O cliente é o nosso maior ativo; cuidamos de sua reputação e de seus objetivos de negócio com zelo e excelência.') },
+                { titulo: g(content, 'mvv', 'valor3_titulo', 'Vanguarda e Inovação'), descricao: g(content, 'mvv', 'valor3_descricao', 'Buscamos sempre o pioneirismo no mercado de comunicação, antecipando tendências e ferramentas.') },
+                { titulo: g(content, 'mvv', 'valor4_titulo', 'Meritocracia e Reconhecimento'), descricao: g(content, 'mvv', 'valor4_descricao', 'Valorizamos o talento e o esforço individual e coletivo dos nossos colaboradores, garantindo que o crescimento profissional caminhe lado a lado com os resultados entregues.') },
+                { titulo: g(content, 'mvv', 'valor5_titulo', 'Ética e Parceria'), descricao: g(content, 'mvv', 'valor5_descricao', 'Construímos relações transparentes, íntegras e duradouras com a equipe, clientes e a mídia.') },
+              ].map((v) => (
+                <div key={v.titulo} className="bg-white dark:bg-[#1a1a1a] rounded-2xl p-7 border border-gray-100 dark:border-white/5">
+                  <div className="w-2 h-2 rounded-full bg-gold mb-4" />
+                  <h4 className="font-semibold text-navy dark:text-white mb-2">{v.titulo}</h4>
+                  <p className="text-gray-500 dark:text-gray-400 text-sm leading-relaxed">{v.descricao}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="text-center">
+            <Link href="/missao-visao-valores" className="inline-block border border-gold text-gold px-7 py-3 rounded-full text-sm font-semibold hover:bg-gold hover:text-white transition-colors">
+              Ver página completa →
+            </Link>
+          </div>
+        </div>
+      </section>
+
       {/* ── Serviços ─────────────────────────────────────── */}
       <section id="servicos" className="bg-gray-50 dark:bg-[#161616] py-24">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -212,7 +264,7 @@ export default async function Home() {
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <a
-              href={g(content, 'cta', 'cta1_href', 'mailto:contato@santospress.com.br')}
+              href={g(content, 'cta', 'cta1_href', 'mailto:atendimento@santospress.com.br')}
               className="inline-block bg-gold text-white px-8 py-4 rounded-full font-semibold hover:bg-gold/85 transition-colors"
             >
               {g(content, 'cta', 'cta1_texto', 'Enviar mensagem')}

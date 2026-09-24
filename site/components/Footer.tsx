@@ -27,6 +27,7 @@ export function Footer() {
               <li><Link href="/" className="hover:text-gold transition-colors">Home</Link></li>
               <li><Link href="/noticias" className="hover:text-gold transition-colors">Notícias</Link></li>
               <li><Link href="/equipe" className="hover:text-gold transition-colors">Equipe</Link></li>
+              <li><Link href="/missao-visao-valores" className="hover:text-gold transition-colors">Missão, Visão e Valores</Link></li>
               <li><Link href="/login" className="hover:text-gold transition-colors">Área Logada</Link></li>
             </ul>
           </div>
@@ -35,8 +36,13 @@ export function Footer() {
             <h4 className="text-white font-semibold mb-4 text-sm uppercase tracking-wide">Contato</h4>
             <ul className="space-y-3 text-sm">
               <li>
-                <a href="mailto:contato@santospress.com.br" className="hover:text-gold transition-colors">
-                  contato@santospress.com.br
+                <a href="mailto:atendimento@santospress.com.br" className="hover:text-gold transition-colors">
+                  atendimento@santospress.com.br
+                </a>
+              </li>
+              <li>
+                <a href="https://wa.me/5513997426063" target="_blank" rel="noopener noreferrer" className="hover:text-gold transition-colors">
+                  (13) 99742-6063
                 </a>
               </li>
               <li>Rua Quintino Bocaiuva, 03</li>

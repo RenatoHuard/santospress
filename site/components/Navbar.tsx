@@ -44,6 +44,9 @@ export function Navbar() {
             <Link href="/equipe" className="text-gray-600 dark:text-gray-400 hover:text-navy dark:hover:text-white font-medium transition-colors text-sm">
               Equipe
             </Link>
+            <Link href="/missao-visao-valores" className="text-gray-600 dark:text-gray-400 hover:text-navy dark:hover:text-white font-medium transition-colors text-sm">
+              Pilares
+            </Link>
             <ThemeToggle />
             <Link
               href="/login"
@@ -79,6 +82,7 @@ export function Navbar() {
           <Link href="/" onClick={() => setOpen(false)} className="text-gray-700 dark:text-gray-300 font-medium">Home</Link>
           <Link href="/noticias" onClick={() => setOpen(false)} className="text-gray-700 dark:text-gray-300 font-medium">Notícias</Link>
           <Link href="/equipe" onClick={() => setOpen(false)} className="text-gray-700 dark:text-gray-300 font-medium">Equipe</Link>
+          <Link href="/missao-visao-valores" onClick={() => setOpen(false)} className="text-gray-700 dark:text-gray-300 font-medium">Pilares</Link>
           <Link
             href="/login"
             onClick={() => setOpen(false)}
