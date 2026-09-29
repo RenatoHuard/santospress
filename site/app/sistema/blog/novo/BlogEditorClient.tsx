@@ -201,10 +201,12 @@ interface InitialPost {
   seo_titulo: string | null
   seo_descricao: string | null
   publicado_em: string | null
+  cliente_id: string | null
 }
 
 interface Props {
   funcionarios: { id: string; nome: string; email: string; is_coringa: boolean }[]
+  clientes: { id: string; razao_social: string; nome_fantasia: string | null }[]
   initialPost?: InitialPost
 }
 
@@ -226,7 +228,7 @@ const TB_DIV = 'w-px h-5 bg-gray-200 dark:bg-white/10 mx-1 self-center'
 
 // ── Componente principal ────────────────────────────────────────────
 
-export function BlogEditorClient({ funcionarios, initialPost }: Props) {
+export function BlogEditorClient({ funcionarios, clientes, initialPost }: Props) {
   const router = useRouter()
 
   // Form state — pre-filled if editing
@@ -241,6 +243,7 @@ export function BlogEditorClient({ funcionarios, initialPost }: Props) {
   const [categoria, setCategoria] = useState(initialPost?.categoria ?? '')
   const [tags, setTags] = useState<string[]>(initialPost?.tags ?? [])
   const [tagInput, setTagInput] = useState('')
+  const [clienteId, setClienteId] = useState(initialPost?.cliente_id ?? '')
 
   // SEO
   const [seoTitulo, setSeoTitulo] = useState(initialPost?.seo_titulo ?? '')
@@ -354,6 +357,7 @@ export function BlogEditorClient({ funcionarios, initialPost }: Props) {
         tags,
         categoria,
         publicado_em: initialPost?.publicado_em ?? undefined,
+        cliente_id: clienteId || null,
       })
       setSavedId(id)
       if (forceStatus) setStatus(forceStatus)
@@ -723,6 +727,27 @@ export function BlogEditorClient({ funcionarios, initialPost }: Props) {
                         </option>
                       ))}
                     </select>
+                  </div>
+
+                  {/* Client link */}
+                  <div>
+                    <label className={LABEL}>Vínculo com Cliente <span className="normal-case font-normal text-gray-400">(opcional)</span></label>
+                    <select value={clienteId} onChange={(e) => setClienteId(e.target.value)} className={INPUT}>
+                      <option value="">— Sem vínculo —</option>
+                      {clientes.map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.nome_fantasia ?? c.razao_social}
+                        </option>
+                      ))}
+                    </select>
+                    {clienteId && (
+                      <p className="text-[10px] text-gold mt-1 flex items-center gap-1">
+                        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                        </svg>
+                        Vinculado para relatórios de release
+                      </p>
+                    )}
                   </div>
 
                   {/* Category */}

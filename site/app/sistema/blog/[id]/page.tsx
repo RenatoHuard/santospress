@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation'
-import { getBlogPost, getFuncionariosBasico } from '../../actions/blog'
+import { getBlogPost, getFuncionariosBasico, getClientesBasico } from '../../actions/blog'
 import { BlogEditorClient } from '../novo/BlogEditorClient'
 
 interface Props {
@@ -11,9 +11,14 @@ export default async function EditarBlogPostPage({ params }: Props) {
 
   let post = null
   let funcionarios: { id: string; nome: string; email: string; is_coringa: boolean }[] = []
+  let clientes: { id: string; razao_social: string; nome_fantasia: string | null }[] = []
 
   try {
-    ;[post, funcionarios] = await Promise.all([getBlogPost(id), getFuncionariosBasico()])
+    ;[post, funcionarios, clientes] = await Promise.all([
+      getBlogPost(id),
+      getFuncionariosBasico(),
+      getClientesBasico(),
+    ])
   } catch {
     // service key not set
   }
@@ -31,6 +36,7 @@ export default async function EditarBlogPostPage({ params }: Props) {
   return (
     <BlogEditorClient
       funcionarios={funcionarios}
+      clientes={clientes}
       initialPost={post as Parameters<typeof BlogEditorClient>[0]['initialPost']}
     />
   )

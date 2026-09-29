@@ -23,6 +23,7 @@ export interface PostPayload {
   tags: string[]
   categoria: string
   publicado_em?: string | null // preservado nas edições; só sobrescrito na 1ª publicação
+  cliente_id?: string | null
 }
 
 export async function salvarPost(payload: PostPayload): Promise<string> {
@@ -48,6 +49,7 @@ export async function salvarPost(payload: PostPayload): Promise<string> {
     tags: payload.tags.length > 0 ? payload.tags : null,
     categoria: payload.categoria || null,
     publicado_em,
+    cliente_id: payload.cliente_id || null,
   }
 
   if (payload.id) {
@@ -115,7 +117,7 @@ export async function getBlogPosts() {
   const { data } = await serviceClient()
     .from('spress_blog_posts')
     .select('id, titulo, slug, status, categoria, capa_url, publicado_em, created_at')
-    .order('created_at', { ascending: false })
+    .order('publicado_em', { ascending: false })
   return data ?? []
 }
 
@@ -218,6 +220,15 @@ export async function getBlogAnalytics(days: number) {
     topPosts,
     trafficSources,
   }
+}
+
+export async function getClientesBasico() {
+  const { data } = await serviceClient()
+    .from('spress_clientes')
+    .select('id, razao_social, nome_fantasia, status')
+    .eq('status', 'ativo')
+    .order('razao_social')
+  return (data ?? []) as { id: string; razao_social: string; nome_fantasia: string | null }[]
 }
 
 export async function registrarVisita(

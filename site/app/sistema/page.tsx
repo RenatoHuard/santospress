@@ -1,10 +1,11 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { getDashboardStats } from './actions'
 import { getMeusRoles } from './actions/auth'
-import { podeAcessarAdmin, apenasPerfilProprio } from './lib/roles'
+import { podeAcessarAdmin, apenasPerfilProprio, isCliente } from './lib/roles'
 import { TopNav } from './components/TopNav'
 import { RadialMenu } from './components/RadialMenu'
 import { MeuMenuRadial } from './components/MeuMenuRadial'
@@ -16,6 +17,7 @@ interface Stats {
 }
 
 export default function DashboardPage() {
+  const router = useRouter()
   const [roles, setRoles] = useState<string[] | null>(null)
   const [stats, setStats] = useState<Stats>({ clientesAtivos: 0, funcionariosAtivos: 0, configured: true })
 
@@ -23,12 +25,16 @@ export default function DashboardPage() {
     supabase.auth.getUser().then(async ({ data: { user } }) => {
       if (!user) return
       const r = await getMeusRoles(user.id)
+      if (isCliente(r)) {
+        router.replace('/sistema/cliente')
+        return
+      }
       setRoles(r)
       if (podeAcessarAdmin(r)) {
         getDashboardStats().then(setStats)
       }
     })
-  }, [])
+  }, [router])
 
   const isAdminPanel = roles !== null && podeAcessarAdmin(roles)
   const isPersonal   = roles !== null && apenasPerfilProprio(roles)

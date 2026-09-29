@@ -42,14 +42,24 @@ export async function isSuperAdmin(authUserId: string): Promise<boolean> {
   return !!data
 }
 
-/** Retorna o array de roles do usuário (novo sistema multi-role). */
+/** Retorna o array de roles do usuário (novo sistema multi-role).
+ *  Funcionários vêm de spress_usuarios; clientes recebem ['cliente'] automaticamente. */
 export async function getMeusRoles(authUserId: string): Promise<string[]> {
-  const { data } = await sb()
+  const { data: usuario } = await sb()
     .from('spress_usuarios')
     .select('roles')
     .eq('auth_user_id', authUserId)
     .maybeSingle()
-  return data?.roles ?? []
+  if (usuario?.roles?.length) return usuario.roles
+
+  const { data: cliente } = await sb()
+    .from('spress_clientes')
+    .select('id')
+    .eq('auth_user_id', authUserId)
+    .maybeSingle()
+  if (cliente) return ['cliente']
+
+  return []
 }
 
 /** Compatibilidade — retorna o primeiro role ou o campo legado. */

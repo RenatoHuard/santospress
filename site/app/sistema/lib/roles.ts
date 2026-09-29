@@ -4,6 +4,7 @@ export const isRH          = (roles: string[]) => roles.includes('rh')
 export const isGestor      = (roles: string[]) => roles.includes('gestor')
 export const isColaborador = (roles: string[]) => roles.includes('colaborador')
 export const isAtendente   = (roles: string[]) => roles.includes('atendente')
+export const isCliente     = (roles: string[]) => roles.includes('cliente')
 
 export const podeVerRH        = (roles: string[]) => isAdmin(roles) || isRH(roles) || isGestor(roles)
 export const podeEditarRH     = (roles: string[]) => isAdmin(roles) || isRH(roles)

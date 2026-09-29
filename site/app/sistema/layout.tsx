@@ -21,12 +21,13 @@ export default function SistemaLayout({ children }: { children: React.ReactNode 
 
       const roles = await getMeusRoles(session.user.id)
 
-      // Colaboradores/atendentes só acessam seu perfil, blog, kanban e calendário
+      // Colaboradores/atendentes/clientes têm acesso restrito
       const rotasPermitidas = [
         '/sistema/perfil',
         '/sistema/blog',
         '/sistema/kanban',
         '/sistema/calendario',
+        '/sistema/cliente',
       ]
       if (
         apenasPerfilProprio(roles) &&
