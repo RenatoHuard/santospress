@@ -24,6 +24,7 @@ export interface PostPayload {
   categoria: string
   publicado_em?: string | null // preservado nas edições; só sobrescrito na 1ª publicação
   cliente_id?: string | null
+  tipo?: string  // 'noticia' | 'case'; default 'noticia'
 }
 
 export async function salvarPost(payload: PostPayload): Promise<string> {
@@ -50,6 +51,7 @@ export async function salvarPost(payload: PostPayload): Promise<string> {
     categoria: payload.categoria || null,
     publicado_em,
     cliente_id: payload.cliente_id || null,
+    tipo: payload.tipo ?? 'noticia',
   }
 
   if (payload.id) {
@@ -113,18 +115,20 @@ export async function getBlogPost(id: string) {
   return data
 }
 
-export async function getBlogPosts() {
+export async function getBlogPosts(tipo = 'noticia') {
   const { data } = await serviceClient()
     .from('spress_blog_posts')
     .select('id, titulo, slug, status, categoria, capa_url, publicado_em, created_at')
+    .eq('tipo', tipo)
     .order('publicado_em', { ascending: false })
   return data ?? []
 }
 
-export async function getBlogDrafts() {
+export async function getBlogDrafts(tipo = 'noticia') {
   const { data } = await serviceClient()
     .from('spress_blog_posts')
     .select('id, titulo, slug, resumo, categoria, capa_url, created_at, updated_at')
+    .eq('tipo', tipo)
     .eq('status', 'rascunho')
     .order('updated_at', { ascending: false })
   return data ?? []

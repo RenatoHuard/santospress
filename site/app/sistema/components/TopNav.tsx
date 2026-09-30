@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation'
 import { useTheme } from 'next-themes'
 import { supabase } from '@/lib/supabase'
 import { ThemeToggle } from '@/components/ThemeToggle'
+import { SimularPerfilDropdown } from './SimularPerfilDropdown'
 import type { User } from '@supabase/supabase-js'
 
 export function TopNav() {
@@ -45,6 +46,7 @@ export function TopNav() {
       <span className="text-gray-400 dark:text-gray-600 text-xs uppercase tracking-widest">Painel</span>
 
       <div className="ml-auto flex items-center gap-4">
+        {user?.email === 'admin@santospress.com.br' && <SimularPerfilDropdown />}
         {user && (
           <span className="text-gray-400 dark:text-gray-600 text-xs hidden sm:block">{user.email}</span>
         )}

@@ -40,6 +40,18 @@ async function getLatestPosts(): Promise<BlogPost[]> {
     .from('spress_blog_posts')
     .select('id, titulo, slug, resumo, capa_url, publicado_em')
     .eq('status', 'publicado')
+    .eq('tipo', 'noticia')
+    .order('publicado_em', { ascending: false })
+    .limit(3)
+  return data ?? []
+}
+
+async function getLatestCases(): Promise<BlogPost[]> {
+  const { data } = await supabase
+    .from('spress_blog_posts')
+    .select('id, titulo, slug, resumo, capa_url, publicado_em')
+    .eq('status', 'publicado')
+    .eq('tipo', 'case')
     .order('publicado_em', { ascending: false })
     .limit(3)
   return data ?? []
@@ -61,9 +73,10 @@ async function getServicos() {
 // ── Página ─────────────────────────────────────────────────────────
 
 export default async function Home() {
-  const [content, posts, services] = await Promise.all([
+  const [content, posts, cases, services] = await Promise.all([
     getSiteContent(),
     getLatestPosts(),
+    getLatestCases(),
     getServicos(),
   ])
 
@@ -111,6 +124,28 @@ export default async function Home() {
           </div>
         </div>
       </section>
+
+      {/* ── Cases ────────────────────────────────────────── */}
+      {cases.length > 0 && (
+        <section className="bg-[#0d1426] py-24">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between mb-12">
+              <div>
+                <span className="text-gold font-semibold text-xs uppercase tracking-widest">Portfólio</span>
+                <h2 className="text-3xl md:text-4xl font-bold text-white mt-3">Cases de Sucesso</h2>
+              </div>
+              <Link href="/cases" className="mt-4 sm:mt-0 text-gold font-semibold hover:underline text-sm">
+                Ver todos os cases →
+              </Link>
+            </div>
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
+              {cases.map((post) => (
+                <BlogCard key={post.id} post={post} href={`/cases/${post.slug}`} />
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* ── Sobre ────────────────────────────────────────── */}
       <section id="sobre" className="bg-white dark:bg-[#111111] py-24">

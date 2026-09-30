@@ -25,8 +25,10 @@ export default function SistemaLayout({ children }: { children: React.ReactNode 
       const rotasPermitidas = [
         '/sistema/perfil',
         '/sistema/blog',
+        '/sistema/cases',
         '/sistema/kanban',
         '/sistema/calendario',
+        '/sistema/cadastros',
         '/sistema/cliente',
       ]
       if (

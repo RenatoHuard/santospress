@@ -11,7 +11,7 @@ import {
 interface Props {
   quadroId: string
   todosUsuarios: UsuarioSimples[]
-  isAdminGestor: boolean
+  canManage: boolean
 }
 
 function Avatar({ u, size = 28 }: { u: UsuarioSimples; size?: number }) {
@@ -38,7 +38,7 @@ function Avatar({ u, size = 28 }: { u: UsuarioSimples; size?: number }) {
   )
 }
 
-export function QuadroMembros({ quadroId, todosUsuarios, isAdminGestor }: Props) {
+export function QuadroMembros({ quadroId, todosUsuarios, canManage }: Props) {
   const [membros, setMembros]       = useState<UsuarioSimples[]>([])
   const [open, setOpen]             = useState(false)
   const [loading, setLoading]       = useState(false)
@@ -80,15 +80,15 @@ export function QuadroMembros({ quadroId, todosUsuarios, isAdminGestor }: Props)
     setRemovingId(null)
   }
 
-  if (!isAdminGestor && membros.length === 0) return null
+  if (!canManage && membros.length === 0) return null
 
   return (
     <div className="relative flex items-center" ref={panelRef}>
       {/* Avatar stack */}
       <button
-        onClick={() => isAdminGestor && setOpen(o => !o)}
-        className={`flex items-center ${isAdminGestor ? 'cursor-pointer hover:opacity-80' : 'cursor-default'} transition-opacity`}
-        title={isAdminGestor ? 'Gerenciar membros' : 'Membros do quadro'}
+        onClick={() => canManage && setOpen(o => !o)}
+        className={`flex items-center ${canManage ? 'cursor-pointer hover:opacity-80' : 'cursor-default'} transition-opacity`}
+        title={canManage ? 'Gerenciar membros' : 'Membros do quadro'}
       >
         <div className="flex items-center pl-1.5">
           {membros.slice(0, 5).map(m => <Avatar key={m.id} u={m} />)}
@@ -100,7 +100,7 @@ export function QuadroMembros({ quadroId, todosUsuarios, isAdminGestor }: Props)
               +{membros.length - 5}
             </div>
           )}
-          {membros.length === 0 && isAdminGestor && (
+          {membros.length === 0 && canManage && (
             <div
               style={{ width: 28, height: 28 }}
               className="rounded-full border-2 border-dashed border-gray-300 dark:border-white/20 flex items-center justify-center text-gray-400 dark:text-gray-500"
@@ -111,7 +111,7 @@ export function QuadroMembros({ quadroId, todosUsuarios, isAdminGestor }: Props)
             </div>
           )}
         </div>
-        {isAdminGestor && (
+        {canManage && (
           <span className="ml-2 text-[11px] text-gray-400 dark:text-gray-500 font-medium">
             {membros.length === 0 ? 'Adicionar membros' : `${membros.length} membro${membros.length !== 1 ? 's' : ''}`}
           </span>
@@ -119,7 +119,7 @@ export function QuadroMembros({ quadroId, todosUsuarios, isAdminGestor }: Props)
       </button>
 
       {/* Dropdown panel */}
-      {open && isAdminGestor && (
+      {open && canManage && (
         <div className="absolute top-full mt-2 left-0 z-50 w-72 bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-white/10 rounded-2xl shadow-xl overflow-hidden">
           <div className="px-4 py-3 border-b border-gray-100 dark:border-white/5">
             <p className="text-xs font-semibold text-gray-700 dark:text-white uppercase tracking-wider">Membros do Quadro</p>

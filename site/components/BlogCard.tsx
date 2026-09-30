@@ -11,10 +11,10 @@ function formatDate(date: string | null) {
   })
 }
 
-export function BlogCard({ post }: { post: BlogPost }) {
+export function BlogCard({ post, href }: { post: BlogPost; href?: string }) {
   return (
     <Link
-      href={`/noticias/${post.slug}`}
+      href={href ?? `/noticias/${post.slug}`}
       className="group block bg-white dark:bg-[#1a1a1a] rounded-2xl overflow-hidden shadow-sm dark:shadow-none hover:shadow-md dark:hover:shadow-none transition-shadow border border-gray-100 dark:border-white/5"
     >
       {post.capa_url ? (

@@ -18,6 +18,7 @@ async function getAllPosts(): Promise<BlogPost[]> {
     .from('spress_blog_posts')
     .select('id, titulo, slug, resumo, capa_url, publicado_em')
     .eq('status', 'publicado')
+    .eq('tipo', 'noticia')
     .order('publicado_em', { ascending: false })
   return data ?? []
 }

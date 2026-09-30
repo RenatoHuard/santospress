@@ -202,12 +202,16 @@ interface InitialPost {
   seo_descricao: string | null
   publicado_em: string | null
   cliente_id: string | null
+  tipo?: string | null
 }
 
 interface Props {
   funcionarios: { id: string; nome: string; email: string; is_coringa: boolean }[]
   clientes: { id: string; razao_social: string; nome_fantasia: string | null }[]
   initialPost?: InitialPost
+  tipo?: string       // 'noticia' | 'case' — para novos posts
+  tipoLabel?: string  // 'Notícia' | 'Case' — label exibido na UI
+  backHref?: string   // link do painel de volta
 }
 
 // ── Estilos compartilhados ──────────────────────────────────────────
@@ -228,7 +232,7 @@ const TB_DIV = 'w-px h-5 bg-gray-200 dark:bg-white/10 mx-1 self-center'
 
 // ── Componente principal ────────────────────────────────────────────
 
-export function BlogEditorClient({ funcionarios, clientes, initialPost }: Props) {
+export function BlogEditorClient({ funcionarios, clientes, initialPost, tipo, tipoLabel, backHref }: Props) {
   const router = useRouter()
 
   // Form state — pre-filled if editing
@@ -358,6 +362,7 @@ export function BlogEditorClient({ funcionarios, clientes, initialPost }: Props)
         categoria,
         publicado_em: initialPost?.publicado_em ?? undefined,
         cliente_id: clienteId || null,
+        tipo: initialPost?.tipo ?? tipo ?? 'noticia',
       })
       setSavedId(id)
       if (forceStatus) setStatus(forceStatus)
@@ -469,11 +474,13 @@ export function BlogEditorClient({ funcionarios, clientes, initialPost }: Props)
 
             {/* Sub-header */}
             <div className="h-14 border-b border-gray-100 dark:border-white/5 flex items-center px-6 gap-4 shrink-0">
-              <Link href="/sistema/blog" className="text-gray-400 hover:text-gray-700 dark:hover:text-white text-sm transition-colors">
+              <Link href={backHref ?? '/sistema/blog'} className="text-gray-400 hover:text-gray-700 dark:hover:text-white text-sm transition-colors">
                 ← Painel
               </Link>
               <span className="text-gray-200 dark:text-white/10">|</span>
-              <span className="text-xs text-gray-400 dark:text-gray-600 uppercase tracking-widest">Novo Post</span>
+              <span className="text-xs text-gray-400 dark:text-gray-600 uppercase tracking-widest">
+                {initialPost ? `Editar ${tipoLabel ?? 'Post'}` : `Novo ${tipoLabel ?? 'Post'}`}
+              </span>
 
               <div className="ml-auto flex items-center gap-3">
                 {saveMsg && (

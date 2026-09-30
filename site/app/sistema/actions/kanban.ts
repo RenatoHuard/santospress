@@ -82,7 +82,7 @@ export interface ClienteSimples {
 }
 
 export interface KanbanData {
-  quadro: { id: string; nome: string; cliente_id: string | null }
+  quadro: { id: string; nome: string; cliente_id: string | null; visibilidade: string; criador_id: string | null }
   colunas: KanbanColuna[]
   usuarios: UsuarioSimples[]
   clientes: ClienteSimples[]
@@ -96,6 +96,8 @@ export interface Quadro {
   cliente_nome: string | null
   created_at: string
   total_cards: number
+  visibilidade: string
+  criador_id: string | null
 }
 
 // ── Quadros ──────────────────────────────────────────────────────────
@@ -105,7 +107,7 @@ export async function getQuadros(): Promise<Quadro[]> {
 
   const { data: quadros } = await client
     .from('spress_quadros')
-    .select('id, nome, cliente_id, created_at')
+    .select('id, nome, cliente_id, created_at, visibilidade, criador_id')
     .order('created_at', { ascending: false })
 
   if (!quadros?.length) return []
@@ -134,35 +136,30 @@ export async function getQuadros(): Promise<Quadro[]> {
   }))
 }
 
-export async function getQuadrosParaColaborador(usuarioId: string): Promise<Quadro[]> {
+export async function getQuadrosVisiveis(usuarioId: string): Promise<Quadro[]> {
   if (!usuarioId) return []
   const client = sb()
 
-  // quadros via cards atribuídos
-  const { data: demandas } = await client
-    .from('spress_demandas')
-    .select('quadro_id')
-    .eq('responsavel_id', usuarioId)
-
-  // quadros via membership explícita
   const { data: memberships } = await client
     .from('spress_quadro_membros')
     .select('quadro_id')
     .eq('usuario_id', usuarioId)
 
-  const quadroIds = [...new Set([
-    ...(demandas ?? []).map(d => d.quadro_id),
-    ...(memberships ?? []).map(m => m.quadro_id),
-  ].filter(Boolean))]
+  const memberIds = (memberships ?? []).map(m => m.quadro_id).filter(Boolean) as string[]
 
-  if (!quadroIds.length) return []
-
-  const { data: quadros } = await client
+  // Traz públicos + privados onde o usuário é membro
+  let query = client
     .from('spress_quadros')
-    .select('id, nome, cliente_id, created_at')
-    .in('id', quadroIds)
+    .select('id, nome, cliente_id, created_at, visibilidade, criador_id')
     .order('created_at', { ascending: false })
 
+  if (memberIds.length > 0) {
+    query = query.or(`visibilidade.eq.publico,id.in.(${memberIds.join(',')})`)
+  } else {
+    query = query.eq('visibilidade', 'publico')
+  }
+
+  const { data: quadros } = await query
   if (!quadros?.length) return []
 
   const clienteIds = [...new Set(quadros.map(q => q.cliente_id).filter(Boolean))]
@@ -175,8 +172,7 @@ export async function getQuadrosParaColaborador(usuarioId: string): Promise<Quad
   const { data: counts } = await client
     .from('spress_demandas')
     .select('quadro_id')
-    .in('quadro_id', quadroIds)
-    .eq('responsavel_id', usuarioId)
+    .in('quadro_id', quadros.map(q => q.id))
 
   const countMap: Record<string, number> = {}
   for (const c of counts ?? []) {
@@ -190,15 +186,30 @@ export async function getQuadrosParaColaborador(usuarioId: string): Promise<Quad
   }))
 }
 
-export async function criarQuadro(nome: string, clienteId?: string): Promise<{ id: string } | null> {
-  const { data, error } = await sb()
+export async function criarQuadro(
+  nome: string,
+  clienteId?: string,
+  visibilidade: string = 'publico',
+  criadorId?: string,
+): Promise<{ id: string } | null> {
+  const client = sb()
+  const { data, error } = await client
     .from('spress_quadros')
-    .insert({ nome, cliente_id: clienteId ?? null })
+    .insert({ nome, cliente_id: clienteId ?? null, visibilidade, criador_id: criadorId ?? null })
     .select('id')
     .single()
 
   if (error) return null
+
+  if (criadorId && data) {
+    await client.from('spress_quadro_membros').upsert({ quadro_id: data.id, usuario_id: criadorId })
+  }
+
   return data
+}
+
+export async function atualizarVisibilidadeQuadro(quadroId: string, visibilidade: string): Promise<void> {
+  await sb().from('spress_quadros').update({ visibilidade }).eq('id', quadroId)
 }
 
 export async function renomearQuadro(quadroId: string, nome: string): Promise<void> {
@@ -216,7 +227,7 @@ export async function getKanbanData(quadroId: string): Promise<KanbanData | null
 
   const [{ data: quadro }, { data: colunas }, { data: demandas }, { data: usuarios }, { data: clientesRaw }, { data: etiquetasBoard }] =
     await Promise.all([
-      client.from('spress_quadros').select('id, nome, cliente_id').eq('id', quadroId).maybeSingle(),
+      client.from('spress_quadros').select('id, nome, cliente_id, visibilidade, criador_id').eq('id', quadroId).maybeSingle(),
       client.from('spress_colunas').select('id, nome, ordem').eq('quadro_id', quadroId).order('ordem'),
       client.from('spress_demandas')
         .select('id, titulo, descricao, tipo, prioridade, origem, ordem, visto_em, concluida_em, prazo, cliente_id, atendente_id, responsavel_id, coluna_id, created_at')

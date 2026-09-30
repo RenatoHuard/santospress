@@ -35,6 +35,7 @@ async function getPost(slug: string) {
     .select('*, autor:spress_usuarios(nome)')
     .eq('slug', slug)
     .eq('status', 'publicado')
+    .eq('tipo', 'noticia')
     .single()
   return data
 }
@@ -53,6 +54,7 @@ async function getMostReadPost(excludeId: string): Promise<PostCard | null> {
       .select('id, titulo, slug, resumo, capa_url, publicado_em')
       .eq('id', counts[0].post_id)
       .eq('status', 'publicado')
+      .eq('tipo', 'noticia')
       .single()
     if (data) return data as PostCard
   }
@@ -62,6 +64,7 @@ async function getMostReadPost(excludeId: string): Promise<PostCard | null> {
     .from('spress_blog_posts')
     .select('id, titulo, slug, resumo, capa_url, publicado_em')
     .eq('status', 'publicado')
+    .eq('tipo', 'noticia')
     .neq('id', excludeId)
     .order('publicado_em', { ascending: false })
     .limit(1)
@@ -74,6 +77,7 @@ async function getAdjacentPost(publishedAt: string, excludeId: string): Promise<
     .from('spress_blog_posts')
     .select('id, titulo, slug, resumo, capa_url, publicado_em')
     .eq('status', 'publicado')
+    .eq('tipo', 'noticia')
     .neq('id', excludeId)
     .lt('publicado_em', publishedAt)
     .order('publicado_em', { ascending: false })
@@ -85,6 +89,7 @@ async function getAdjacentPost(publishedAt: string, excludeId: string): Promise<
     .from('spress_blog_posts')
     .select('id, titulo, slug, resumo, capa_url, publicado_em')
     .eq('status', 'publicado')
+    .eq('tipo', 'noticia')
     .neq('id', excludeId)
     .gt('publicado_em', publishedAt)
     .order('publicado_em', { ascending: true })

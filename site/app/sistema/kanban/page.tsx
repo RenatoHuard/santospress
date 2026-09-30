@@ -4,28 +4,58 @@ import { useEffect, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
-import { getQuadros, getQuadrosParaColaborador, getUsuarioByAuthId, criarQuadro, deletarQuadro, type Quadro } from '../actions/kanban'
+import {
+  getQuadros,
+  getQuadrosVisiveis,
+  getUsuarioByAuthId,
+  criarQuadro,
+  deletarQuadro,
+  type Quadro,
+} from '../actions/kanban'
+
+function IconGlobo() {
+  return (
+    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 017.843 4.582M12 3a8.997 8.997 0 00-7.843 4.582m15.686 0A11.953 11.953 0 0112 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0121 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0112 16.5c-3.162 0-6.133-.815-8.716-2.247m0 0A9.015 9.015 0 013 12c0-1.605.42-3.113 1.157-4.418" />
+    </svg>
+  )
+}
+
+function IconCadeado() {
+  return (
+    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+    </svg>
+  )
+}
 
 export default function KanbanListPage() {
   const router = useRouter()
-  const [quadros, setQuadros] = useState<Quadro[]>([])
-  const [loading, setLoading] = useState(true)
-  const [isAdminGestor, setIsAdminGestor] = useState(true)
-  const [criando, setCriando] = useState(false)
-  const [nomeNovo, setNomeNovo] = useState('')
-  const [isPending, startTransition] = useTransition()
+  const [quadros, setQuadros]             = useState<Quadro[]>([])
+  const [loading, setLoading]             = useState(true)
+  const [isAdmin, setIsAdmin]             = useState(false)
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
+  const [criando, setCriando]             = useState(false)
+  const [nomeNovo, setNomeNovo]           = useState('')
+  const [visNovo, setVisNovo]             = useState<'publico' | 'privado'>('publico')
+  const [isPending, startTransition]      = useTransition()
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
 
   useEffect(() => {
     supabase.auth.getUser().then(async ({ data: { user } }) => {
-      if (!user) { getQuadros().then(d => { setQuadros(d); setLoading(false) }); return }
+      if (!user) {
+        getQuadros().then(d => { setQuadros(d); setLoading(false) })
+        return
+      }
       const u = await getUsuarioByAuthId(user.id)
       const admin = !!(u?.roles?.includes('admin') || u?.roles?.includes('gestor') || u?.roles?.includes('rh'))
-      setIsAdminGestor(admin)
+      setIsAdmin(admin)
+      setCurrentUserId(u?.id ?? null)
+
       if (admin) {
         getQuadros().then(d => { setQuadros(d); setLoading(false) })
       } else {
-        getQuadrosParaColaborador(u?.id ?? '').then(d => { setQuadros(d); setLoading(false) })
+        getQuadrosVisiveis(u?.id ?? '').then(d => { setQuadros(d); setLoading(false) })
       }
     })
   }, [])
@@ -34,7 +64,7 @@ export default function KanbanListPage() {
     const nome = nomeNovo.trim()
     if (!nome) { setCriando(false); return }
     startTransition(async () => {
-      const result = await criarQuadro(nome)
+      const result = await criarQuadro(nome, undefined, visNovo, currentUserId ?? undefined)
       if (result) router.push(`/sistema/kanban/${result.id}`)
     })
   }
@@ -47,6 +77,10 @@ export default function KanbanListPage() {
     })
   }
 
+  function canDelete(q: Quadro) {
+    return isAdmin || (currentUserId !== null && q.criador_id === currentUserId)
+  }
+
   return (
     <div className="max-w-5xl mx-auto px-6 py-10">
       <div className="flex items-center justify-between mb-8">
@@ -54,36 +88,60 @@ export default function KanbanListPage() {
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Quadros Kanban</h1>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Gerencie tarefas e demandas por quadro.</p>
         </div>
-        {isAdminGestor && (
-          <button
-            onClick={() => setCriando(true)}
-            className="flex items-center gap-2 bg-gold hover:bg-gold/90 text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors"
-          >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-            </svg>
-            Novo quadro
-          </button>
-        )}
+        <button
+          onClick={() => setCriando(true)}
+          className="flex items-center gap-2 bg-gold hover:bg-gold/90 text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors"
+        >
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+          </svg>
+          Novo quadro
+        </button>
       </div>
 
-      {/* Novo quadro inline */}
+      {/* Formulário inline — novo quadro */}
       {criando && (
-        <div className="bg-white dark:bg-[#111] border border-gray-100 dark:border-white/5 rounded-2xl p-5 mb-6 flex items-center gap-3">
+        <div className="bg-white dark:bg-[#111] border border-gray-100 dark:border-white/5 rounded-2xl p-5 mb-6 flex flex-col sm:flex-row items-start sm:items-center gap-3">
           <input
             autoFocus
-            className="flex-1 bg-gray-50 dark:bg-[#0a0a0a] border border-gray-200 dark:border-white/8 rounded-xl px-4 py-2.5 text-sm text-gray-900 dark:text-white outline-none focus:border-gold/50 focus:ring-2 focus:ring-gold/15"
+            className="flex-1 w-full bg-gray-50 dark:bg-[#0a0a0a] border border-gray-200 dark:border-white/8 rounded-xl px-4 py-2.5 text-sm text-gray-900 dark:text-white outline-none focus:border-gold/50 focus:ring-2 focus:ring-gold/15"
             placeholder="Nome do quadro..."
             value={nomeNovo}
             onChange={e => setNomeNovo(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter') handleCriar(); if (e.key === 'Escape') { setCriando(false); setNomeNovo('') } }}
           />
-          <button onClick={handleCriar} disabled={isPending} className="bg-gold text-white text-sm font-semibold px-4 py-2.5 rounded-xl hover:bg-gold/90 disabled:opacity-60 transition-colors">
-            {isPending ? 'Criando...' : 'Criar'}
-          </button>
-          <button onClick={() => { setCriando(false); setNomeNovo('') }} className="text-sm text-gray-400 hover:text-gray-700 dark:hover:text-white px-3 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 transition-colors">
-            Cancelar
-          </button>
+
+          {/* Toggle visibilidade */}
+          <div className="flex items-center gap-1 bg-gray-100 dark:bg-white/5 rounded-xl p-1 shrink-0">
+            <button
+              onClick={() => setVisNovo('publico')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${visNovo === 'publico' ? 'bg-white dark:bg-[#1a1a1a] text-navy dark:text-white shadow-sm' : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'}`}
+            >
+              <IconGlobo /> Público
+            </button>
+            <button
+              onClick={() => setVisNovo('privado')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${visNovo === 'privado' ? 'bg-white dark:bg-[#1a1a1a] text-navy dark:text-white shadow-sm' : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'}`}
+            >
+              <IconCadeado /> Privado
+            </button>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              onClick={handleCriar}
+              disabled={isPending}
+              className="bg-gold text-white text-sm font-semibold px-4 py-2.5 rounded-xl hover:bg-gold/90 disabled:opacity-60 transition-colors"
+            >
+              {isPending ? 'Criando...' : 'Criar'}
+            </button>
+            <button
+              onClick={() => { setCriando(false); setNomeNovo(''); setVisNovo('publico') }}
+              className="text-sm text-gray-400 hover:text-gray-700 dark:hover:text-white px-3 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 transition-colors"
+            >
+              Cancelar
+            </button>
+          </div>
         </div>
       )}
 
@@ -98,8 +156,8 @@ export default function KanbanListPage() {
               <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6z" />
             </svg>
           </div>
-          <p className="text-gray-500 dark:text-gray-400 font-medium">Nenhum quadro ainda</p>
-          <p className="text-sm text-gray-400 dark:text-gray-600 mt-1">Crie seu primeiro quadro para começar.</p>
+          <p className="text-gray-500 dark:text-gray-400 font-medium">Nenhum quadro visível</p>
+          <p className="text-sm text-gray-400 dark:text-gray-600 mt-1">Crie um quadro ou peça para ser adicionado a um privado.</p>
         </div>
       ) : (
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -112,9 +170,16 @@ export default function KanbanListPage() {
                       <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" />
                     </svg>
                   </div>
-                  <span className="text-xs text-gray-400 dark:text-gray-500 font-medium">
-                    {q.total_cards} {q.total_cards === 1 ? 'card' : 'cards'}
-                  </span>
+                  <div className="flex items-center gap-1.5">
+                    {/* Badge visibilidade */}
+                    <span className={`flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full ${q.visibilidade === 'privado' ? 'bg-amber-50 text-amber-600 dark:bg-amber-900/20 dark:text-amber-400' : 'bg-gray-100 text-gray-400 dark:bg-white/5 dark:text-gray-500'}`}>
+                      {q.visibilidade === 'privado' ? <IconCadeado /> : <IconGlobo />}
+                      {q.visibilidade === 'privado' ? 'Privado' : 'Público'}
+                    </span>
+                    <span className="text-xs text-gray-400 dark:text-gray-500 font-medium">
+                      {q.total_cards} {q.total_cards === 1 ? 'card' : 'cards'}
+                    </span>
+                  </div>
                 </div>
                 <p className="text-base font-bold text-gray-900 dark:text-white">{q.nome}</p>
                 {q.cliente_nome && (
@@ -125,13 +190,13 @@ export default function KanbanListPage() {
                 </p>
               </Link>
 
-              {/* Delete (admin/gestor only) */}
-              {isAdminGestor && confirmDelete === q.id ? (
+              {/* Delete — visível para admin ou criador */}
+              {canDelete(q) && confirmDelete === q.id ? (
                 <div className="absolute top-3 right-3 flex items-center gap-1">
                   <button onClick={() => setConfirmDelete(null)} className="text-[10px] text-gray-400 px-1.5 py-0.5 rounded bg-gray-100 dark:bg-white/5 hover:bg-gray-200">✕</button>
                   <button onClick={() => handleDelete(q.id)} className="text-[10px] text-white bg-red-500 hover:bg-red-600 px-1.5 py-0.5 rounded font-semibold">✓</button>
                 </div>
-              ) : isAdminGestor ? (
+              ) : canDelete(q) ? (
                 <button
                   onClick={e => { e.preventDefault(); setConfirmDelete(q.id) }}
                   className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 text-gray-300 dark:text-gray-600 hover:text-red-400 transition-all p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5"

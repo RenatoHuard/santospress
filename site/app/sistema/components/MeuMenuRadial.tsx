@@ -5,17 +5,22 @@ import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
 
-type Level = 'closed' | 'main' | 'meus-dados' | 'site' | 'noticias'
+type Level = 'closed' | 'main' | 'meus-dados' | 'cadastros' | 'site' | 'noticias' | 'cases'
+
+const PREFERRED_ANGLES: Record<number, number[]> = {
+  1: [-90],
+  2: [180, 0],
+  3: [-90, 0, 180],
+  4: [-135, -45, 45, 135],
+}
 
 function getPositions(count: number, radius = 165) {
   if (count === 0) return []
-  if (count === 1) return [{ x: 0, y: -radius }]
-  const spread = Math.min(220, count * 70)
-  const step = spread / (count - 1)
-  const start = -spread / 2
-  return Array.from({ length: count }, (_, i) => {
-    const rad = ((start + i * step) * Math.PI) / 180
-    return { x: Math.sin(rad) * radius, y: -Math.cos(rad) * radius }
+  const degrees = PREFERRED_ANGLES[count]
+    ?? Array.from({ length: count }, (_, i) => i * (360 / count) - 90)
+  return degrees.map(deg => {
+    const a = deg * (Math.PI / 180)
+    return { x: Math.cos(a) * radius, y: Math.sin(a) * radius }
   })
 }
 
@@ -88,6 +93,30 @@ const IconRelatorio = () => (
   </svg>
 )
 
+const IconCases = ({ size = 24 }: { size?: number }) => (
+  <svg style={{ width: size, height: size }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M20.25 14.15v4.25c0 1.094-.787 2.036-1.872 2.18-2.087.277-4.216.42-6.378.42s-4.291-.143-6.378-.42c-1.085-.144-1.872-1.086-1.872-2.18v-4.25m16.5 0a2.18 2.18 0 00.75-1.661V8.706c0-1.081-.768-2.015-1.837-2.175a48.114 48.114 0 00-3.413-.387m4.5 8.006c-.194.165-.42.295-.673.38A23.978 23.978 0 0112 15.75c-2.648 0-5.195-.429-7.577-1.22a2.016 2.016 0 01-.673-.38m0 0A2.18 2.18 0 013 12.489V8.706c0-1.081.768-2.015 1.837-2.175a48.111 48.111 0 013.413-.387m7.5 0V5.25A2.25 2.25 0 0013.5 3h-3a2.25 2.25 0 00-2.25 2.25v.894m7.5 0a48.667 48.667 0 00-7.5 0M12 12.75h.008v.008H12v-.008z" />
+  </svg>
+)
+
+const IconCadastros = ({ size = 24 }: { size?: number }) => (
+  <svg style={{ width: size, height: size }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" />
+  </svg>
+)
+
+const IconFuncionario = () => (
+  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+  </svg>
+)
+
+const IconCliente = () => (
+  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M20.25 14.15v4.25c0 1.094-.787 2.036-1.872 2.18-2.087.277-4.216.42-6.378.42s-4.291-.143-6.378-.42c-1.085-.144-1.872-1.086-1.872-2.18v-4.25m16.5 0a2.18 2.18 0 00.75-1.661V8.706c0-1.081-.768-2.015-1.837-2.175a48.114 48.114 0 00-3.413-.387m4.5 8.006c-.194.165-.42.295-.673.38A23.978 23.978 0 0112 15.75c-2.648 0-5.195-.429-7.577-1.22a2.016 2.016 0 01-.673-.38m0 0A2.18 2.18 0 013 12.489V8.706c0-1.081.768-2.015 1.837-2.175a48.111 48.111 0 013.413-.387m7.5 0V5.25A2.25 2.25 0 0013.5 3h-3a2.25 2.25 0 00-2.25 2.25v.894m7.5 0a48.667 48.667 0 00-7.5 0M12 12.75h.008v.008H12v-.008z" />
+  </svg>
+)
+
 const IconBack = () => (
   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
     <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
@@ -114,8 +143,9 @@ const MEUS_DADOS_ITEMS = [
 ]
 
 const SITE_ITEMS = [
-  { id: 'editar-site', label: 'Editar Site', href: '/sistema/site', icon: <IconEdit /> },
-  { id: 'noticias',    label: 'Notícias',    href: '#',             icon: <IconNoticias />, isGroup: true },
+  { id: 'editar-site', label: 'Editar Site', href: '/sistema/site', icon: <IconEdit />,     isGroup: false, groupLevel: undefined as Level | undefined },
+  { id: 'noticias',    label: 'Notícias',    href: '#',             icon: <IconNoticias />, isGroup: true,  groupLevel: 'noticias' as Level },
+  { id: 'cases',       label: 'Post Cases',  href: '#',             icon: <IconCases />,    isGroup: true,  groupLevel: 'cases' as Level },
 ]
 
 const NOTICIAS_ITEMS = [
@@ -125,36 +155,80 @@ const NOTICIAS_ITEMS = [
   { id: 'relatorios',   label: 'Relatórios',   href: '/sistema/blog/relatorios',   icon: <IconRelatorio /> },
 ]
 
+const CASES_ITEMS = [
+  { id: 'nova-case',         label: 'Nova Case',   href: '/sistema/cases/novo',       icon: <IconNovaNoticia /> },
+  { id: 'publicacoes-cases', label: 'Publicações', href: '/sistema/cases',            icon: <IconPublicacoes /> },
+  { id: 'rascunhos-cases',   label: 'Rascunhos',   href: '/sistema/cases/rascunhos',  icon: <IconRascunho /> },
+  { id: 'relatorios-cases',  label: 'Relatórios',  href: '/sistema/cases/relatorios', icon: <IconRelatorio /> },
+]
+
+const CADASTROS_ITEMS = [
+  { id: 'funcionarios', label: 'Colaboradores', href: '/sistema/cadastros/funcionarios', icon: <IconFuncionario /> },
+  { id: 'clientes',     label: 'Clientes',      href: '/sistema/cadastros/clientes',     icon: <IconCliente /> },
+]
+
 // ── Componente ───────────────────────────────────────────────────────
 
-export function MeuMenuRadial() {
+export function MeuMenuRadial({ enabledIds }: { enabledIds?: Set<string> | null }) {
   const router = useRouter()
   const [level, setLevel] = useState<Level>('closed')
   const [hasOpened, setHasOpened] = useState(false)
 
-  const isMain      = level === 'main'
-  const isMeusDados = level === 'meus-dados'
-  const isSite      = level === 'site'
-  const isNoticias  = level === 'noticias'
+  const ok = (id: string) => !enabledIds || enabledIds.has(id)
+
+  const isMain       = level === 'main'
+  const isMeusDados  = level === 'meus-dados'
+  const isCadastros  = level === 'cadastros'
+  const isSite       = level === 'site'
+  const isNoticias   = level === 'noticias'
+  const isCases      = level === 'cases'
 
   function close()       { setLevel('closed') }
   function openMain()    { setHasOpened(true); setLevel('main') }
   function backToMain()  { setLevel('main') }
 
-  // Itens do nível principal (grupos e folhas)
-  const mainItems = [
-    { id: 'meus-dados', label: 'Meus Dados', icon: <IconUser />,      largeIcon: <IconUser size={36} />,      href: undefined,             onClick: () => setLevel('meus-dados') },
-    { id: 'kanban',     label: 'Kanban',     icon: <IconKanban />,    largeIcon: <IconKanban size={36} />,    href: '/sistema/kanban',     onClick: undefined },
-    { id: 'calendario', label: 'Calendário', icon: <IconCalendario />, largeIcon: <IconCalendario size={36} />, href: '/sistema/calendario', onClick: undefined },
-    { id: 'site',       label: 'Site',       icon: <IconSite />,      largeIcon: <IconSite size={36} />,      href: undefined,             onClick: () => setLevel('site') },
+  // Itens filtrados por permissão
+  const filteredMeusDadosItems  = MEUS_DADOS_ITEMS.filter(i => ok(i.id))
+  const filteredCadastrosItems  = CADASTROS_ITEMS.filter(i => ok(i.id))
+  const filteredNoticiasItems   = NOTICIAS_ITEMS.filter(i => ok(i.id))
+  const filteredCasesItems      = CASES_ITEMS.filter(i => ok(i.id))
+  const filteredSiteItems       = SITE_ITEMS.filter(i => {
+    if (i.id === 'noticias') return ok('noticias') && filteredNoticiasItems.length > 0
+    if (i.id === 'cases')    return ok('cases') && filteredCasesItems.length > 0
+    return ok(i.id)
+  })
+
+  const allMainItems = [
+    { id: 'meus-dados', label: 'Meus Dados', icon: <IconUser />,         largeIcon: <IconUser size={36} />,         href: undefined,             onClick: () => setLevel('meus-dados') },
+    { id: 'kanban',     label: 'Kanban',     icon: <IconKanban />,       largeIcon: <IconKanban size={36} />,       href: '/sistema/kanban',     onClick: undefined },
+    { id: 'calendario', label: 'Calendário', icon: <IconCalendario />,   largeIcon: <IconCalendario size={36} />,   href: '/sistema/calendario', onClick: undefined },
+    { id: 'cadastros',  label: 'Cadastros',  icon: <IconCadastros />,    largeIcon: <IconCadastros size={36} />,    href: undefined,             onClick: () => setLevel('cadastros') },
+    { id: 'site',       label: 'Site',       icon: <IconSite />,         largeIcon: <IconSite size={36} />,         href: undefined,             onClick: () => setLevel('site') },
   ]
+
+  const mainItems = allMainItems.filter(i => {
+    if (i.id === 'meus-dados') return ok('meus-dados') && filteredMeusDadosItems.length > 0
+    if (i.id === 'cadastros')  return ok('cadastros') && filteredCadastrosItems.length > 0
+    if (i.id === 'site')       return ok('site') && filteredSiteItems.length > 0
+    return ok(i.id)
+  })
+
   const mainPositions    = getPositions(mainItems.length)
-  const meusDadosPos     = getPositions(MEUS_DADOS_ITEMS.length)
-  const sitePos          = getPositions(SITE_ITEMS.length)
-  const noticiasPos      = getPositions(NOTICIAS_ITEMS.length)
+  const meusDadosPos     = getPositions(filteredMeusDadosItems.length)
+  const cadastrosPos     = getPositions(filteredCadastrosItems.length)
+  const sitePos          = getPositions(filteredSiteItems.length)
+  const noticiasPos      = getPositions(filteredNoticiasItems.length)
+  const casesPos         = getPositions(filteredCasesItems.length)
 
   // Qual grupo está no centro (apenas grupos com sub-nível)
-  const centerGroup = isMeusDados ? 'meus-dados' : isSite || isNoticias ? 'site' : null
+  const centerGroup = isMeusDados ? 'meus-dados' : isCadastros ? 'cadastros' : isSite || isNoticias || isCases ? 'site' : null
+
+  // Aliases para clareza no JSX abaixo
+  const activeMeusDadosItems  = filteredMeusDadosItems
+  const activeCadastrosItems  = filteredCadastrosItems
+  const activeSiteItems       = filteredSiteItems
+  const activeNoticiasItems   = filteredNoticiasItems
+  const activeCasesItems      = filteredCasesItems
 
   return (
     <div className="relative flex items-center justify-center select-none" style={{ width: 480, height: 480 }}>
@@ -226,7 +300,7 @@ export function MeuMenuRadial() {
       })}
 
       {/* ── Nível 2a: sub-itens de Meus Dados ───────────────── */}
-      {MEUS_DADOS_ITEMS.map((item, i) => {
+      {activeMeusDadosItems.map((item, i) => {
         const pos = meusDadosPos[i]
         return (
           <div
@@ -252,8 +326,35 @@ export function MeuMenuRadial() {
         )
       })}
 
+      {/* ── Nível 2b: sub-itens de Cadastros ──────────────────── */}
+      {activeCadastrosItems.map((item, i) => {
+        const pos = cadastrosPos[i]
+        return (
+          <div
+            key={item.id}
+            className="absolute flex flex-col items-center"
+            style={{
+              left: '50%', top: '50%',
+              transform: isCadastros
+                ? `translate(calc(-50% + ${pos.x}px), calc(-50% + ${pos.y}px))`
+                : 'translate(-50%, -50%)',
+              opacity: isCadastros ? 1 : 0,
+              pointerEvents: isCadastros ? 'auto' : 'none',
+              transition: 'transform 0.48s cubic-bezier(0.34,1.56,0.64,1), opacity 0.25s ease',
+              transitionDelay: isCadastros ? `${0.1 + i * 0.08}s` : '0s',
+              zIndex: 20,
+            }}
+          >
+            <Link href={item.href} onClick={close} className={`w-16 h-16 ${ITEM_BTN}`}>
+              {item.icon}
+            </Link>
+            <span className={LABEL}>{item.label}</span>
+          </div>
+        )
+      })}
+
       {/* ── Nível 2b: sub-itens de Site (Editar Site + Notícias) ── */}
-      {SITE_ITEMS.map((item, i) => {
+      {activeSiteItems.map((item, i) => {
         const pos = sitePos[i]
         return (
           <div
@@ -272,7 +373,7 @@ export function MeuMenuRadial() {
             }}
           >
             {item.isGroup ? (
-              <button onClick={() => setLevel('noticias')} className={`w-16 h-16 ${ITEM_BTN}`}>
+              <button onClick={() => item.groupLevel && setLevel(item.groupLevel)} className={`w-16 h-16 ${ITEM_BTN}`}>
                 {item.icon}
               </button>
             ) : (
@@ -286,7 +387,7 @@ export function MeuMenuRadial() {
       })}
 
       {/* ── Nível 3: sub-itens de Notícias ──────────────────── */}
-      {NOTICIAS_ITEMS.map((item, i) => {
+      {activeNoticiasItems.map((item, i) => {
         const pos = noticiasPos[i]
         return (
           <div
@@ -301,6 +402,33 @@ export function MeuMenuRadial() {
               pointerEvents: isNoticias ? 'auto' : 'none',
               transition: 'transform 0.48s cubic-bezier(0.34,1.56,0.64,1), opacity 0.25s ease',
               transitionDelay: isNoticias ? `${0.1 + i * 0.08}s` : '0s',
+              zIndex: 20,
+            }}
+          >
+            <Link href={item.href} onClick={close} className={`w-16 h-16 ${ITEM_BTN}`}>
+              {item.icon}
+            </Link>
+            <span className={LABEL}>{item.label}</span>
+          </div>
+        )
+      })}
+
+      {/* ── Nível 3: sub-itens de Cases ──────────────────── */}
+      {activeCasesItems.map((item, i) => {
+        const pos = casesPos[i]
+        return (
+          <div
+            key={item.id}
+            className="absolute flex flex-col items-center"
+            style={{
+              left: '50%', top: '50%',
+              transform: isCases
+                ? `translate(calc(-50% + ${pos.x}px), calc(-50% + ${pos.y}px))`
+                : 'translate(-50%, -50%)',
+              opacity: isCases ? 1 : 0,
+              pointerEvents: isCases ? 'auto' : 'none',
+              transition: 'transform 0.48s cubic-bezier(0.34,1.56,0.64,1), opacity 0.25s ease',
+              transitionDelay: isCases ? `${0.1 + i * 0.08}s` : '0s',
               zIndex: 20,
             }}
           >

@@ -41,6 +41,9 @@ export function Navbar() {
             <Link href="/noticias" className="text-gray-600 dark:text-gray-400 hover:text-navy dark:hover:text-white font-medium transition-colors text-sm">
               Notícias
             </Link>
+            <Link href="/cases" className="text-gray-600 dark:text-gray-400 hover:text-navy dark:hover:text-white font-medium transition-colors text-sm">
+              Cases
+            </Link>
             <Link href="/equipe" className="text-gray-600 dark:text-gray-400 hover:text-navy dark:hover:text-white font-medium transition-colors text-sm">
               Equipe
             </Link>
@@ -81,6 +84,7 @@ export function Navbar() {
         <div className="md:hidden border-t border-gray-100 dark:border-white/5 bg-white dark:bg-[#111111] px-4 py-5 flex flex-col gap-4">
           <Link href="/" onClick={() => setOpen(false)} className="text-gray-700 dark:text-gray-300 font-medium">Home</Link>
           <Link href="/noticias" onClick={() => setOpen(false)} className="text-gray-700 dark:text-gray-300 font-medium">Notícias</Link>
+          <Link href="/cases" onClick={() => setOpen(false)} className="text-gray-700 dark:text-gray-300 font-medium">Cases</Link>
           <Link href="/equipe" onClick={() => setOpen(false)} className="text-gray-700 dark:text-gray-300 font-medium">Equipe</Link>
           <Link href="/missao-visao-valores" onClick={() => setOpen(false)} className="text-gray-700 dark:text-gray-300 font-medium">Pilares</Link>
           <Link
