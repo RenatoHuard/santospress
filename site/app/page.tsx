@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import Image from 'next/image'
 import { supabase } from '@/lib/supabase'
 import { BlogCard } from '@/components/BlogCard'
 import type { BlogPost } from '@/lib/types'
@@ -94,64 +95,90 @@ export default async function Home() {
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-gold/25 via-transparent to-transparent pointer-events-none" />
         <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-gold/40 to-transparent" />
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-28 md:py-44">
-          <div className="max-w-3xl">
-            <span className="inline-block bg-gold/20 text-gold text-xs font-semibold px-4 py-1.5 rounded-full mb-8 tracking-widest uppercase">
-              {g(content, 'hero', 'badge', 'Santos/SP · Comunicação Integrada')}
-            </span>
-            <h1 className="text-4xl md:text-6xl font-bold text-white leading-tight mb-6">
-              {g(content, 'hero', 'headline1', 'Comunicação que')}
-              <span className="text-gold block mt-1">
-                {g(content, 'hero', 'headline2', 'transforma marcas.')}
+          <div className={cases.length > 0 ? 'grid md:grid-cols-2 gap-16 items-center' : ''}>
+
+            {/* Coluna esquerda: texto principal */}
+            <div>
+              <span className="inline-block bg-gold/20 text-gold text-xs font-semibold px-4 py-1.5 rounded-full mb-8 tracking-widest uppercase">
+                {g(content, 'hero', 'badge', 'Santos/SP · Comunicação Integrada')}
               </span>
-            </h1>
-            <p className="text-gray-300 text-lg md:text-xl mb-12 leading-relaxed max-w-2xl">
-              {g(content, 'hero', 'subtitulo', 'Assessoria de imprensa, social media e marketing integrado para posicionar sua empresa, entidade ou marca com inteligência junto à mídia e ao mercado.')}
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4">
-              <Link
-                href={g(content, 'hero', 'cta1_href', '#servicos')}
-                className="inline-block bg-gold text-white px-8 py-4 rounded-full font-semibold hover:bg-gold/85 transition-colors text-center"
-              >
-                {g(content, 'hero', 'cta1_texto', 'Nossos Serviços')}
-              </Link>
-              <Link
-                href={g(content, 'hero', 'cta2_href', '#sobre')}
-                className="inline-block border border-white/25 text-white px-8 py-4 rounded-full font-semibold hover:bg-white/10 transition-colors text-center"
-              >
-                {g(content, 'hero', 'cta2_texto', 'Conheça a SantosPress')}
-              </Link>
+              <h1 className="text-4xl md:text-6xl font-bold text-white leading-tight mb-6">
+                {g(content, 'hero', 'headline1', 'Comunicação que')}
+                <span className="text-gold block mt-1">
+                  {g(content, 'hero', 'headline2', 'transforma marcas.')}
+                </span>
+              </h1>
+              <p className="text-gray-300 text-lg md:text-xl mb-12 leading-relaxed">
+                {g(content, 'hero', 'subtitulo', 'Assessoria de imprensa, social media e marketing integrado para posicionar sua empresa, entidade ou marca com inteligência junto à mídia e ao mercado.')}
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4">
+                <Link
+                  href={g(content, 'hero', 'cta1_href', '#servicos')}
+                  className="inline-block bg-gold text-white px-8 py-4 rounded-full font-semibold hover:bg-gold/85 transition-colors text-center"
+                >
+                  {g(content, 'hero', 'cta1_texto', 'Nossos Serviços')}
+                </Link>
+                <Link
+                  href={g(content, 'hero', 'cta2_href', '#sobre')}
+                  className="inline-block border border-white/25 text-white px-8 py-4 rounded-full font-semibold hover:bg-white/10 transition-colors text-center"
+                >
+                  {g(content, 'hero', 'cta2_texto', 'Conheça a SantosPress')}
+                </Link>
+              </div>
             </div>
+
+            {/* Coluna direita: preview do case (estilo link compartilhado) */}
+            {cases.length > 0 && (
+              <div className="flex justify-center md:justify-end mt-12 md:mt-0">
+                <div className="w-full max-w-xs bg-white/6 border border-white/12 rounded-2xl overflow-hidden backdrop-blur-sm">
+                  {cases[0].capa_url ? (
+                    <Link href={`/cases/${cases[0].slug}`} className="block">
+                      <div className="relative h-40 w-full">
+                        <Image
+                          src={cases[0].capa_url}
+                          alt={cases[0].titulo}
+                          fill
+                          className="object-cover"
+                          sizes="320px"
+                        />
+                        <div className="absolute inset-0 bg-navy/20" />
+                      </div>
+                    </Link>
+                  ) : null}
+                  <div className="p-4">
+                    <span className="text-gold text-[10px] font-bold uppercase tracking-widest">Case em destaque</span>
+                    <Link href={`/cases/${cases[0].slug}`} className="group block mt-1">
+                      <h3 className="text-white text-sm font-semibold leading-snug line-clamp-2 group-hover:text-gold transition-colors">
+                        {cases[0].titulo}
+                      </h3>
+                    </Link>
+                    {cases[0].resumo && (
+                      <p className="text-gray-400 text-xs mt-2 line-clamp-2 leading-relaxed">
+                        {cases[0].resumo}
+                      </p>
+                    )}
+                    <div className="flex items-center gap-2 mt-4 pt-3 border-t border-white/8">
+                      <Link
+                        href={`/cases/${cases[0].slug}`}
+                        className="text-gold text-xs font-semibold hover:underline"
+                      >
+                        Ver case →
+                      </Link>
+                      <span className="text-white/20 text-xs">·</span>
+                      <Link
+                        href="/cases"
+                        className="text-white/45 text-xs hover:text-white/70 transition-colors"
+                      >
+                        Ver todos os cases
+                      </Link>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
           </div>
         </div>
-
-        {/* ── Cases teaser (inline no hero) ─────────────── */}
-        {cases.length > 0 && (
-          <div className="relative border-t border-white/10">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center gap-3 flex-wrap">
-              <span className="text-gold text-[10px] font-bold uppercase tracking-widest shrink-0">Case em destaque</span>
-              <span className="w-px h-3 bg-white/20 hidden sm:block shrink-0" />
-              <Link
-                href={`/cases/${cases[0].slug}`}
-                className="text-white/80 text-sm hover:text-white truncate flex-1 min-w-0"
-              >
-                {cases[0].titulo}
-              </Link>
-              <Link
-                href={`/cases/${cases[0].slug}`}
-                className="text-gold text-xs font-semibold hover:underline whitespace-nowrap shrink-0"
-              >
-                Ver case →
-              </Link>
-              <span className="text-white/20 text-xs hidden sm:inline shrink-0">·</span>
-              <Link
-                href="/cases"
-                className="text-white/50 text-xs hover:text-white/70 whitespace-nowrap hidden sm:inline shrink-0"
-              >
-                Ver todos
-              </Link>
-            </div>
-          </div>
-        )}
       </section>
 
       {/* ── Sobre ────────────────────────────────────────── */}
