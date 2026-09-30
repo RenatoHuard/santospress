@@ -54,7 +54,7 @@ async function getLatestCases(): Promise<BlogPost[]> {
     .eq('status', 'publicado')
     .eq('tipo', 'case')
     .order('publicado_em', { ascending: false })
-    .limit(1)
+    .limit(4)
   return data ?? []
 }
 
@@ -129,7 +129,7 @@ export default async function Home() {
 
             {/* Coluna direita: preview do case (estilo link compartilhado) */}
             {cases.length > 0 && (
-              <div className="flex justify-center md:justify-end mt-12 md:mt-0">
+              <div className="flex justify-center md:justify-end mt-12 md:mt-0 md:pr-12 lg:pr-20">
                 <div className="w-full max-w-xs bg-white/6 border border-white/12 rounded-2xl overflow-hidden backdrop-blur-sm">
                   {cases[0].capa_url ? (
                     <Link href={`/cases/${cases[0].slug}`} className="block">
@@ -262,6 +262,95 @@ export default async function Home() {
           </div>
         </div>
       </section>
+
+      {/* ── Cases ────────────────────────────────────────── */}
+      {cases.length > 0 && (
+        <section className="bg-[#0d1426] py-24">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex items-end justify-between mb-12">
+              <div>
+                <span className="text-gold font-semibold text-xs uppercase tracking-widest">Portfólio</span>
+                <h2 className="text-3xl md:text-4xl font-bold text-white mt-3">Cases de Sucesso</h2>
+              </div>
+              <Link href="/cases" className="text-gold text-sm font-semibold hover:underline hidden sm:inline">
+                Ver todos →
+              </Link>
+            </div>
+
+            {/* Case em destaque — sempre o mais recente */}
+            <Link
+              href={`/cases/${cases[0].slug}`}
+              className="group block rounded-2xl overflow-hidden border border-white/10 hover:border-gold/30 transition-all mb-10 bg-white/4"
+            >
+              <div className={cases[0].capa_url ? 'grid md:grid-cols-2' : ''}>
+                {cases[0].capa_url && (
+                  <div className="relative h-56 md:h-80">
+                    <Image
+                      src={cases[0].capa_url}
+                      alt={cases[0].titulo}
+                      fill
+                      className="object-cover"
+                      sizes="(max-width: 768px) 100vw, 50vw"
+                    />
+                    <div className="absolute inset-0 bg-navy/30" />
+                  </div>
+                )}
+                <div className="p-8 md:p-10 flex flex-col justify-center">
+                  <span className="text-gold text-[10px] font-bold uppercase tracking-widest mb-3">Mais recente</span>
+                  <h3 className="text-white text-xl md:text-2xl font-bold leading-snug mb-4 group-hover:text-gold transition-colors line-clamp-3">
+                    {cases[0].titulo}
+                  </h3>
+                  {cases[0].resumo && (
+                    <p className="text-gray-400 text-sm leading-relaxed line-clamp-3">{cases[0].resumo}</p>
+                  )}
+                  <span className="inline-flex items-center gap-1 mt-6 text-gold text-sm font-semibold">
+                    Ler case <span aria-hidden>→</span>
+                  </span>
+                </div>
+              </div>
+            </Link>
+
+            {/* Até 3 cases seguintes (diferentes do hero) */}
+            {cases.length > 1 && (
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {cases.slice(1, 4).map((post) => (
+                  <Link
+                    key={post.id}
+                    href={`/cases/${post.slug}`}
+                    className="group block rounded-xl overflow-hidden border border-white/10 hover:border-gold/30 transition-all bg-white/4"
+                  >
+                    {post.capa_url && (
+                      <div className="relative h-40 w-full">
+                        <Image
+                          src={post.capa_url}
+                          alt={post.titulo}
+                          fill
+                          className="object-cover"
+                          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                        />
+                      </div>
+                    )}
+                    <div className="p-5">
+                      <h3 className="text-white text-sm font-semibold leading-snug line-clamp-3 group-hover:text-gold transition-colors">
+                        {post.titulo}
+                      </h3>
+                      {post.resumo && (
+                        <p className="text-gray-500 text-xs mt-2 line-clamp-2 leading-relaxed">{post.resumo}</p>
+                      )}
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            )}
+
+            <div className="mt-8 text-center sm:hidden">
+              <Link href="/cases" className="text-gold text-sm font-semibold hover:underline">
+                Ver todos os cases →
+              </Link>
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* ── Serviços ─────────────────────────────────────── */}
       <section id="servicos" className="bg-gray-50 dark:bg-[#161616] py-24">
