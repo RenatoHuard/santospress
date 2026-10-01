@@ -3,6 +3,7 @@ import Image from 'next/image'
 import { supabase } from '@/lib/supabase'
 import { BlogCard } from '@/components/BlogCard'
 import type { BlogPost } from '@/lib/types'
+import { getDepoimentosPublicos, type DepoimentoPublico } from '@/app/sistema/actions/depoimentos'
 
 export const revalidate = 60
 
@@ -74,11 +75,12 @@ async function getServicos() {
 // ── Página ─────────────────────────────────────────────────────────
 
 export default async function Home() {
-  const [content, posts, cases, services] = await Promise.all([
+  const [content, posts, cases, services, depoimentos] = await Promise.all([
     getSiteContent(),
     getLatestPosts(),
     getLatestCases(),
     getServicos(),
+    getDepoimentosPublicos(),
   ])
 
   const heroStats = [
@@ -403,6 +405,58 @@ export default async function Home() {
               {posts.map((post) => (
                 <BlogCard key={post.id} post={post} />
               ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* ── Depoimentos ──────────────────────────────────── */}
+      {depoimentos.length > 0 && (
+        <section className="bg-white dark:bg-[#111111] py-24">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-14">
+              <span className="text-gold font-semibold text-xs uppercase tracking-widest">O que dizem</span>
+              <h2 className="text-3xl md:text-4xl font-bold text-navy dark:text-white mt-3">Depoimentos</h2>
+            </div>
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {(depoimentos as DepoimentoPublico[]).map((dep) => {
+                const empresa = dep.cliente?.nome_fantasia ?? dep.cliente?.razao_social ?? ''
+                const iniciais = empresa.charAt(0).toUpperCase()
+                return (
+                  <div
+                    key={dep.id}
+                    className="bg-gray-50 dark:bg-[#1a1a1a] rounded-2xl p-7 border border-gray-100 dark:border-white/5 flex flex-col"
+                  >
+                    <svg className="w-6 h-6 text-gold/40 mb-4 shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z" />
+                    </svg>
+                    <p className="text-gray-600 dark:text-gray-300 text-sm leading-relaxed flex-1 italic">
+                      &ldquo;{dep.texto}&rdquo;
+                    </p>
+                    <div className="flex items-center gap-3 mt-6 pt-5 border-t border-gray-100 dark:border-white/6">
+                      {dep.foto_url ? (
+                        <div className="relative w-10 h-10 rounded-full overflow-hidden shrink-0">
+                          <Image src={dep.foto_url} alt={dep.autor_nome} fill className="object-cover" sizes="40px" />
+                        </div>
+                      ) : dep.cliente?.logo_url ? (
+                        <div className="relative w-10 h-10 rounded-xl overflow-hidden shrink-0 bg-gray-100 dark:bg-white/5">
+                          <Image src={dep.cliente.logo_url} alt={empresa} fill className="object-contain p-1" sizes="40px" />
+                        </div>
+                      ) : (
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-gold/30 to-gold/70 flex items-center justify-center text-white text-sm font-bold shrink-0">
+                          {iniciais}
+                        </div>
+                      )}
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{dep.autor_nome}</p>
+                        <p className="text-xs text-gray-400 dark:text-gray-500 truncate">
+                          {dep.autor_cargo ? `${dep.autor_cargo} · ` : ''}{empresa}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
             </div>
           </div>
         </section>

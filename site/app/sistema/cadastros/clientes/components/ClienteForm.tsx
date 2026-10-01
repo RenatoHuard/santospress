@@ -6,20 +6,22 @@ import { TabContatos } from './tabs/TabContatos'
 import { TabFinanceiro } from './tabs/TabFinanceiro'
 import { TabContratos } from './tabs/TabContratos'
 import { TabCRM } from './tabs/TabCRM'
+import { TabDepoimentos } from './tabs/TabDepoimentos'
 
 interface Props {
   mode: 'create' | 'edit'
   initialData?: Record<string, string>
 }
 
-type TabKey = 'empresa' | 'contatos' | 'financeiro' | 'contratos' | 'crm'
+type TabKey = 'empresa' | 'contatos' | 'financeiro' | 'contratos' | 'crm' | 'depoimentos'
 
 const ALL_TABS: { key: TabKey; label: string; editOnly?: boolean }[] = [
-  { key: 'empresa',    label: 'Empresa' },
-  { key: 'contatos',  label: 'Contatos',   editOnly: true },
-  { key: 'financeiro', label: 'Financeiro', editOnly: true },
-  { key: 'contratos',  label: 'Contratos',  editOnly: true },
-  { key: 'crm',        label: 'CRM',        editOnly: true },
+  { key: 'empresa',      label: 'Empresa' },
+  { key: 'contatos',     label: 'Contatos',    editOnly: true },
+  { key: 'financeiro',   label: 'Financeiro',  editOnly: true },
+  { key: 'contratos',    label: 'Contratos',   editOnly: true },
+  { key: 'crm',          label: 'CRM',         editOnly: true },
+  { key: 'depoimentos',  label: 'Depoimentos', editOnly: true },
 ]
 
 export function ClienteForm({ mode, initialData }: Props) {
@@ -57,10 +59,11 @@ export function ClienteForm({ mode, initialData }: Props) {
       )}
       {mode === 'edit' && clienteId && (
         <>
-          {active === 'contatos'   && <TabContatos  clienteId={clienteId} />}
-          {active === 'financeiro' && <TabFinanceiro clienteId={clienteId} />}
-          {active === 'contratos'  && <TabContratos  clienteId={clienteId} />}
-          {active === 'crm'        && <TabCRM         clienteId={clienteId} />}
+          {active === 'contatos'    && <TabContatos    clienteId={clienteId} />}
+          {active === 'financeiro'  && <TabFinanceiro  clienteId={clienteId} />}
+          {active === 'contratos'   && <TabContratos   clienteId={clienteId} />}
+          {active === 'crm'         && <TabCRM          clienteId={clienteId} />}
+          {active === 'depoimentos' && <TabDepoimentos  clienteId={clienteId} />}
         </>
       )}
     </div>

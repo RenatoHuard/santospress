@@ -7,6 +7,7 @@ import {
   deletarContato,
   type ContatoPayload,
 } from '../../../../actions/clientes'
+import { criarConviteContato } from '../../../../actions/convites-clientes'
 import {
   Section, Field, G2, G3, TabLoader, Feedback, inputCls, MaskedInput,
 } from '../../../funcionarios/components/tabs/_shared'
@@ -26,6 +27,8 @@ function blankContato(): ContatoPayload {
 
 interface Props { clienteId: string }
 
+type ContatoRow = ContatoPayload & { id: string; auth_user_id?: string | null }
+
 export function TabContatos({ clienteId }: Props) {
   const [contatos, setContatos] = useState<ContatoPayload[]>([])
   const [loading, setLoading] = useState(true)
@@ -34,6 +37,7 @@ export function TabContatos({ clienteId }: Props) {
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
+  const [conviteLink, setConviteLink] = useState<{ id: string; link: string } | null>(null)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -83,7 +87,13 @@ export function TabContatos({ clienteId }: Props) {
 
   async function handleDelete(id: string) {
     await deletarContato(id)
-    setContatos((prev) => prev.filter((c) => (c as ContatoPayload & { id: string }).id !== id))
+    setContatos((prev) => prev.filter((c) => (c as ContatoRow).id !== id))
+  }
+
+  async function handleEnviarAcesso(ct: ContatoRow) {
+    const token = await criarConviteContato(clienteId, ct.id)
+    const link = `${window.location.origin}/convite-cliente/${token}`
+    setConviteLink({ id: ct.id, link })
   }
 
   if (loading) return <TabLoader />
@@ -94,8 +104,10 @@ export function TabContatos({ clienteId }: Props) {
       {contatos.length > 0 && (
         <div className="space-y-3">
           {contatos.map((c) => {
-            const ct = c as ContatoPayload & { id: string }
-            const isEditing = editing && (editing as ContatoPayload & { id?: string }).id === ct.id
+            const ct = c as ContatoRow
+            const isEditing = editing && (editing as ContatoRow).id === ct.id
+            const temAcesso = !!ct.auth_user_id
+            const linkGerado = conviteLink?.id === ct.id ? conviteLink.link : null
             return (
               <div key={ct.id} className="bg-white dark:bg-[#111] border border-gray-100 dark:border-white/5 rounded-2xl p-5">
                 {isEditing ? (
@@ -108,38 +120,59 @@ export function TabContatos({ clienteId }: Props) {
                     error={error}
                   />
                 ) : (
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-gray-900 dark:text-white text-sm font-semibold">{ct.nome}</span>
-                        <span className="text-[11px] px-2 py-0.5 rounded-full bg-gray-100 dark:bg-white/8 text-gray-500 dark:text-gray-400">
-                          {TIPOS.find((t) => t.value === ct.tipo)?.label ?? ct.tipo}
-                        </span>
+                  <>
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-gray-900 dark:text-white text-sm font-semibold">{ct.nome}</span>
+                          <span className="text-[11px] px-2 py-0.5 rounded-full bg-gray-100 dark:bg-white/8 text-gray-500 dark:text-gray-400">
+                            {TIPOS.find((t) => t.value === ct.tipo)?.label ?? ct.tipo}
+                          </span>
+                          {temAcesso && (
+                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-400 dark:border-emerald-800/30">
+                              Com acesso
+                            </span>
+                          )}
+                        </div>
+                        {ct.cargo && <p className="text-gray-500 text-xs">{ct.cargo}</p>}
+                        <div className="flex flex-wrap gap-x-4 gap-y-0.5 mt-1.5 text-xs text-gray-400">
+                          {ct.email    && <span>{ct.email}</span>}
+                          {ct.telefone && <span>{ct.telefone}</span>}
+                          {ct.whatsapp && <span>WA: {ct.whatsapp}</span>}
+                        </div>
                       </div>
-                      {ct.cargo && <p className="text-gray-500 text-xs">{ct.cargo}</p>}
-                      <div className="flex flex-wrap gap-x-4 gap-y-0.5 mt-1.5 text-xs text-gray-400">
-                        {ct.email    && <span>{ct.email}</span>}
-                        {ct.telefone && <span>{ct.telefone}</span>}
-                        {ct.whatsapp && <span>WA: {ct.whatsapp}</span>}
+                      <div className="flex gap-3 shrink-0 items-start">
+                        {!temAcesso && (
+                          <button
+                            type="button"
+                            onClick={() => handleEnviarAcesso(ct)}
+                            className="text-xs text-gold hover:text-gold/80 transition-colors"
+                          >
+                            Enviar acesso
+                          </button>
+                        )}
+                        <button type="button" onClick={() => startEdit(ct)}
+                          className="text-xs text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
+                          Editar
+                        </button>
+                        <button type="button" onClick={() => handleDelete(ct.id)}
+                          className="text-xs text-red-400 hover:text-red-600 transition-colors">
+                          Remover
+                        </button>
                       </div>
                     </div>
-                    <div className="flex gap-3 shrink-0">
-                      <button
-                        type="button"
-                        onClick={() => startEdit(ct)}
-                        className="text-xs text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
-                      >
-                        Editar
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleDelete(ct.id)}
-                        className="text-xs text-red-400 hover:text-red-600 transition-colors"
-                      >
-                        Remover
-                      </button>
-                    </div>
-                  </div>
+                    {linkGerado && (
+                      <div className="mt-3 p-3 bg-gold/5 border border-gold/20 rounded-xl">
+                        <p className="text-xs text-gray-600 dark:text-gray-400 mb-1 font-medium">Link de acesso gerado:</p>
+                        <div className="flex items-center gap-2">
+                          <input readOnly value={linkGerado}
+                            className="flex-1 text-xs bg-transparent text-gray-500 dark:text-gray-400 outline-none truncate" />
+                          <button type="button" onClick={() => navigator.clipboard.writeText(linkGerado)}
+                            className="text-xs text-gold hover:underline whitespace-nowrap">Copiar</button>
+                        </div>
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
             )

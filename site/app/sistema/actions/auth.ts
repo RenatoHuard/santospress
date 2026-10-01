@@ -18,14 +18,15 @@ export type UserType = 'funcionario' | 'cliente' | 'sistema' | 'unknown'
 export async function checkUserType(authUserId: string): Promise<UserType> {
   const admin = sb()
 
-  const [funcRes, clienteRes, sysRes] = await Promise.all([
+  const [funcRes, clienteRes, contatoRes, sysRes] = await Promise.all([
     admin.from('spress_usuarios').select('id').eq('auth_user_id', authUserId).maybeSingle(),
     admin.from('spress_clientes').select('id').eq('auth_user_id', authUserId).maybeSingle(),
+    admin.from('spress_clientes_contatos').select('id').eq('auth_user_id', authUserId).maybeSingle(),
     admin.from('spress_sys_users').select('id').eq('auth_user_id', authUserId).eq('ativo', true).maybeSingle(),
   ])
 
   if (funcRes.data) return 'funcionario'
-  if (clienteRes.data) return 'cliente'
+  if (clienteRes.data || contatoRes.data) return 'cliente'
   if (sysRes.data) return 'sistema'
   return 'unknown'
 }
@@ -59,6 +60,13 @@ export async function getMeusRoles(authUserId: string): Promise<string[]> {
     .maybeSingle()
   if (cliente) return ['cliente']
 
+  const { data: contato } = await sb()
+    .from('spress_clientes_contatos')
+    .select('id')
+    .eq('auth_user_id', authUserId)
+    .maybeSingle()
+  if (contato) return ['cliente']
+
   return []
 }
 
@@ -68,14 +76,33 @@ export async function getMeuRole(authUserId: string): Promise<string | null> {
   return roles[0] ?? null
 }
 
-/** Busca dados básicos do cliente pelo auth_user_id (chamado pelo portal). */
+/** Busca dados básicos do cliente pelo auth_user_id.
+ *  Suporta tanto o titular do cadastro quanto contatos com acesso. */
 export async function getClientePortalData(authUserId: string) {
-  const { data } = await sb()
+  const admin = sb()
+
+  // 1. Titular do cadastro
+  const { data: direto } = await admin
     .from('spress_clientes')
     .select('id, razao_social, nome_fantasia, cnpj, segmento, status, email, telefone, cidade, uf')
     .eq('auth_user_id', authUserId)
+    .maybeSingle()
+  if (direto) return direto
+
+  // 2. Contato com acesso (convite secundário)
+  const { data: contato } = await admin
+    .from('spress_clientes_contatos')
+    .select('cliente_id')
+    .eq('auth_user_id', authUserId)
+    .maybeSingle()
+  if (!contato) return null
+
+  const { data: viaContato } = await admin
+    .from('spress_clientes')
+    .select('id, razao_social, nome_fantasia, cnpj, segmento, status, email, telefone, cidade, uf')
+    .eq('id', contato.cliente_id)
     .single()
-  return data
+  return viaContato ?? null
 }
 
 /** Altera a senha de um cliente no Supabase Auth. */
