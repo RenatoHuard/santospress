@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useState, useTransition } from 'react'
-import { getDepoimentosCliente, toggleDepoimento, type Depoimento } from '../../../../../actions/depoimentos'
+import { getDepoimentosCliente, toggleDepoimento, type Depoimento } from '../../../../actions/depoimentos'
 
 interface Props { clienteId: string }
 
