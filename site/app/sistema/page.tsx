@@ -11,6 +11,7 @@ import { getEffectiveRoles } from './lib/simulador'
 import { TopNav } from './components/TopNav'
 import { RadialMenu } from './components/RadialMenu'
 import { MeuMenuRadial } from './components/MeuMenuRadial'
+import { NotificacoesDepoimentos } from './components/NotificacoesDepoimentos'
 
 interface Stats {
   clientesAtivos: number
@@ -51,6 +52,8 @@ export default function DashboardPage() {
   return (
     <div className="flex flex-col min-h-screen">
       <TopNav />
+
+      {isAdminPanel && <NotificacoesDepoimentos />}
 
       {isAdminPanel && !stats.configured && (
         <div className="bg-amber-50 dark:bg-amber-950/50 border-b border-amber-200 dark:border-amber-800/30 px-6 py-2.5 text-amber-700 dark:text-amber-400/90 text-xs text-center">

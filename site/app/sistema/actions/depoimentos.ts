@@ -23,7 +23,15 @@ export type Depoimento = {
   texto: string
   foto_url: string | null
   ativo: boolean
+  novo: boolean
   criado_em: string
+}
+
+export type DepoimentoNovo = {
+  id: string
+  autor_nome: string
+  criado_em: string
+  cliente: { id: string; razao_social: string; nome_fantasia: string | null } | null
 }
 
 export type DepoimentoPublico = Depoimento & {
@@ -56,9 +64,26 @@ export async function getDepoimentosCliente(clienteId: string): Promise<Depoimen
 export async function toggleDepoimento(id: string, ativo: boolean) {
   const { error } = await sb()
     .from('spress_depoimentos')
-    .update({ ativo })
+    .update({ ativo, novo: false })
     .eq('id', id)
   if (error) throw new Error(error.message)
+}
+
+export async function marcarDepoimentosComoVistos(clienteId: string) {
+  await sb()
+    .from('spress_depoimentos')
+    .update({ novo: false })
+    .eq('cliente_id', clienteId)
+    .eq('novo', true)
+}
+
+export async function getDepoimentosNovos(): Promise<DepoimentoNovo[]> {
+  const { data } = await sb()
+    .from('spress_depoimentos')
+    .select('id, autor_nome, criado_em, cliente:spress_clientes(id, razao_social, nome_fantasia)')
+    .eq('novo', true)
+    .order('criado_em', { ascending: false })
+  return (data ?? []) as unknown as DepoimentoNovo[]
 }
 
 export async function getDepoimentosPublicos(): Promise<DepoimentoPublico[]> {

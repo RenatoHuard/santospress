@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useState, useTransition } from 'react'
-import { getDepoimentosCliente, toggleDepoimento, type Depoimento } from '../../../../actions/depoimentos'
+import { getDepoimentosCliente, toggleDepoimento, marcarDepoimentosComoVistos, type Depoimento } from '../../../../actions/depoimentos'
 
 interface Props { clienteId: string }
 
@@ -18,7 +18,10 @@ export function TabDepoimentos({ clienteId }: Props) {
     setLoading(false)
   }, [clienteId])
 
-  useEffect(() => { load() }, [load])
+  useEffect(() => {
+    load()
+    marcarDepoimentosComoVistos(clienteId)
+  }, [load, clienteId])
 
   function handleToggle(dep: Depoimento) {
     setTogglingId(dep.id)

@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { TabEmpresa } from './tabs/TabEmpresa'
 import { TabContatos } from './tabs/TabContatos'
 import { TabFinanceiro } from './tabs/TabFinanceiro'
@@ -26,7 +27,17 @@ const ALL_TABS: { key: TabKey; label: string; editOnly?: boolean }[] = [
 ]
 
 export function ClienteForm({ mode, initialData }: Props) {
-  const [active, setActive] = useState<TabKey>('empresa')
+  const searchParams = useSearchParams()
+  const [active, setActive] = useState<TabKey>(() => {
+    const tab = searchParams.get('tab') as TabKey | null
+    if (tab && ALL_TABS.some(t => t.key === tab)) return tab
+    return 'empresa'
+  })
+
+  useEffect(() => {
+    const tab = searchParams.get('tab') as TabKey | null
+    if (tab && ALL_TABS.some(t => t.key === tab)) setActive(tab)
+  }, [searchParams])
 
   const tabs = mode === 'create' ? ALL_TABS.filter((t) => !t.editOnly) : ALL_TABS
   const clienteId = initialData?.id ?? ''
