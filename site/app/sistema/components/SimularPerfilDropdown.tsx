@@ -20,7 +20,7 @@ export function SimularPerfilDropdown() {
   function switchRole(key: string) {
     setSimulatedRole(key === 'admin' ? null : key)
     setOpen(false)
-    window.location.href = '/sistema'
+    window.location.href = key === 'cliente' ? '/cliente' : '/sistema'
   }
 
   const activeKey = current ?? 'admin'

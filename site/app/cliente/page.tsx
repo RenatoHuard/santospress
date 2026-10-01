@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import { supabase } from '@/lib/supabase'
-import { getClienteDashboard, type ClienteDashboard, type Contato } from './actions'
+import { getClienteDashboard, getClienteDashboardById, type ClienteDashboard, type Contato } from './actions'
+import { getSimulatedRole, getSimulatedClienteId } from '@/app/sistema/lib/simulador'
 
 function tempoParcerias(createdAt: string): string {
   const inicio = new Date(createdAt)
@@ -110,7 +111,14 @@ export default function ClienteDashboardPage() {
   useEffect(() => {
     supabase.auth.getUser().then(async ({ data: { user } }) => {
       if (!user) { router.replace('/login'); return }
-      const d = await getClienteDashboard(user.id)
+      let d = await getClienteDashboard(user.id)
+      if (!d) {
+        const simulatedRole = getSimulatedRole()
+        const simulatedClienteId = getSimulatedClienteId()
+        if (simulatedRole === 'cliente' && simulatedClienteId) {
+          d = await getClienteDashboardById(simulatedClienteId)
+        }
+      }
       if (!d) { router.replace('/login'); return }
       setDashboard(d)
       setLoading(false)
@@ -239,6 +247,25 @@ export default function ClienteDashboardPage() {
           </div>
         </div>
       )}
+
+      {/* Depoimento */}
+      <Link
+        href="/cliente/depoimento"
+        className="group flex items-center gap-4 bg-white dark:bg-[#111] border border-gray-100 dark:border-white/5 rounded-2xl p-6 hover:border-gold/40 hover:shadow-sm transition-all"
+      >
+        <div className="w-11 h-11 rounded-xl bg-navy/10 dark:bg-white/5 flex items-center justify-center shrink-0">
+          <svg className="w-5 h-5 text-navy dark:text-white/60" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.21.865.501L12 21l2.755-4.133a1.14 1.14 0 01.865-.501 48.172 48.172 0 003.423-.379c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0012 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018z" />
+          </svg>
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-semibold text-gray-900 dark:text-white">Registrar Depoimento</p>
+          <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">Compartilhe sua experiência com a Santos Press</p>
+        </div>
+        <svg className="w-4 h-4 text-gray-300 dark:text-gray-600 group-hover:text-gold group-hover:translate-x-0.5 transition-all shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+        </svg>
+      </Link>
     </div>
   )
 }

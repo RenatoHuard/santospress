@@ -1,4 +1,5 @@
 const KEY = 'sp_simulate_role'
+const CLIENTE_KEY = 'sp_simulate_cliente_id'
 
 export const ROLES_SIMULAVEIS = [
   { key: 'admin',       label: 'Admin',       cor: 'text-yellow-500 dark:text-gold' },
@@ -18,6 +19,17 @@ export function setSimulatedRole(role: string | null) {
   if (typeof window === 'undefined') return
   if (role && role !== 'admin') sessionStorage.setItem(KEY, role)
   else sessionStorage.removeItem(KEY)
+}
+
+export function getSimulatedClienteId(): string | null {
+  if (typeof window === 'undefined') return null
+  return sessionStorage.getItem(CLIENTE_KEY)
+}
+
+export function setSimulatedClienteId(id: string | null) {
+  if (typeof window === 'undefined') return
+  if (id) sessionStorage.setItem(CLIENTE_KEY, id)
+  else sessionStorage.removeItem(CLIENTE_KEY)
 }
 
 /** Se o usuário for admin e tiver simulação ativa, retorna os roles simulados. */

@@ -31,17 +31,10 @@ export interface ClienteDashboard {
   contatos: Contato[]
 }
 
-export async function getClienteDashboard(authUserId: string): Promise<ClienteDashboard | null> {
-  const client = sb()
-
-  const { data: cli } = await client
-    .from('spress_clientes')
-    .select('id, nome_fantasia, razao_social, status, created_at, atendente_id, equipe_id')
-    .eq('auth_user_id', authUserId)
-    .maybeSingle()
-
-  if (!cli) return null
-
+async function buildDashboard(
+  client: ReturnType<typeof sb>,
+  cli: { id: string; nome_fantasia: string | null; razao_social: string | null; status: string; created_at: string; atendente_id: string | null; equipe_id: string | null },
+): Promise<ClienteDashboard> {
   const [{ count: atendidas }, { count: emAndamento }, atendenteRes, lideresRes] =
     await Promise.all([
       client
@@ -92,6 +85,28 @@ export async function getClienteDashboard(authUserId: string): Promise<ClienteDa
     metricas: { atendidas: atendidas ?? 0, emAndamento: emAndamento ?? 0 },
     contatos,
   }
+}
+
+export async function getClienteDashboard(authUserId: string): Promise<ClienteDashboard | null> {
+  const client = sb()
+  const { data: cli } = await client
+    .from('spress_clientes')
+    .select('id, nome_fantasia, razao_social, status, created_at, atendente_id, equipe_id')
+    .eq('auth_user_id', authUserId)
+    .maybeSingle()
+  if (!cli) return null
+  return buildDashboard(client, cli)
+}
+
+export async function getClienteDashboardById(clienteId: string): Promise<ClienteDashboard | null> {
+  const client = sb()
+  const { data: cli } = await client
+    .from('spress_clientes')
+    .select('id, nome_fantasia, razao_social, status, created_at, atendente_id, equipe_id')
+    .eq('id', clienteId)
+    .maybeSingle()
+  if (!cli) return null
+  return buildDashboard(client, cli)
 }
 
 export interface ClienteCadastro {
