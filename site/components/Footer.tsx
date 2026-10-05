@@ -34,7 +34,7 @@ export function Footer() {
 
           <div>
             <h4 className="text-white font-semibold mb-4 text-sm uppercase tracking-wide">Contato</h4>
-            <ul className="space-y-3 text-sm">
+            <ul className="space-y-2 text-sm">
               <li>
                 <a href="mailto:atendimento@santospress.com.br" className="hover:text-gold transition-colors">
                   atendimento@santospress.com.br
@@ -45,10 +45,16 @@ export function Footer() {
                   (13) 99742-6063
                 </a>
               </li>
-              <li>Rua Quintino Bocaiuva, 03</li>
-              <li>Gonzaga — Santos/SP</li>
+              <li className="leading-snug">
+                Rua Quintino Bocaiuva, 03<br />
+                Gonzaga — Santos/SP
+              </li>
+              <li className="leading-snug">
+                Av. Paulista, 2444, Conj. 73/74<br />
+                Bela Vista — São Paulo/SP
+              </li>
               <li>
-                <div className="flex gap-4 mt-2">
+                <div className="flex gap-4 mt-1">
                   <a
                     href="https://www.instagram.com/santospress/"
                     target="_blank"
