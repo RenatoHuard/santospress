@@ -51,6 +51,8 @@ export function KanbanBoard({ initialData }: Props) {
   const [filterClienteId, setFilterClienteId] = useState('')
   const [filterResponsavelId, setFilterResponsavelId] = useState('')
 
+  const [labelsExpanded, setLabelsExpanded] = useState(false)
+
   useEffect(() => {
     supabase.auth.getUser().then(async ({ data: { user } }) => {
       if (!user) return
@@ -281,6 +283,8 @@ export function KanbanBoard({ initialData }: Props) {
                   }}
                   onDeleteColuna={colunaId => setColunas(prev => prev.filter(c => c.id !== colunaId))}
                   onRenameColuna={(colunaId, nome) => setColunas(prev => prev.map(c => c.id === colunaId ? { ...c, nome } : c))}
+                  labelsExpanded={labelsExpanded}
+                  onToggleLabels={() => setLabelsExpanded(v => !v)}
                 />
               ))}
             </SortableContext>
@@ -322,7 +326,7 @@ export function KanbanBoard({ initialData }: Props) {
         </div>
 
         <DragOverlay>
-          {activeCard && <KanbanCard card={activeCard} onClick={() => {}} overlay />}
+          {activeCard && <KanbanCard card={activeCard} onClick={() => {}} overlay labelsExpanded={labelsExpanded} />}
           {activeColuna && (
             <div className="w-72 rounded-2xl bg-gray-100 dark:bg-[#1a1a1a] border border-gray-200 dark:border-white/5 opacity-90 p-3">
               <p className="text-sm font-semibold text-gray-700 dark:text-gray-200 px-1">{activeColuna.nome}</p>

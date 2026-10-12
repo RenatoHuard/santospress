@@ -1,6 +1,5 @@
 'use client'
 
-import { useState } from 'react'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import type { KanbanCard as KanbanCardType } from '../../actions/kanban'
@@ -40,10 +39,11 @@ interface Props {
   card: KanbanCardType
   onClick: () => void
   overlay?: boolean
+  labelsExpanded?: boolean
+  onToggleLabels?: () => void
 }
 
-export function KanbanCard({ card, onClick, overlay = false }: Props) {
-  const [tooltipId, setTooltipId] = useState<string | null>(null)
+export function KanbanCard({ card, onClick, overlay = false, labelsExpanded = false, onToggleLabels }: Props) {
 
   const {
     setNodeRef, attributes, listeners, transform, transition, isDragging,
@@ -91,27 +91,28 @@ export function KanbanCard({ card, onClick, overlay = false }: Props) {
         {card.titulo}
       </p>
 
-      {/* Etiquetas — click mostra nome */}
+      {/* Etiquetas — estilo Trello: clique alterna pequeno/expandido */}
       {card.etiquetas && card.etiquetas.length > 0 && (
         <div className="flex flex-wrap gap-1 mt-2">
           {card.etiquetas.map(e => (
-            <div key={e.id} className="relative">
+            labelsExpanded && e.nome ? (
               <button
-                className="h-2 w-8 rounded-full transition-transform hover:scale-110 focus:outline-none"
+                key={e.id}
+                className="h-5 rounded-full px-2.5 text-[10px] font-semibold text-white transition-all hover:opacity-80 focus:outline-none"
+                style={{ backgroundColor: e.cor }}
+                onClick={ev => { ev.stopPropagation(); onToggleLabels?.() }}
+              >
+                {e.nome}
+              </button>
+            ) : (
+              <button
+                key={e.id}
+                className="h-2 w-10 rounded-full transition-all hover:h-3 focus:outline-none"
                 style={{ backgroundColor: e.cor }}
                 title={e.nome ?? e.cor}
-                onClick={ev => {
-                  ev.stopPropagation()
-                  setTooltipId(tooltipId === e.id ? null : e.id)
-                }}
+                onClick={ev => { ev.stopPropagation(); onToggleLabels?.() }}
               />
-              {tooltipId === e.id && (
-                <div className="absolute bottom-4 left-0 z-50 px-2 py-1 bg-gray-900 dark:bg-gray-700 text-white text-[10px] font-medium rounded shadow-lg whitespace-nowrap pointer-events-none">
-                  {e.nome ?? e.cor}
-                  <div className="absolute top-full left-2 border-4 border-transparent border-t-gray-900 dark:border-t-gray-700" />
-                </div>
-              )}
-            </div>
+            )
           ))}
         </div>
       )}

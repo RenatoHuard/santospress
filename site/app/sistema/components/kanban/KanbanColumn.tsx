@@ -16,11 +16,14 @@ interface Props {
   onAddCard: (colunaId: string, card: KanbanCardType) => void
   onDeleteColuna: (colunaId: string) => void
   onRenameColuna: (colunaId: string, nome: string) => void
+  labelsExpanded: boolean
+  onToggleLabels: () => void
 }
 
 export function KanbanColumn({
   coluna, quadroId, usuarios, clientes,
   onCardClick, onAddCard, onDeleteColuna, onRenameColuna,
+  labelsExpanded, onToggleLabels,
 }: Props) {
   const [editingNome, setEditingNome] = useState(false)
   const [nomeInput, setNomeInput] = useState(coluna.nome)
@@ -148,6 +151,8 @@ export function KanbanColumn({
               key={card.id}
               card={card}
               onClick={() => onCardClick(card)}
+              labelsExpanded={labelsExpanded}
+              onToggleLabels={onToggleLabels}
             />
           ))}
         </SortableContext>
