@@ -534,11 +534,22 @@ export interface CalendarioCard extends KanbanCard {
   coluna_nome: string | null
 }
 
+export interface Aniversario {
+  id: string
+  contato_nome: string
+  cargo: string | null
+  data_nascimento: string
+  cliente_id: string | null
+  cliente_nome: string | null
+  tipo: 'contato' | 'equipe'
+}
+
 export interface CalendarioData {
   cards: CalendarioCard[]
   usuarios: UsuarioSimples[]
   clientes: ClienteSimples[]
   etiquetasByQuadro: Record<string, Etiqueta[]>
+  aniversarios: Aniversario[]
 }
 
 export async function getCalendarioData(): Promise<CalendarioData> {
@@ -553,6 +564,8 @@ export async function getCalendarioData(): Promise<CalendarioData> {
     { data: etiquetas },
     { data: demandaEtiquetas },
     { data: checklistAllRaw },
+    { data: contatosAniversario },
+    { data: equipeAniversario },
   ] = await Promise.all([
     client.from('spress_demandas')
       .select('id, titulo, descricao, tipo, prioridade, origem, ordem, visto_em, concluida_em, prazo, cliente_id, atendente_id, responsavel_id, coluna_id, quadro_id, created_at')
@@ -564,6 +577,12 @@ export async function getCalendarioData(): Promise<CalendarioData> {
     client.from('spress_etiquetas').select('id, quadro_id, nome, cor'),
     client.from('spress_demanda_etiquetas').select('demanda_id, etiqueta_id'),
     client.from('spress_checklist_items').select('demanda_id, concluido'),
+    client.from('spress_clientes_contatos')
+      .select('id, nome, cargo, data_nascimento, cliente_id')
+      .not('data_nascimento', 'is', null),
+    client.from('spress_func_pessoal')
+      .select('usuario_id, data_nascimento, usuario:spress_usuarios(nome, cargo)')
+      .not('data_nascimento', 'is', null),
   ])
 
   const clienteMap  = Object.fromEntries((clientesRaw ?? []).map(c => [c.id, c.nome_fantasia || c.razao_social]))
@@ -620,11 +639,42 @@ export async function getCalendarioData(): Promise<CalendarioData> {
     coluna_nome: d.coluna_id ? (colunaMap[d.coluna_id] ?? null) : null,
   }))
 
+  const clienteNomeMap = Object.fromEntries(
+    (clientesRaw ?? []).map(c => [c.id, c.nome_fantasia || c.razao_social || 'Cliente'])
+  )
+
+  const aniversarios: Aniversario[] = [
+    ...(contatosAniversario ?? []).map(c => ({
+      id: c.id,
+      contato_nome: c.nome,
+      cargo: c.cargo ?? null,
+      data_nascimento: c.data_nascimento,
+      cliente_id: c.cliente_id ?? null,
+      cliente_nome: c.cliente_id ? (clienteNomeMap[c.cliente_id] ?? null) : null,
+      tipo: 'contato' as const,
+    })),
+    ...(equipeAniversario ?? [])
+      .filter(e => e.data_nascimento)
+      .map(e => {
+        const u = e.usuario as { nome?: string; cargo?: string } | null
+        return {
+          id: e.usuario_id,
+          contato_nome: u?.nome ?? 'Colaborador',
+          cargo: u?.cargo ?? null,
+          data_nascimento: e.data_nascimento,
+          cliente_id: null,
+          cliente_nome: null,
+          tipo: 'equipe' as const,
+        }
+      }),
+  ]
+
   return {
     cards,
     usuarios: usuarios ?? [],
     clientes: (clientesRaw ?? []).map(c => ({ id: c.id, nome: c.nome_fantasia || c.razao_social || 'Cliente' })),
     etiquetasByQuadro,
+    aniversarios,
   }
 }
 

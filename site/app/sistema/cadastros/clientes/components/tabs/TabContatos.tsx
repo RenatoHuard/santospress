@@ -22,7 +22,7 @@ const TIPOS = [
 ]
 
 function blankContato(): ContatoPayload {
-  return { tipo: 'interlocutor', nome: '', cargo: '', cpf: '', telefone: '', whatsapp: '', email: '', observacoes: '', ordem: 0 }
+  return { tipo: 'interlocutor', nome: '', cargo: '', cpf: '', telefone: '', whatsapp: '', email: '', observacoes: '', ordem: 0, data_nascimento: '' }
 }
 
 interface Props { clienteId: string; readOnly?: boolean }
@@ -139,6 +139,12 @@ export function TabContatos({ clienteId, readOnly }: Props) {
                           {ct.email    && <span>{ct.email}</span>}
                           {ct.telefone && <span>{ct.telefone}</span>}
                           {ct.whatsapp && <span>WA: {ct.whatsapp}</span>}
+                          {ct.data_nascimento && (
+                            <span>
+                              🎂{' '}
+                              {new Date(ct.data_nascimento + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: 'long' })}
+                            </span>
+                          )}
                         </div>
                       </div>
                       {!readOnly && (
@@ -305,6 +311,17 @@ function ContatoForm({
           />
         </Field>
       </G3>
+      <G2>
+        <Field label="Data de Nascimento">
+          <input
+            type="date"
+            value={data.data_nascimento ?? ''}
+            onChange={(e) => onChange({ ...data, data_nascimento: e.target.value })}
+            className={inputCls}
+          />
+        </Field>
+        <div />
+      </G2>
       <Field label="Observações">
         <textarea
           value={data.observacoes}

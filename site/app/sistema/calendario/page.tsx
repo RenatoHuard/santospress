@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import {
   getCalendarioData, getUsuarioByAuthId,
-  type CalendarioCard, type CalendarioData, type Etiqueta, type KanbanCard, type UsuarioSimples,
+  type Aniversario, type CalendarioCard, type CalendarioData, type Etiqueta, type KanbanCard, type UsuarioSimples,
 } from '../actions/kanban'
 import { CardDetalhes } from '../components/kanban/CardDetalhes'
 import { CalendarioGantt } from './CalendarioGantt'
@@ -78,6 +78,17 @@ export default function CalendarioPage() {
     }
     return map
   }, [visibleCards])
+
+  // Aniversários: agrupados por "MM-DD" para match anual
+  const aniversariosByMonthDay = useMemo(() => {
+    const map: Record<string, Aniversario[]> = {}
+    for (const a of (data?.aniversarios ?? [])) {
+      const mmdd = a.data_nascimento.slice(5) // "MM-DD"
+      if (!map[mmdd]) map[mmdd] = []
+      map[mmdd].push(a)
+    }
+    return map
+  }, [data])
 
   const { year, month, calendarDays } = useMemo(() => {
     const y = currentMonth.getFullYear()
@@ -258,9 +269,17 @@ export default function CalendarioPage() {
             {calendarDays.map((cell, idx) => {
               const isToday   = cell.key === todayKey
               const dayCards  = cell.key ? (cardsByDate[cell.key] ?? []) : []
-              const overflow  = dayCards.length > 3
-              const visible   = dayCards.slice(0, 3)
-              const extraCount = dayCards.length - 3
+              // MM-DD para match de aniversário
+              const mmdd = cell.date
+                ? `${String(cell.date.getMonth() + 1).padStart(2, '0')}-${String(cell.date.getDate()).padStart(2, '0')}`
+                : null
+              const dayAniversarios = mmdd ? (aniversariosByMonthDay[mmdd] ?? []) : []
+              const totalItems = dayCards.length + dayAniversarios.length
+              const overflow   = totalItems > 3
+              const visibleCards2 = dayCards.slice(0, Math.min(3, dayCards.length))
+              const anivSlots  = Math.max(0, 3 - visibleCards2.length)
+              const visibleAniv = dayAniversarios.slice(0, anivSlots)
+              const extraCount  = totalItems - visibleCards2.length - visibleAniv.length
 
               return (
                 <div
@@ -279,7 +298,7 @@ export default function CalendarioPage() {
                     </span>
                   )}
 
-                  {visible.map(card => {
+                  {visibleCards2.map(card => {
                     const isConcluida = !!card.concluida_em
                     const prazoDate = card.prazo ? new Date(card.prazo.split('T')[0]) : null
                     const now = new Date(); now.setHours(0,0,0,0)
@@ -302,6 +321,26 @@ export default function CalendarioPage() {
                       </button>
                     )
                   })}
+
+                  {visibleAniv.map(aniv => (
+                    <div
+                      key={aniv.id}
+                      title={`${aniv.contato_nome}${aniv.cliente_nome ? ` — ${aniv.cliente_nome}` : aniv.tipo === 'equipe' ? ' — Equipe SantosPress' : ''}`}
+                      className={`w-full text-[10px] leading-tight px-1.5 py-1 rounded border-l-2 truncate ${
+                        aniv.tipo === 'equipe'
+                          ? 'border-l-violet-400 bg-violet-50 dark:bg-violet-950/20 text-violet-700 dark:text-violet-300'
+                          : 'border-l-pink-400 bg-pink-50 dark:bg-pink-950/20 text-pink-700 dark:text-pink-300'
+                      }`}
+                    >
+                      🎂 {aniv.contato_nome}
+                      {aniv.tipo === 'contato' && aniv.cliente_nome && (
+                        <span className="opacity-60"> · {aniv.cliente_nome}</span>
+                      )}
+                      {aniv.tipo === 'equipe' && (
+                        <span className="opacity-60"> · Equipe</span>
+                      )}
+                    </div>
+                  ))}
 
                   {overflow && (
                     <span className="text-[10px] text-gray-400 dark:text-gray-500 px-1.5 font-medium">

@@ -115,6 +115,7 @@ export interface ContatoPayload {
   email: string
   observacoes: string
   ordem: number
+  data_nascimento?: string
 }
 
 export async function getClienteContatos(clienteId: string) {
