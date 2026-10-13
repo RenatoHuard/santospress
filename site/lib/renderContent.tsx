@@ -3,10 +3,20 @@ import { SocialLinkCard, type SocialPreview } from '@/components/SocialLinkCard'
 
 const PROSE = 'prose prose-lg max-w-none prose-headings:text-navy prose-a:text-gold prose-strong:text-navy'
 
+// Decodifica entidades HTML que o serializer escreve nos atributos
+function htmlAttrDecode(s: string): string {
+  return s
+    .replace(/&amp;/g,  '&')
+    .replace(/&quot;/g, '"')
+    .replace(/&#x27;/g, "'")
+    .replace(/&#39;/g,  "'")
+    .replace(/&lt;/g,   '<')
+    .replace(/&gt;/g,   '>')
+}
+
 function attr(tag: string, name: string): string {
   const m = new RegExp(`${name}="([^"]*?)"`).exec(tag)
-  if (!m) return ''
-  try { return decodeURIComponent(m[1]) } catch { return m[1] }
+  return m ? htmlAttrDecode(m[1]) : ''
 }
 
 export function renderContent(html: string): ReactNode {

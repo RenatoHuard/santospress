@@ -94,27 +94,25 @@ const SocialCardExtension = Node.create({
       tag: 'div[data-social-card]',
       getAttrs: (dom) => {
         const el = dom as HTMLElement
-        const dec = (s: string | null) => { try { return decodeURIComponent(s ?? '') } catch { return s ?? '' } }
         return {
-          url:         dec(el.getAttribute('data-url')),
-          title:       dec(el.getAttribute('data-title')),
-          description: dec(el.getAttribute('data-description')),
-          image:       dec(el.getAttribute('data-image')),
-          site_name:   dec(el.getAttribute('data-site-name')),
+          url:         el.getAttribute('data-url')         ?? '',
+          title:       el.getAttribute('data-title')       ?? '',
+          description: el.getAttribute('data-description') ?? '',
+          image:       el.getAttribute('data-image')       ?? '',
+          site_name:   el.getAttribute('data-site-name')   ?? '',
         }
       },
     }]
   },
 
   renderHTML({ HTMLAttributes }) {
-    const enc = (v: unknown) => encodeURIComponent(String(v ?? ''))
     return ['div', mergeAttributes({
       'data-social-card': 'true',
-      'data-url':         enc(HTMLAttributes.url),
-      'data-title':       enc(HTMLAttributes.title),
-      'data-description': enc(HTMLAttributes.description),
-      'data-image':       enc(HTMLAttributes.image),
-      'data-site-name':   enc(HTMLAttributes.site_name),
+      'data-url':         String(HTMLAttributes.url         ?? ''),
+      'data-title':       String(HTMLAttributes.title       ?? ''),
+      'data-description': String(HTMLAttributes.description ?? ''),
+      'data-image':       String(HTMLAttributes.image       ?? ''),
+      'data-site-name':   String(HTMLAttributes.site_name   ?? ''),
     })]
   },
 

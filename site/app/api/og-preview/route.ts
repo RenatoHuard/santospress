@@ -1,26 +1,49 @@
 import { NextRequest, NextResponse } from 'next/server'
 
-function extractMeta(html: string, ...selectors: string[]): string {
-  for (const sel of selectors) {
-    // property="sel" content="..." or content="..." property="sel"
-    const re1 = new RegExp(`<meta[^>]+property=["']${sel}["'][^>]+content=["']([^"']*?)["']`, 'i')
-    const re2 = new RegExp(`<meta[^>]+content=["']([^"']*?)["'][^>]+property=["']${sel}["']`, 'i')
-    const re3 = new RegExp(`<meta[^>]+name=["']${sel}["'][^>]+content=["']([^"']*?)["']`, 'i')
-    const re4 = new RegExp(`<meta[^>]+content=["']([^"']*?)["'][^>]+name=["']${sel}["']`, 'i')
-    const match = re1.exec(html) ?? re2.exec(html) ?? re3.exec(html) ?? re4.exec(html)
-    if (match?.[1]) return match[1]
-  }
-  return ''
+// Entidades HTML mais comuns, incluindo caracteres do português
+const ENTITIES: Record<string, string> = {
+  amp: '&', lt: '<', gt: '>', quot: '"', apos: "'",
+  nbsp: ' ', copy: '©', reg: '®', trade: '™',
+  // Pontuação tipográfica
+  mdash: '—', ndash: '–', lsquo: '‘', rsquo: '’',
+  ldquo: '“', rdquo: '”', hellip: '…', bull: '•',
+  middot: '·', prime: '′', Prime: '″', tilde: '~', sim: '~',
+  // Português / espanhol
+  ccedil: 'ç', Ccedil: 'Ç',
+  atilde: 'ã', Atilde: 'Ã', otilde: 'õ', Otilde: 'Õ',
+  agrave: 'à', Agrave: 'À', aacute: 'á', Aacute: 'Á',
+  acirc:  'â', Acirc:  'Â', auml:   'ä', Auml:   'Ä',
+  eacute: 'é', Eacute: 'É', egrave: 'è', Egrave: 'È',
+  ecirc:  'ê', Ecirc:  'Ê', euml:   'ë', Euml:   'Ë',
+  iacute: 'í', Iacute: 'Í', icirc:  'î', Icirc:  'Î',
+  oacute: 'ó', Oacute: 'Ó', ocirc:  'ô', Ocirc:  'Ô',
+  ouml:   'ö', Ouml:   'Ö', ugrave: 'ù', Ugrave: 'Ù',
+  uacute: 'ú', Uacute: 'Ú', ucirc:  'û', Ucirc:  'Û',
+  uuml:   'ü', Uuml:   'Ü', ntilde: 'ñ', Ntilde: 'Ñ',
+  szlig:  'ß',
 }
 
-function decodeEntities(s: string) {
+function decodeEntities(s: string): string {
   return s
-    .replace(/&amp;/g, '&')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&quot;/g, '"')
-    .replace(/&#039;/g, "'")
-    .replace(/&#x27;/g, "'")
+    .replace(/&([a-zA-Z]+);/g, (m, name) => ENTITIES[name] ?? m)
+    .replace(/&#x([0-9A-Fa-f]+);/g, (_, hex) => String.fromCharCode(parseInt(hex, 16)))
+    .replace(/&#(\d+);/g, (_, dec) => String.fromCharCode(parseInt(dec, 10)))
+}
+
+function extractMeta(html: string, ...selectors: string[]): string {
+  for (const sel of selectors) {
+    const patterns = [
+      new RegExp(`<meta[^>]+property=["']${sel}["'][^>]+content=["']([^"']*?)["']`, 'i'),
+      new RegExp(`<meta[^>]+content=["']([^"']*?)["'][^>]+property=["']${sel}["']`, 'i'),
+      new RegExp(`<meta[^>]+name=["']${sel}["'][^>]+content=["']([^"']*?)["']`, 'i'),
+      new RegExp(`<meta[^>]+content=["']([^"']*?)["'][^>]+name=["']${sel}["']`, 'i'),
+    ]
+    for (const re of patterns) {
+      const m = re.exec(html)
+      if (m?.[1]) return m[1]
+    }
+  }
+  return ''
 }
 
 export async function GET(req: NextRequest) {
@@ -52,14 +75,14 @@ export async function GET(req: NextRequest) {
 
     const title = decodeEntities(
       extractMeta(html, 'og:title', 'twitter:title') ||
-        (/<title[^>]*>([^<]+)<\/title>/i.exec(html)?.[1] ?? ''),
+      (/<title[^>]*>([^<]+)<\/title>/i.exec(html)?.[1] ?? ''),
     )
     const description = decodeEntities(
       extractMeta(html, 'og:description', 'twitter:description', 'description'),
     )
-    const image = decodeEntities(extractMeta(html, 'og:image', 'twitter:image'))
+    const image     = decodeEntities(extractMeta(html, 'og:image', 'twitter:image'))
     const site_name = decodeEntities(extractMeta(html, 'og:site_name'))
-    const ogUrl = decodeEntities(extractMeta(html, 'og:url')) || target.toString()
+    const ogUrl     = decodeEntities(extractMeta(html, 'og:url')) || target.toString()
 
     return NextResponse.json({ title, description, image, site_name, url: ogUrl })
   } catch {
