@@ -14,9 +14,16 @@ function htmlAttrDecode(s: string): string {
     .replace(/&gt;/g,   '>')
 }
 
+// Decodifica referências numéricas HTML: &#xe7; → ç, &#x327; → combining cedilla, etc.
+function decodeNumericEntities(s: string): string {
+  return s
+    .replace(/&#x([0-9A-Fa-f]+);/gi, (_, h) => String.fromCodePoint(parseInt(h, 16)))
+    .replace(/&#(\d+);/g, (_, d) => String.fromCodePoint(parseInt(d, 10)))
+}
+
 // Decode compatível com formato antigo (encodeURIComponent) e novo (raw)
 function decodeAttr(raw: string, isUrl: boolean): string {
-  // Primeiro decodifica entidades HTML (formato novo do ProseMirror)
+  // Primeiro decodifica entidades HTML de atributo (ProseMirror escreve &amp; etc.)
   const s = htmlAttrDecode(raw)
 
   if (isUrl) {
@@ -26,11 +33,13 @@ function decodeAttr(raw: string, isUrl: boolean): string {
     }
     return s
   } else {
-    // Texto (title, description, site_name): backward-compat com encodeURIComponent
-    if (/%[0-9A-Fa-f]{2}/.test(s)) {
-      try { return decodeURIComponent(s) } catch {}
+    // Texto: backward-compat com encodeURIComponent + decodifica entidades numéricas
+    let v = s
+    if (/%[0-9A-Fa-f]{2}/.test(v)) {
+      try { v = decodeURIComponent(v) } catch {}
     }
-    return s
+    // Decodifica &#x327; &#xe7; etc. que ficaram literais em cards antigos
+    return decodeNumericEntities(v)
   }
 }
 

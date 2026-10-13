@@ -102,10 +102,13 @@ const SocialCardExtension = Node.create({
           return s
         }
         const decText = (v: string | null) => {
-          const s = v ?? ''
+          let s = v ?? ''
           if (/%[0-9A-Fa-f]{2}/.test(s))
-            try { return decodeURIComponent(s) } catch {}
+            try { s = decodeURIComponent(s) } catch {}
+          // Decodifica &#x327; &#xe7; etc. literais de cards antigos
           return s
+            .replace(/&#x([0-9A-Fa-f]+);/gi, (_, h) => String.fromCodePoint(parseInt(h, 16)))
+            .replace(/&#(\d+);/g, (_, d) => String.fromCodePoint(parseInt(d, 10)))
         }
         return {
           url:         decUrl(el.getAttribute('data-url')),
