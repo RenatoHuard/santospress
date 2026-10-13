@@ -94,12 +94,25 @@ const SocialCardExtension = Node.create({
       tag: 'div[data-social-card]',
       getAttrs: (dom) => {
         const el = dom as HTMLElement
+        // Suporta formato antigo (encodeURIComponent) e novo (raw)
+        const decUrl = (v: string | null) => {
+          const s = v ?? ''
+          if (s.startsWith('https%3A') || s.startsWith('http%3A'))
+            try { return decodeURIComponent(s) } catch { return s }
+          return s
+        }
+        const decText = (v: string | null) => {
+          const s = v ?? ''
+          if (/%[0-9A-Fa-f]{2}/.test(s))
+            try { return decodeURIComponent(s) } catch {}
+          return s
+        }
         return {
-          url:         el.getAttribute('data-url')         ?? '',
-          title:       el.getAttribute('data-title')       ?? '',
-          description: el.getAttribute('data-description') ?? '',
-          image:       el.getAttribute('data-image')       ?? '',
-          site_name:   el.getAttribute('data-site-name')   ?? '',
+          url:         decUrl(el.getAttribute('data-url')),
+          image:       decUrl(el.getAttribute('data-image')),
+          title:       decText(el.getAttribute('data-title')),
+          description: decText(el.getAttribute('data-description')),
+          site_name:   decText(el.getAttribute('data-site-name')),
         }
       },
     }]

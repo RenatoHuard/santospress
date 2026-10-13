@@ -3,7 +3,7 @@ import { SocialLinkCard, type SocialPreview } from '@/components/SocialLinkCard'
 
 const PROSE = 'prose prose-lg max-w-none prose-headings:text-navy prose-a:text-gold prose-strong:text-navy'
 
-// Decodifica entidades HTML que o serializer escreve nos atributos
+// Decodifica entidades HTML que o serializer do ProseMirror escreve nos atributos
 function htmlAttrDecode(s: string): string {
   return s
     .replace(/&amp;/g,  '&')
@@ -14,9 +14,29 @@ function htmlAttrDecode(s: string): string {
     .replace(/&gt;/g,   '>')
 }
 
+// Decode compatível com formato antigo (encodeURIComponent) e novo (raw)
+function decodeAttr(raw: string, isUrl: boolean): string {
+  // Primeiro decodifica entidades HTML (formato novo do ProseMirror)
+  const s = htmlAttrDecode(raw)
+
+  if (isUrl) {
+    // Formato antigo: o protocolo estava encodeURIComponent → "https%3A..."
+    if (s.startsWith('https%3A') || s.startsWith('http%3A')) {
+      try { return decodeURIComponent(s) } catch { return s }
+    }
+    return s
+  } else {
+    // Texto (title, description, site_name): backward-compat com encodeURIComponent
+    if (/%[0-9A-Fa-f]{2}/.test(s)) {
+      try { return decodeURIComponent(s) } catch {}
+    }
+    return s
+  }
+}
+
 function attr(tag: string, name: string): string {
   const m = new RegExp(`${name}="([^"]*?)"`).exec(tag)
-  return m ? htmlAttrDecode(m[1]) : ''
+  return m ? m[1] : ''
 }
 
 export function renderContent(html: string): ReactNode {
@@ -36,14 +56,14 @@ export function renderContent(html: string): ReactNode {
     }
 
     const tag = m[0]
-    const url = attr(tag, 'data-url')
+    const url = decodeAttr(attr(tag, 'data-url'), true)
     if (url) {
       const preview: SocialPreview = {
         url,
-        title:       attr(tag, 'data-title'),
-        description: attr(tag, 'data-description'),
-        image:       attr(tag, 'data-image'),
-        site_name:   attr(tag, 'data-site-name'),
+        image:       decodeAttr(attr(tag, 'data-image'),       true),
+        title:       decodeAttr(attr(tag, 'data-title'),       false),
+        description: decodeAttr(attr(tag, 'data-description'), false),
+        site_name:   decodeAttr(attr(tag, 'data-site-name'),   false),
       }
       nodes.push(<SocialLinkCard key={key++} url={url} preview={preview} />)
     }
