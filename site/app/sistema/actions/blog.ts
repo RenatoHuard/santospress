@@ -9,6 +9,14 @@ function serviceClient() {
   return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, key)
 }
 
+export interface SocialPreview {
+  title: string
+  description: string
+  image: string
+  site_name: string
+  url: string
+}
+
 export interface PostPayload {
   id?: string
   titulo: string
@@ -25,6 +33,8 @@ export interface PostPayload {
   publicado_em?: string | null // preservado nas edições; só sobrescrito na 1ª publicação
   cliente_id?: string | null
   tipo?: string  // 'noticia' | 'case'; default 'noticia'
+  social_link_url?: string | null
+  social_link_preview?: SocialPreview | null
 }
 
 export async function salvarPost(payload: PostPayload): Promise<string> {
@@ -52,6 +62,8 @@ export async function salvarPost(payload: PostPayload): Promise<string> {
     publicado_em,
     cliente_id: payload.cliente_id || null,
     tipo: payload.tipo ?? 'noticia',
+    social_link_url: payload.social_link_url ?? null,
+    social_link_preview: payload.social_link_preview ?? null,
   }
 
   if (payload.id) {

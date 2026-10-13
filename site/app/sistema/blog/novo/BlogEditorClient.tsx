@@ -1,7 +1,8 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react'
-import { useEditor, EditorContent } from '@tiptap/react'
+import { useEditor, EditorContent, ReactNodeViewRenderer, NodeViewWrapper } from '@tiptap/react'
+import { Node, mergeAttributes, type NodeViewProps } from '@tiptap/core'
 import StarterKit from '@tiptap/starter-kit'
 import ImageExt from '@tiptap/extension-image'
 import LinkExt from '@tiptap/extension-link'
@@ -14,7 +15,7 @@ import Highlight from '@tiptap/extension-highlight'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import { salvarPost, uploadBlogImagem } from '@/app/sistema/actions/blog'
+import { salvarPost, uploadBlogImagem, type SocialPreview } from '@/app/sistema/actions/blog'
 import { TopNav } from '@/app/sistema/components/TopNav'
 
 // ── Imagem redimensionável ─────────────────────────────────────────
@@ -32,6 +33,93 @@ const ResizableImage = ImageExt.extend({
             : { style: 'max-width:100%;height:auto;display:block;' },
       },
     }
+  },
+})
+
+// ── Social Card Extension ─────────────────────────────────────────
+
+function SocialCardNodeView({ node, deleteNode }: NodeViewProps) {
+  const { url, title, description, image, site_name } = node.attrs as {
+    url: string; title: string; description: string; image: string; site_name: string
+  }
+  let hostname = url
+  try { hostname = new URL(url).hostname.replace('www.', '') } catch {}
+
+  return (
+    <NodeViewWrapper>
+      <div contentEditable={false} className="relative my-3 group/socialcard select-none">
+        <div className="flex border border-gray-200 dark:border-white/10 rounded-xl overflow-hidden bg-white dark:bg-[#1a1a1a]">
+          <div className="w-1 shrink-0 bg-gold" />
+          {image && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={image} alt={title} className="w-24 sm:w-32 shrink-0 object-cover self-stretch" />
+          )}
+          <div className="flex-1 px-3 py-2.5 min-w-0">
+            <p className="text-[10px] font-semibold text-gold uppercase tracking-wider">{site_name || hostname}</p>
+            <p className="font-bold text-gray-900 dark:text-white text-xs leading-snug line-clamp-2 mt-0.5">{title || url}</p>
+            {description && (
+              <p className="text-gray-500 dark:text-gray-400 text-xs mt-1 line-clamp-2">{description}</p>
+            )}
+            <p className="text-[10px] text-gray-400 mt-1.5 truncate">{hostname}</p>
+          </div>
+        </div>
+        <button
+          onClick={deleteNode}
+          className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white rounded-full text-xs hidden group-hover/socialcard:flex items-center justify-center shadow-sm leading-none"
+        >
+          ×
+        </button>
+      </div>
+    </NodeViewWrapper>
+  )
+}
+
+const SocialCardExtension = Node.create({
+  name: 'socialCard',
+  group: 'block',
+  atom: true,
+
+  addAttributes() {
+    return {
+      url:         { default: '' },
+      title:       { default: '' },
+      description: { default: '' },
+      image:       { default: '' },
+      site_name:   { default: '' },
+    }
+  },
+
+  parseHTML() {
+    return [{
+      tag: 'div[data-social-card]',
+      getAttrs: (dom) => {
+        const el = dom as HTMLElement
+        const dec = (s: string | null) => { try { return decodeURIComponent(s ?? '') } catch { return s ?? '' } }
+        return {
+          url:         dec(el.getAttribute('data-url')),
+          title:       dec(el.getAttribute('data-title')),
+          description: dec(el.getAttribute('data-description')),
+          image:       dec(el.getAttribute('data-image')),
+          site_name:   dec(el.getAttribute('data-site-name')),
+        }
+      },
+    }]
+  },
+
+  renderHTML({ HTMLAttributes }) {
+    const enc = (v: unknown) => encodeURIComponent(String(v ?? ''))
+    return ['div', mergeAttributes({
+      'data-social-card': 'true',
+      'data-url':         enc(HTMLAttributes.url),
+      'data-title':       enc(HTMLAttributes.title),
+      'data-description': enc(HTMLAttributes.description),
+      'data-image':       enc(HTMLAttributes.image),
+      'data-site-name':   enc(HTMLAttributes.site_name),
+    })]
+  },
+
+  addNodeView() {
+    return ReactNodeViewRenderer(SocialCardNodeView)
   },
 })
 
@@ -203,6 +291,8 @@ interface InitialPost {
   publicado_em: string | null
   cliente_id: string | null
   tipo?: string | null
+  social_link_url?: string | null
+  social_link_preview?: SocialPreview | null
 }
 
 interface Props {
@@ -277,6 +367,11 @@ export function BlogEditorClient({ funcionarios, clientes, initialPost, tipo, ti
   const [htmlContent, setHtmlContent] = useState(initialPost?.conteudo ?? '')
   // savedId: ID do post já salvo (new or existing)
   const [savedId, setSavedId] = useState<string | null>(initialPost?.id ?? null)
+  // Social card modal (inserir card inline no editor)
+  const [socialCardModal, setSocialCardModal] = useState(false)
+  const [socialCardUrl, setSocialCardUrl] = useState('')
+  const [socialCardPreview, setSocialCardPreview] = useState<SocialPreview | null>(null)
+  const [socialCardFetching, setSocialCardFetching] = useState(false)
 
   // ── Editor ──────────────────────────────────────────────────────
 
@@ -293,6 +388,7 @@ export function BlogEditorClient({ funcionarios, clientes, initialPost, tipo, ti
         HTMLAttributes: { rel: 'noopener noreferrer' },
       }),
       ResizableImage,
+      SocialCardExtension,
       TextAlign.configure({ types: ['heading', 'paragraph', 'image'] }),
       Placeholder.configure({ placeholder: 'Comece a escrever o seu post aqui...' }),
       CharacterCount,
@@ -442,6 +538,40 @@ export function BlogEditorClient({ funcionarios, clientes, initialPost, tipo, ti
     setTagInput('')
   }
 
+  async function handleFetchCardPreview() {
+    if (!socialCardUrl.trim()) return
+    setSocialCardFetching(true)
+    setSocialCardPreview(null)
+    try {
+      const res = await fetch(`/api/og-preview?url=${encodeURIComponent(socialCardUrl.trim())}`)
+      if (!res.ok) throw new Error('Não foi possível buscar o preview')
+      const data = await res.json()
+      if (data.error) throw new Error('Preview indisponível para este link')
+      setSocialCardPreview(data)
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Erro ao buscar preview')
+    } finally {
+      setSocialCardFetching(false)
+    }
+  }
+
+  function handleInsertSocialCard() {
+    if (!editor || !socialCardPreview || !socialCardUrl.trim()) return
+    editor.chain().focus().insertContent({
+      type: 'socialCard',
+      attrs: {
+        url:         socialCardUrl.trim(),
+        title:       socialCardPreview.title,
+        description: socialCardPreview.description,
+        image:       socialCardPreview.image,
+        site_name:   socialCardPreview.site_name,
+      },
+    }).run()
+    setSocialCardModal(false)
+    setSocialCardUrl('')
+    setSocialCardPreview(null)
+  }
+
   // ── Toolbar helper ───────────────────────────────────────────────
 
   const t = editor
@@ -486,17 +616,20 @@ export function BlogEditorClient({ funcionarios, clientes, initialPost, tipo, ti
                 {saveMsg && (
                   <span className="text-xs text-green-600 dark:text-green-400 font-medium">{saveMsg}</span>
                 )}
-                <select
-                  value={status}
-                  onChange={(e) => setStatus(e.target.value as 'rascunho' | 'publicado')}
-                  className="text-xs border border-gray-200 dark:border-white/8 rounded-lg px-3 py-1.5 bg-white dark:bg-[#1a1a1a] text-gray-600 dark:text-gray-300 outline-none"
-                >
-                  <option value="rascunho">Rascunho</option>
-                  <option value="publicado">Publicado</option>
-                </select>
+
+                {/* Status badge — read-only, alterado pelos botões */}
+                <span className={`inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full border ${
+                  status === 'publicado'
+                    ? 'bg-green-50 dark:bg-green-950/40 border-green-200 dark:border-green-800 text-green-700 dark:text-green-400'
+                    : 'bg-gray-100 dark:bg-white/5 border-gray-200 dark:border-white/10 text-gray-500 dark:text-gray-400'
+                }`}>
+                  <span className={`w-1.5 h-1.5 rounded-full ${status === 'publicado' ? 'bg-green-500' : 'bg-gray-400'}`} />
+                  {status === 'publicado' ? 'Publicado' : 'Rascunho'}
+                </span>
+
                 <button
                   onClick={() => setShowPreview(true)}
-                  className="px-4 py-1.5 text-sm border border-gray-200 dark:border-white/10 rounded-lg text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors flex items-center gap-1.5"
+                  className="px-3 py-1.5 text-sm border border-gray-200 dark:border-white/10 rounded-lg text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors flex items-center gap-1.5"
                 >
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
@@ -504,20 +637,48 @@ export function BlogEditorClient({ funcionarios, clientes, initialPost, tipo, ti
                   </svg>
                   Preview
                 </button>
-                <button
-                  onClick={() => handleSave()}
-                  disabled={saving}
-                  className="px-4 py-1.5 text-sm border border-gray-200 dark:border-white/10 rounded-lg text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors disabled:opacity-50"
-                >
-                  {saving ? 'Salvando…' : 'Salvar'}
-                </button>
-                <button
-                  onClick={() => handleSave('publicado')}
-                  disabled={saving}
-                  className="px-4 py-1.5 text-sm bg-gold text-white rounded-lg font-semibold hover:bg-gold/90 transition-colors disabled:opacity-50"
-                >
-                  Publicar
-                </button>
+
+                {status === 'publicado' ? (
+                  <>
+                    {/* Post já publicado: Atualizar preserva publicação, Despublicar volta a rascunho */}
+                    <button
+                      onClick={() => handleSave('rascunho')}
+                      disabled={saving}
+                      title="Salva o conteúdo e remove da publicação"
+                      className="px-3 py-1.5 text-sm border border-gray-200 dark:border-white/10 rounded-lg text-gray-500 dark:text-gray-400 hover:border-red-300 hover:text-red-500 dark:hover:text-red-400 transition-colors disabled:opacity-50"
+                    >
+                      Despublicar
+                    </button>
+                    <button
+                      onClick={() => handleSave('publicado')}
+                      disabled={saving}
+                      title="Salva alterações mantendo o post publicado"
+                      className="px-4 py-1.5 text-sm bg-gold text-white rounded-lg font-semibold hover:bg-gold/90 transition-colors disabled:opacity-50"
+                    >
+                      {saving ? 'Salvando…' : 'Atualizar'}
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    {/* Post em rascunho: Salvar mantém rascunho, Publicar publica */}
+                    <button
+                      onClick={() => handleSave('rascunho')}
+                      disabled={saving}
+                      title="Salva sem publicar"
+                      className="px-3 py-1.5 text-sm border border-gray-200 dark:border-white/10 rounded-lg text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors disabled:opacity-50"
+                    >
+                      {saving ? 'Salvando…' : 'Salvar rascunho'}
+                    </button>
+                    <button
+                      onClick={() => handleSave('publicado')}
+                      disabled={saving}
+                      title="Publica imediatamente no site"
+                      className="px-4 py-1.5 text-sm bg-gold text-white rounded-lg font-semibold hover:bg-gold/90 transition-colors disabled:opacity-50"
+                    >
+                      Publicar
+                    </button>
+                  </>
+                )}
               </div>
             </div>
 
@@ -627,6 +788,15 @@ export function BlogEditorClient({ funcionarios, clientes, initialPost, tipo, ti
               >
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+              </button>
+              <button
+                title="Inserir card de rede social"
+                onClick={() => setSocialCardModal(true)}
+                className={TB_BTN(false)}
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
                 </svg>
               </button>
             </div>
@@ -817,6 +987,7 @@ export function BlogEditorClient({ funcionarios, clientes, initialPost, tipo, ti
                       </label>
                     )}
                   </div>
+
                 </>
               )}
 
@@ -1053,6 +1224,69 @@ export function BlogEditorClient({ funcionarios, clientes, initialPost, tipo, ti
                 className="px-4 py-2 bg-gold text-white text-sm rounded-xl font-semibold hover:bg-gold/90 disabled:opacity-50 transition-colors"
               >
                 Inserir
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Social Card modal ───────────────────────────────────── */}
+      {socialCardModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => { setSocialCardModal(false); setSocialCardUrl(''); setSocialCardPreview(null) }}>
+          <div className="bg-white dark:bg-[#1a1a1a] rounded-2xl p-6 w-full max-w-md shadow-2xl border border-gray-100 dark:border-white/8" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-5">
+              <h3 className="font-semibold text-gray-900 dark:text-white">Inserir Card de Rede Social</h3>
+              <button onClick={() => { setSocialCardModal(false); setSocialCardUrl(''); setSocialCardPreview(null) }} className="text-gray-400 hover:text-gray-700 dark:hover:text-white text-xl leading-none">×</button>
+            </div>
+
+            <div className="flex gap-2">
+              <input
+                type="url"
+                autoFocus
+                placeholder="https://www.instagram.com/p/..."
+                className={`${INPUT} flex-1`}
+                value={socialCardUrl}
+                onChange={(e) => { setSocialCardUrl(e.target.value); setSocialCardPreview(null) }}
+                onKeyDown={(e) => { if (e.key === 'Enter') handleFetchCardPreview() }}
+              />
+              <button
+                onClick={handleFetchCardPreview}
+                disabled={!socialCardUrl.trim() || socialCardFetching}
+                className="px-3 py-2 bg-gold text-white text-xs rounded-xl font-semibold hover:bg-gold/90 disabled:opacity-50 transition-colors shrink-0"
+              >
+                {socialCardFetching
+                  ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  : 'Buscar'}
+              </button>
+            </div>
+
+            {socialCardPreview && (
+              <div className="mt-4 flex border border-gray-200 dark:border-white/10 rounded-xl overflow-hidden text-xs">
+                <div className="w-1 shrink-0 bg-gold" />
+                {socialCardPreview.image && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={socialCardPreview.image} alt="" className="w-24 shrink-0 object-cover self-stretch" />
+                )}
+                <div className="flex-1 p-3 space-y-1 min-w-0">
+                  {socialCardPreview.site_name && (
+                    <p className="text-gold font-semibold uppercase tracking-wider text-[10px]">{socialCardPreview.site_name}</p>
+                  )}
+                  <p className="font-semibold text-gray-900 dark:text-white line-clamp-2">{socialCardPreview.title}</p>
+                  {socialCardPreview.description && (
+                    <p className="text-gray-500 dark:text-gray-400 line-clamp-2">{socialCardPreview.description}</p>
+                  )}
+                </div>
+              </div>
+            )}
+
+            <div className="flex justify-end gap-3 mt-5">
+              <button onClick={() => { setSocialCardModal(false); setSocialCardUrl(''); setSocialCardPreview(null) }} className="px-4 py-2 text-sm text-gray-500 hover:text-gray-800 dark:hover:text-white transition-colors">Cancelar</button>
+              <button
+                onClick={handleInsertSocialCard}
+                disabled={!socialCardPreview || !socialCardUrl.trim()}
+                className="px-4 py-2 bg-gold text-white text-sm rounded-xl font-semibold hover:bg-gold/90 disabled:opacity-50 transition-colors"
+              >
+                Inserir card
               </button>
             </div>
           </div>

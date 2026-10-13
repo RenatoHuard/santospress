@@ -5,6 +5,7 @@ import Link from 'next/link'
 import type { Metadata } from 'next'
 import { ViewTracker } from './ViewTracker'
 import { ShareButtons } from './ShareButtons'
+import { renderContent } from '@/lib/renderContent'
 
 function sb() {
   return createClient(
@@ -187,10 +188,7 @@ export default async function CasePostPage({ params }: Props) {
 
       <div className="bg-white">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-          <div
-            className="prose prose-lg max-w-none prose-headings:text-navy prose-a:text-gold prose-strong:text-navy"
-            dangerouslySetInnerHTML={{ __html: post.conteudo ?? '' }}
-          />
+          {renderContent(post.conteudo ?? '')}
           <div className="mt-14 pt-8 border-t border-gray-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <Link href="/cases" className="text-gold font-semibold hover:underline text-sm">
               ← Voltar aos Cases
