@@ -251,7 +251,7 @@ export default function ClientesPage() {
                       href={`/sistema/cadastros/clientes/${c.id}`}
                       className="text-gray-400 hover:text-gray-900 dark:text-gray-500 dark:hover:text-white text-xs transition-colors"
                     >
-                      Editar →
+                      Ver →
                     </Link>
                   </td>
                 </tr>
