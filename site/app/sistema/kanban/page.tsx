@@ -10,6 +10,7 @@ import {
   getUsuarioByAuthId,
   criarQuadro,
   deletarQuadro,
+  renomearQuadro,
   type Quadro,
 } from '../actions/kanban'
 
@@ -40,6 +41,8 @@ export default function KanbanListPage() {
   const [visNovo, setVisNovo]             = useState<'publico' | 'privado'>('publico')
   const [isPending, startTransition]      = useTransition()
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
+  const [editingId, setEditingId]         = useState<string | null>(null)
+  const [editingNome, setEditingNome]     = useState('')
 
   useEffect(() => {
     supabase.auth.getUser().then(async ({ data: { user } }) => {
@@ -79,6 +82,22 @@ export default function KanbanListPage() {
 
   function canDelete(q: Quadro) {
     return isAdmin || (currentUserId !== null && q.criador_id === currentUserId)
+  }
+
+  function startEditing(q: Quadro) {
+    setConfirmDelete(null)
+    setEditingId(q.id)
+    setEditingNome(q.nome)
+  }
+
+  async function handleRename(id: string) {
+    const nome = editingNome.trim()
+    setEditingId(null)
+    if (!nome) return
+    const q = quadros.find(x => x.id === id)
+    if (!q || nome === q.nome) return
+    await renomearQuadro(id, nome)
+    setQuadros(prev => prev.map(x => x.id === id ? { ...x, nome } : x))
   }
 
   return (
@@ -171,7 +190,6 @@ export default function KanbanListPage() {
                     </svg>
                   </div>
                   <div className="flex items-center gap-1.5">
-                    {/* Badge visibilidade */}
                     <span className={`flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full ${q.visibilidade === 'privado' ? 'bg-amber-50 text-amber-600 dark:bg-amber-900/20 dark:text-amber-400' : 'bg-gray-100 text-gray-400 dark:bg-white/5 dark:text-gray-500'}`}>
                       {q.visibilidade === 'privado' ? <IconCadeado /> : <IconGlobo />}
                       {q.visibilidade === 'privado' ? 'Privado' : 'Público'}
@@ -181,7 +199,26 @@ export default function KanbanListPage() {
                     </span>
                   </div>
                 </div>
-                <p className="text-base font-bold text-gray-900 dark:text-white">{q.nome}</p>
+
+                {/* Nome — inline edit ou texto */}
+                {editingId === q.id ? (
+                  <input
+                    autoFocus
+                    className="w-full text-base font-bold bg-transparent border-b-2 border-gold text-gray-900 dark:text-white outline-none pb-0.5"
+                    value={editingNome}
+                    onChange={e => setEditingNome(e.target.value)}
+                    onBlur={() => handleRename(q.id)}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter') (e.target as HTMLInputElement).blur()
+                      if (e.key === 'Escape') setEditingId(null)
+                    }}
+                    onClick={e => e.preventDefault()}
+                    onMouseDown={e => e.stopPropagation()}
+                  />
+                ) : (
+                  <p className="text-base font-bold text-gray-900 dark:text-white">{q.nome}</p>
+                )}
+
                 {q.cliente_nome && (
                   <p className="text-xs text-gold mt-0.5">{q.cliente_nome}</p>
                 )}
@@ -190,21 +227,35 @@ export default function KanbanListPage() {
                 </p>
               </Link>
 
-              {/* Delete — visível para admin ou criador */}
+              {/* Ações (rename + delete) — visível para admin ou criador */}
               {canDelete(q) && confirmDelete === q.id ? (
                 <div className="absolute top-3 right-3 flex items-center gap-1">
                   <button onClick={() => setConfirmDelete(null)} className="text-[10px] text-gray-400 px-1.5 py-0.5 rounded bg-gray-100 dark:bg-white/5 hover:bg-gray-200">✕</button>
                   <button onClick={() => handleDelete(q.id)} className="text-[10px] text-white bg-red-500 hover:bg-red-600 px-1.5 py-0.5 rounded font-semibold">✓</button>
                 </div>
-              ) : canDelete(q) ? (
-                <button
-                  onClick={e => { e.preventDefault(); setConfirmDelete(q.id) }}
-                  className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 text-gray-300 dark:text-gray-600 hover:text-red-400 transition-all p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5"
-                >
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
-                  </svg>
-                </button>
+              ) : canDelete(q) && editingId !== q.id ? (
+                <div className="absolute top-3 right-3 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
+                  {/* Renomear */}
+                  <button
+                    onClick={e => { e.preventDefault(); startEditing(q) }}
+                    className="text-gray-300 dark:text-gray-600 hover:text-gold transition-colors p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5"
+                    title="Renomear quadro"
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125" />
+                    </svg>
+                  </button>
+                  {/* Deletar */}
+                  <button
+                    onClick={e => { e.preventDefault(); setConfirmDelete(q.id) }}
+                    className="text-gray-300 dark:text-gray-600 hover:text-red-400 transition-colors p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5"
+                    title="Excluir quadro"
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+                    </svg>
+                  </button>
+                </div>
               ) : null}
             </div>
           ))}
