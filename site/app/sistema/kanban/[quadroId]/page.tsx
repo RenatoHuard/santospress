@@ -111,13 +111,22 @@ export default function KanbanBoardPage() {
             }}
           />
         ) : (
-          <button
-            className={`text-lg font-bold text-gray-900 dark:text-white transition-colors ${canManage ? 'hover:text-gold' : 'cursor-default'}`}
-            onDoubleClick={() => canManage && setEditingNome(true)}
-            title={canManage ? 'Duplo clique para renomear' : undefined}
-          >
-            {data.quadro.nome}
-          </button>
+          <div className="group/nome flex items-center gap-1.5">
+            <span className="text-lg font-bold text-gray-900 dark:text-white">
+              {data.quadro.nome}
+            </span>
+            {canManage && (
+              <button
+                onClick={() => setEditingNome(true)}
+                title="Renomear quadro"
+                className="opacity-0 group-hover/nome:opacity-100 text-gray-300 dark:text-gray-600 hover:text-gold transition-all p-1 rounded-md hover:bg-gray-100 dark:hover:bg-white/5"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125" />
+                </svg>
+              </button>
+            )}
+          </div>
         )}
 
         {/* Badge/toggle de visibilidade */}
