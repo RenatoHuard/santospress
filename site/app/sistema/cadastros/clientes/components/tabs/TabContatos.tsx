@@ -25,11 +25,11 @@ function blankContato(): ContatoPayload {
   return { tipo: 'interlocutor', nome: '', cargo: '', cpf: '', telefone: '', whatsapp: '', email: '', observacoes: '', ordem: 0 }
 }
 
-interface Props { clienteId: string }
+interface Props { clienteId: string; readOnly?: boolean }
 
 type ContatoRow = ContatoPayload & { id: string; auth_user_id?: string | null }
 
-export function TabContatos({ clienteId }: Props) {
+export function TabContatos({ clienteId, readOnly }: Props) {
   const [contatos, setContatos] = useState<ContatoPayload[]>([])
   const [loading, setLoading] = useState(true)
   const [editing, setEditing] = useState<ContatoPayload | null>(null)
@@ -141,25 +141,27 @@ export function TabContatos({ clienteId }: Props) {
                           {ct.whatsapp && <span>WA: {ct.whatsapp}</span>}
                         </div>
                       </div>
-                      <div className="flex gap-3 shrink-0 items-start">
-                        {!temAcesso && (
-                          <button
-                            type="button"
-                            onClick={() => handleEnviarAcesso(ct)}
-                            className="text-xs text-gold hover:text-gold/80 transition-colors"
-                          >
-                            Enviar acesso
+                      {!readOnly && (
+                        <div className="flex gap-3 shrink-0 items-start">
+                          {!temAcesso && (
+                            <button
+                              type="button"
+                              onClick={() => handleEnviarAcesso(ct)}
+                              className="text-xs text-gold hover:text-gold/80 transition-colors"
+                            >
+                              Enviar acesso
+                            </button>
+                          )}
+                          <button type="button" onClick={() => startEdit(ct)}
+                            className="text-xs text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
+                            Editar
                           </button>
-                        )}
-                        <button type="button" onClick={() => startEdit(ct)}
-                          className="text-xs text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
-                          Editar
-                        </button>
-                        <button type="button" onClick={() => handleDelete(ct.id)}
-                          className="text-xs text-red-400 hover:text-red-600 transition-colors">
-                          Remover
-                        </button>
-                      </div>
+                          <button type="button" onClick={() => handleDelete(ct.id)}
+                            className="text-xs text-red-400 hover:text-red-600 transition-colors">
+                            Remover
+                          </button>
+                        </div>
+                      )}
                     </div>
                     {linkGerado && (
                       <div className="mt-3 p-3 bg-gold/5 border border-gold/20 rounded-xl">
@@ -200,7 +202,7 @@ export function TabContatos({ clienteId }: Props) {
         <Feedback success />
       )}
 
-      {!adding && (
+      {!adding && !readOnly && (
         <button
           type="button"
           onClick={startAdd}

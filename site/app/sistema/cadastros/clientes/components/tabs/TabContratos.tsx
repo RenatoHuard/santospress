@@ -21,15 +21,15 @@ function blankContrato(): ContratoPayload {
 
 function formatBRL(value: string) {
   const n = parseFloat(value)
-  if (isNaN(n)) return 'â€”'
+  if (isNaN(n)) return '—'
   return n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 }
 
-interface Props { clienteId: string }
+interface Props { clienteId: string; readOnly?: boolean }
 
 type Contrato = ContratoPayload & { id: string; created_at?: string }
 
-export function TabContratos({ clienteId }: Props) {
+export function TabContratos({ clienteId, readOnly }: Props) {
   const [contratos, setContratos] = useState<Contrato[]>([])
   const [loading, setLoading] = useState(true)
   const [editing, setEditing] = useState<Contrato | null>(null)
@@ -110,7 +110,7 @@ export function TabContratos({ clienteId }: Props) {
       const url = await getContratoSignedUrl(path)
       window.open(url, '_blank')
     } catch {
-      setError('NÃ£o foi possÃ­vel abrir o arquivo.')
+      setError('Não foi possível abrir o arquivo.')
     }
   }
 
@@ -151,7 +151,7 @@ export function TabContratos({ clienteId }: Props) {
                       </div>
                       <div className="flex flex-wrap gap-x-4 text-xs text-gray-400 mt-1">
                         {c.valor && <span className="font-medium text-gray-600 dark:text-gray-300">{formatBRL(String(c.valor))}</span>}
-                        {c.data_inicio && <span>InÃ­cio: {c.data_inicio}</span>}
+                        {c.data_inicio && <span>Início: {c.data_inicio}</span>}
                         {c.data_fim    && <span>Vence: {c.data_fim}</span>}
                       </div>
                     </div>
@@ -168,8 +168,8 @@ export function TabContratos({ clienteId }: Props) {
                           Arquivo
                         </button>
                       )}
-                      <button type="button" onClick={() => startEdit(c)} className="text-xs text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">Editar</button>
-                      <button type="button" onClick={() => handleDelete(c.id)} className="text-xs text-red-400 hover:text-red-600 transition-colors">Remover</button>
+                      {!readOnly && <button type="button" onClick={() => startEdit(c)} className="text-xs text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">Editar</button>}
+                      {!readOnly && <button type="button" onClick={() => handleDelete(c.id)} className="text-xs text-red-400 hover:text-red-600 transition-colors">Remover</button>}
                     </div>
                   </div>
                 )}
@@ -203,7 +203,7 @@ export function TabContratos({ clienteId }: Props) {
 
       {success && <Feedback success />}
 
-      {!adding && (
+      {!adding && !readOnly && (
         <button
           type="button"
           onClick={startAdd}
@@ -250,7 +250,7 @@ function ContratoForm({
   return (
     <form onSubmit={onSave} className="space-y-5">
       <G2>
-        <Field label="TÃ­tulo" full>
+        <Field label="Título" full>
           {inp('titulo', 'Nome do contrato')}
         </Field>
       </G2>
@@ -267,20 +267,20 @@ function ContratoForm({
         </Field>
       </G3>
       <G2>
-        <Field label="Data de InÃ­cio">
+        <Field label="Data de Início">
           {inp('data_inicio', '', 'date')}
         </Field>
         <Field label="Data de Vencimento">
           {inp('data_fim', '', 'date')}
         </Field>
       </G2>
-      <Field label="DescriÃ§Ã£o">
+      <Field label="Descrição">
         <textarea
           value={data.descricao}
           onChange={(e) => set('descricao', e.target.value)}
           rows={2}
           className={inputCls}
-          placeholder="Escopo, observaÃ§Ãµes..."
+          placeholder="Escopo, observações..."
         />
       </Field>
 

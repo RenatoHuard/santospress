@@ -214,11 +214,11 @@ export function ClienteDetailView({ cliente, todos }: Props) {
           </div>
 
           {activeTab === 'empresa'     && <ViewEmpresa d={cliente} />}
-          {activeTab === 'contatos'    && <TabContatos    clienteId={cliente.id} />}
-          {activeTab === 'financeiro'  && <TabFinanceiro  clienteId={cliente.id} />}
-          {activeTab === 'contratos'   && <TabContratos   clienteId={cliente.id} />}
-          {activeTab === 'crm'         && <TabCRM          clienteId={cliente.id} />}
-          {activeTab === 'depoimentos' && <TabDepoimentos  clienteId={cliente.id} />}
+          {activeTab === 'contatos'    && <TabContatos    clienteId={cliente.id} readOnly />}
+          {activeTab === 'financeiro'  && <TabFinanceiro  clienteId={cliente.id} readOnly />}
+          {activeTab === 'contratos'   && <TabContratos   clienteId={cliente.id} readOnly />}
+          {activeTab === 'crm'         && <TabCRM          clienteId={cliente.id} readOnly />}
+          {activeTab === 'depoimentos' && <TabDepoimentos  clienteId={cliente.id} readOnly />}
         </>
       )}
     </div>

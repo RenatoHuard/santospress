@@ -3,9 +3,9 @@
 import { useCallback, useEffect, useState, useTransition } from 'react'
 import { getDepoimentosCliente, toggleDepoimento, marcarDepoimentosComoVistos, type Depoimento } from '../../../../actions/depoimentos'
 
-interface Props { clienteId: string }
+interface Props { clienteId: string; readOnly?: boolean }
 
-export function TabDepoimentos({ clienteId }: Props) {
+export function TabDepoimentos({ clienteId, readOnly }: Props) {
   const [depoimentos, setDepoimentos] = useState<Depoimento[]>([])
   const [loading, setLoading] = useState(true)
   const [isPending, startTransition] = useTransition()
@@ -90,19 +90,21 @@ export function TabDepoimentos({ clienteId }: Props) {
               </p>
             </div>
 
-            <button
-              type="button"
-              onClick={() => handleToggle(dep)}
-              disabled={isPending && togglingId === dep.id}
-              title={dep.ativo ? 'Retirar do site' : 'Publicar no site'}
-              className={`shrink-0 relative inline-flex h-6 w-11 items-center rounded-full transition-colors disabled:opacity-50 ${
-                dep.ativo ? 'bg-emerald-500' : 'bg-gray-200 dark:bg-white/10'
-              }`}
-            >
-              <span className={`inline-block h-4 w-4 rounded-full bg-white shadow transition-transform ${
-                dep.ativo ? 'translate-x-6' : 'translate-x-1'
-              }`} />
-            </button>
+            {!readOnly && (
+              <button
+                type="button"
+                onClick={() => handleToggle(dep)}
+                disabled={isPending && togglingId === dep.id}
+                title={dep.ativo ? 'Retirar do site' : 'Publicar no site'}
+                className={`shrink-0 relative inline-flex h-6 w-11 items-center rounded-full transition-colors disabled:opacity-50 ${
+                  dep.ativo ? 'bg-emerald-500' : 'bg-gray-200 dark:bg-white/10'
+                }`}
+              >
+                <span className={`inline-block h-4 w-4 rounded-full bg-white shadow transition-transform ${
+                  dep.ativo ? 'translate-x-6' : 'translate-x-1'
+                }`} />
+              </button>
+            )}
           </div>
         </div>
       ))}

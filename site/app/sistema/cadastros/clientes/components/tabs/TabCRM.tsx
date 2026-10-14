@@ -24,12 +24,12 @@ function formatDate(d: string) {
   return `${day}/${m}/${y}`
 }
 
-interface Props { clienteId: string }
+interface Props { clienteId: string; readOnly?: boolean }
 
 type CRMEntry = CRMPayload & { id: string; created_at?: string; responsavel?: { nome: string } }
 type Funcionario = { id: string; nome: string; email: string }
 
-export function TabCRM({ clienteId }: Props) {
+export function TabCRM({ clienteId, readOnly }: Props) {
   const [entries, setEntries] = useState<CRMEntry[]>([])
   const [funcionarios, setFuncionarios] = useState<Funcionario[]>([])
   const [loading, setLoading] = useState(true)
@@ -203,7 +203,7 @@ export function TabCRM({ clienteId }: Props) {
 
       {success && <Feedback success />}
 
-      {!adding && (
+      {!adding && !readOnly && (
         <button
           type="button"
           onClick={() => setAdding(true)}

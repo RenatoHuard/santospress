@@ -15,9 +15,9 @@ const TIPOS_CONTA = ['Corrente', 'Poupança', 'Pagamento']
 
 function blank(v: string | undefined | null) { return v ?? '' }
 
-interface Props { clienteId: string }
+interface Props { clienteId: string; readOnly?: boolean }
 
-export function TabFinanceiro({ clienteId }: Props) {
+export function TabFinanceiro({ clienteId, readOnly }: Props) {
   const [loading, setLoading] = useState(true)
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
@@ -138,10 +138,12 @@ export function TabFinanceiro({ clienteId }: Props) {
         />
       </Section>
 
-      <div className="flex items-center gap-4">
-        <SaveBtn saving={isPending} />
-        <Feedback error={error} success={success} />
-      </div>
+      {!readOnly && (
+        <div className="flex items-center gap-4">
+          <SaveBtn saving={isPending} />
+          <Feedback error={error} success={success} />
+        </div>
+      )}
     </form>
   )
 }
