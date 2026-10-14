@@ -1,6 +1,5 @@
 'use client'
 
-import { TopNav } from '../../components/TopNav'
 import { CornerRadialMenu, type CornerMenuItem } from '../../components/CornerRadialMenu'
 
 const ITEMS: CornerMenuItem[] = [
@@ -28,10 +27,9 @@ const ITEMS: CornerMenuItem[] = [
 
 export default function QuadroLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex flex-col min-h-screen">
-      <TopNav />
+    <>
       <main className="flex-1 overflow-auto">{children}</main>
       <CornerRadialMenu items={ITEMS} backHref="/sistema/kanban" backLabel="Quadros" />
-    </div>
+    </>
   )
 }
