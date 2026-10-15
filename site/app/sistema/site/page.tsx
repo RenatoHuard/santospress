@@ -5,10 +5,9 @@ import Link from 'next/link'
 import { getConteudoSite, salvarSecaoSite, salvarMvvCompleto, type ConteudoSite } from '@/app/sistema/actions/site'
 import {
   getTodosDepoimentos, toggleDepoimento, criarDepoimentoAdmin,
-  editarDepoimento, deletarDepoimento,
-  type DepoimentoAdmin,
+  editarDepoimento, deletarDepoimento, getClientesParaSelect,
+  type DepoimentoAdmin, type ClienteSimples,
 } from '@/app/sistema/actions/depoimentos'
-import { getClientes } from '@/app/sistema/actions/clientes'
 
 // ── Configuração das seções ─────────────────────────────────────────
 
@@ -92,7 +91,6 @@ const MVV_DEFAULTS = {
 }
 
 type ValorItem = { titulo: string; descricao: string }
-type ClienteSimples = { id: string; razao_social: string; nome_fantasia: string | null }
 
 // ── Estilos compartilhados ──────────────────────────────────────────
 
@@ -121,11 +119,11 @@ export default function EditarSitePage() {
     Promise.all([
       getConteudoSite(),
       getTodosDepoimentos(),
-      getClientes(),
+      getClientesParaSelect(),
     ]).then(([d, deps, cls]) => {
       setData(d)
       setDepoimentos(deps)
-      setClientes(cls as ClienteSimples[])
+      setClientes(cls)
 
       const mvv = d.mvv ?? {}
       setMissao(mvv.missao || MVV_DEFAULTS.missao)

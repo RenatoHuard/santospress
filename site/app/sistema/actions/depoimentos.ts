@@ -143,3 +143,13 @@ export async function deletarDepoimento(id: string) {
     .eq('id', id)
   if (error) throw new Error(error.message)
 }
+
+export type ClienteSimples = { id: string; razao_social: string; nome_fantasia: string | null }
+
+export async function getClientesParaSelect(): Promise<ClienteSimples[]> {
+  const { data } = await sb()
+    .from('spress_clientes')
+    .select('id, razao_social, nome_fantasia')
+    .order('razao_social')
+  return (data ?? []) as ClienteSimples[]
+}
