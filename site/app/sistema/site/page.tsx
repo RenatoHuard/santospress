@@ -3,6 +3,12 @@
 import { useEffect, useState, useTransition } from 'react'
 import Link from 'next/link'
 import { getConteudoSite, salvarSecaoSite, salvarMvvCompleto, type ConteudoSite } from '@/app/sistema/actions/site'
+import {
+  getTodosDepoimentos, toggleDepoimento, criarDepoimentoAdmin,
+  editarDepoimento, deletarDepoimento,
+  type DepoimentoAdmin,
+} from '@/app/sistema/actions/depoimentos'
+import { getClientes } from '@/app/sistema/actions/clientes'
 
 // ── Configuração das seções ─────────────────────────────────────────
 
@@ -16,12 +22,13 @@ interface Field {
 }
 
 const SECTIONS = [
-  { id: 'hero',     label: 'Hero',     desc: 'Primeira seção visível do site' },
-  { id: 'sobre',    label: 'Sobre',    desc: 'Seção "Sobre Nós"' },
-  { id: 'mvv',      label: 'MVV',      desc: 'Missão, Visão e Valores (Pilares da Agência)' },
-  { id: 'servicos', label: 'Serviços', desc: 'Títulos da seção de serviços' },
-  { id: 'blog',     label: 'Blog',     desc: 'Cabeçalho da seção de blog' },
-  { id: 'cta',      label: 'CTA',      desc: 'Seção de chamada final (rodapé)' },
+  { id: 'hero',        label: 'Hero',        desc: 'Primeira seção visível do site' },
+  { id: 'sobre',       label: 'Sobre',       desc: 'Seção "Sobre Nós"' },
+  { id: 'mvv',         label: 'MVV',         desc: 'Missão, Visão e Valores (Pilares da Agência)' },
+  { id: 'servicos',    label: 'Serviços',    desc: 'Títulos da seção de serviços' },
+  { id: 'depoimentos', label: 'Depoimentos', desc: 'Depoimentos publicados no site público' },
+  { id: 'blog',        label: 'Blog',        desc: 'Cabeçalho da seção de blog' },
+  { id: 'cta',         label: 'CTA',         desc: 'Seção de chamada final (rodapé)' },
 ]
 
 const FIELDS: Record<string, Field[]> = {
@@ -85,6 +92,7 @@ const MVV_DEFAULTS = {
 }
 
 type ValorItem = { titulo: string; descricao: string }
+type ClienteSimples = { id: string; razao_social: string; nome_fantasia: string | null }
 
 // ── Estilos compartilhados ──────────────────────────────────────────
 
@@ -105,16 +113,24 @@ export default function EditarSitePage() {
   const [visao, setVisao] = useState('')
   const [valores, setValores] = useState<ValorItem[]>([])
 
+  // Depoimentos
+  const [depoimentos, setDepoimentos] = useState<DepoimentoAdmin[]>([])
+  const [clientes, setClientes] = useState<ClienteSimples[]>([])
+
   useEffect(() => {
-    getConteudoSite().then((d) => {
+    Promise.all([
+      getConteudoSite(),
+      getTodosDepoimentos(),
+      getClientes(),
+    ]).then(([d, deps, cls]) => {
       setData(d)
+      setDepoimentos(deps)
+      setClientes(cls as ClienteSimples[])
 
       const mvv = d.mvv ?? {}
-
       setMissao(mvv.missao || MVV_DEFAULTS.missao)
       setVisao(mvv.visao   || MVV_DEFAULTS.visao)
 
-      // Lê valores existentes no banco
       const list: ValorItem[] = []
       for (let i = 1; i <= 50; i++) {
         const t = mvv[`valor${i}_titulo`]
@@ -236,21 +252,31 @@ export default function EditarSitePage() {
                   </p>
                 </div>
 
-                <button
-                  onClick={() => handleSave(activeSection)}
-                  disabled={isPending}
-                  className="px-5 py-2.5 bg-gold text-white rounded-xl text-sm font-semibold hover:bg-gold/90 disabled:opacity-60 transition-all"
-                >
-                  {isPending
-                    ? 'Salvando…'
-                    : savedSection === activeSection
-                    ? '✓ Salvo!'
-                    : 'Salvar alterações'}
-                </button>
+                {activeSection !== 'depoimentos' && (
+                  <button
+                    onClick={() => handleSave(activeSection)}
+                    disabled={isPending}
+                    className="px-5 py-2.5 bg-gold text-white rounded-xl text-sm font-semibold hover:bg-gold/90 disabled:opacity-60 transition-all"
+                  >
+                    {isPending
+                      ? 'Salvando…'
+                      : savedSection === activeSection
+                      ? '✓ Salvo!'
+                      : 'Salvar alterações'}
+                  </button>
+                )}
               </div>
 
-              {/* ── Editor MVV customizado ── */}
-              {activeSection === 'mvv' ? (
+              {/* ── Depoimentos ── */}
+              {activeSection === 'depoimentos' ? (
+                <DepoimentosSection
+                  depoimentos={depoimentos}
+                  clientes={clientes}
+                  onChanged={() =>
+                    getTodosDepoimentos().then(setDepoimentos)
+                  }
+                />
+              ) : activeSection === 'mvv' ? (
                 <div className="space-y-6">
                   {/* Missão */}
                   <div className="bg-white dark:bg-[#111111] rounded-2xl border border-gray-100 dark:border-white/5 p-6">
@@ -373,16 +399,291 @@ export default function EditarSitePage() {
               )}
 
               {/* Preview link */}
-              <p className="text-xs text-gray-400 dark:text-gray-600 mt-4 text-center">
-                As alterações ficam visíveis no site após salvar.{' '}
-                <Link href="/" target="_blank" className="underline hover:text-gold transition-colors">
-                  Abrir site →
-                </Link>
-              </p>
+              {activeSection !== 'depoimentos' && (
+                <p className="text-xs text-gray-400 dark:text-gray-600 mt-4 text-center">
+                  As alterações ficam visíveis no site após salvar.{' '}
+                  <Link href="/" target="_blank" className="underline hover:text-gold transition-colors">
+                    Abrir site →
+                  </Link>
+                </p>
+              )}
             </>
           )}
         </main>
       </div>
+    </div>
+  )
+}
+
+// ── Seção de Depoimentos ────────────────────────────────────────────
+
+const DEP_INPUT =
+  'w-full bg-gray-50 dark:bg-[#0a0a0a] border border-gray-200 dark:border-white/8 text-gray-900 dark:text-white rounded-xl px-4 py-3 text-sm outline-none focus:border-gold/50 focus:ring-2 focus:ring-gold/15 transition placeholder:text-gray-400 dark:placeholder:text-gray-600'
+
+type DepForm = { autor_nome: string; autor_cargo: string; texto: string; cliente_id: string }
+const BLANK_FORM: DepForm = { autor_nome: '', autor_cargo: '', texto: '', cliente_id: '' }
+
+function DepoimentosSection({
+  depoimentos,
+  clientes,
+  onChanged,
+}: {
+  depoimentos: DepoimentoAdmin[]
+  clientes: ClienteSimples[]
+  onChanged: () => void
+}) {
+  const [adding, setAdding] = useState(false)
+  const [editing, setEditing] = useState<DepoimentoAdmin | null>(null)
+  const [form, setForm] = useState<DepForm>(BLANK_FORM)
+  const [isPending, startTransition] = useTransition()
+  const [togglingId, setTogglingId] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
+
+  const published = depoimentos.filter((d) => d.ativo).length
+  const total = depoimentos.length
+
+  function setF(key: keyof DepForm, val: string) {
+    setForm((p) => ({ ...p, [key]: val }))
+  }
+
+  function startAdd() {
+    setEditing(null)
+    setForm(BLANK_FORM)
+    setError(null)
+    setAdding(true)
+  }
+
+  function startEdit(dep: DepoimentoAdmin) {
+    setAdding(false)
+    setForm({
+      autor_nome: dep.autor_nome,
+      autor_cargo: dep.autor_cargo ?? '',
+      texto: dep.texto,
+      cliente_id: dep.cliente_id ?? '',
+    })
+    setEditing(dep)
+    setError(null)
+  }
+
+  function cancelForm() {
+    setAdding(false)
+    setEditing(null)
+    setError(null)
+  }
+
+  function handleToggle(dep: DepoimentoAdmin) {
+    setTogglingId(dep.id)
+    startTransition(async () => {
+      await toggleDepoimento(dep.id, !dep.ativo)
+      onChanged()
+      setTogglingId(null)
+    })
+  }
+
+  function handleDelete(id: string) {
+    startTransition(async () => {
+      await deletarDepoimento(id)
+      onChanged()
+    })
+  }
+
+  function handleSave(e: React.FormEvent) {
+    e.preventDefault()
+    if (!form.autor_nome.trim() || !form.texto.trim()) {
+      setError('Nome do autor e texto são obrigatórios.')
+      return
+    }
+    setError(null)
+    startTransition(async () => {
+      try {
+        const payload = {
+          autor_nome: form.autor_nome.trim(),
+          autor_cargo: form.autor_cargo.trim(),
+          texto: form.texto.trim(),
+          cliente_id: form.cliente_id || null,
+        }
+        if (editing) {
+          await editarDepoimento(editing.id, payload)
+        } else {
+          await criarDepoimentoAdmin(payload)
+        }
+        cancelForm()
+        onChanged()
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Erro ao salvar')
+      }
+    })
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Stats + botão */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <span className="text-sm text-gray-500 dark:text-gray-400">
+            <span className="font-semibold text-emerald-500">{published}</span> publicados
+          </span>
+          <span className="text-gray-200 dark:text-gray-700">·</span>
+          <span className="text-sm text-gray-500 dark:text-gray-400">
+            <span className="font-semibold text-gray-700 dark:text-gray-300">{total}</span> no total
+          </span>
+        </div>
+        {!adding && !editing && (
+          <button
+            onClick={startAdd}
+            className="flex items-center gap-2 text-sm font-semibold text-gold hover:text-gold/80 transition-colors"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+            </svg>
+            Adicionar depoimento
+          </button>
+        )}
+      </div>
+
+      {/* Formulário add / edit */}
+      {(adding || editing) && (
+        <div className="bg-white dark:bg-[#111] border border-gray-100 dark:border-white/5 rounded-2xl p-6">
+          <p className="text-xs font-semibold text-gray-400 dark:text-gray-600 uppercase tracking-widest mb-5">
+            {editing ? 'Editar depoimento' : 'Novo depoimento'}
+          </p>
+          <form onSubmit={handleSave} className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Nome do autor <span className="text-red-400">*</span></label>
+                <input
+                  type="text"
+                  value={form.autor_nome}
+                  onChange={(e) => setF('autor_nome', e.target.value)}
+                  placeholder="Ex: João Silva"
+                  className={DEP_INPUT}
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Cargo / empresa</label>
+                <input
+                  type="text"
+                  value={form.autor_cargo}
+                  onChange={(e) => setF('autor_cargo', e.target.value)}
+                  placeholder="Ex: CEO da Empresa X"
+                  className={DEP_INPUT}
+                />
+              </div>
+            </div>
+            <div>
+              <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Texto do depoimento <span className="text-red-400">*</span></label>
+              <textarea
+                value={form.texto}
+                onChange={(e) => setF('texto', e.target.value)}
+                rows={3}
+                placeholder="O que o cliente disse..."
+                className={DEP_INPUT}
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Vincular a cliente (opcional)</label>
+              <select value={form.cliente_id} onChange={(e) => setF('cliente_id', e.target.value)} className={DEP_INPUT}>
+                <option value="">— Sem vínculo —</option>
+                {clientes.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.nome_fantasia || c.razao_social}
+                  </option>
+                ))}
+              </select>
+            </div>
+            {error && (
+              <p className="text-sm text-red-500">{error}</p>
+            )}
+            <div className="flex items-center gap-3 pt-1">
+              <button
+                type="submit"
+                disabled={isPending}
+                className="bg-gold text-white px-6 py-2.5 rounded-xl text-sm font-semibold hover:bg-gold/90 disabled:opacity-50 transition-colors flex items-center gap-2"
+              >
+                {isPending && <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />}
+                {editing ? 'Salvar alterações' : 'Cadastrar'}
+              </button>
+              <button type="button" onClick={cancelForm} className="text-sm text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">
+                Cancelar
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* Lista */}
+      {depoimentos.length === 0 && !adding ? (
+        <div className="bg-white dark:bg-[#111] border border-gray-100 dark:border-white/5 rounded-2xl p-12 text-center">
+          <p className="text-gray-400 dark:text-gray-600 text-sm">Nenhum depoimento cadastrado.</p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {depoimentos.map((dep) => (
+            <div
+              key={dep.id}
+              className="bg-white dark:bg-[#111] border border-gray-100 dark:border-white/5 rounded-2xl p-5"
+            >
+              <div className="flex items-start gap-4">
+                {/* Toggle */}
+                <button
+                  type="button"
+                  onClick={() => handleToggle(dep)}
+                  disabled={isPending && togglingId === dep.id}
+                  title={dep.ativo ? 'Retirar do site' : 'Publicar no site'}
+                  className={`shrink-0 mt-0.5 relative inline-flex h-6 w-11 items-center rounded-full transition-colors disabled:opacity-50 ${dep.ativo ? 'bg-emerald-500' : 'bg-gray-200 dark:bg-white/10'}`}
+                >
+                  <span className={`inline-block h-4 w-4 rounded-full bg-white shadow transition-transform ${dep.ativo ? 'translate-x-6' : 'translate-x-1'}`} />
+                </button>
+
+                {/* Conteúdo */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap mb-0.5">
+                    <span className="text-sm font-semibold text-gray-900 dark:text-white">{dep.autor_nome}</span>
+                    {dep.autor_cargo && (
+                      <span className="text-xs text-gray-400">· {dep.autor_cargo}</span>
+                    )}
+                    <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${
+                      dep.ativo
+                        ? 'bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-400 dark:border-emerald-800/30'
+                        : 'bg-gray-50 text-gray-400 border-gray-200 dark:bg-white/4 dark:text-gray-500 dark:border-white/8'
+                    }`}>
+                      {dep.ativo ? 'Publicado' : 'Oculto'}
+                    </span>
+                    {dep.cliente && (
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-navy/8 dark:bg-white/5 text-gray-500 dark:text-gray-500 border border-gray-100 dark:border-white/8">
+                        {dep.cliente.nome_fantasia || dep.cliente.razao_social}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 line-clamp-2">&ldquo;{dep.texto}&rdquo;</p>
+                  <p className="text-xs text-gray-300 dark:text-gray-700 mt-1.5">
+                    {new Date(dep.criado_em).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })}
+                  </p>
+                </div>
+
+                {/* Ações */}
+                <div className="shrink-0 flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => startEdit(dep)}
+                    className="text-xs text-gray-400 hover:text-gray-700 dark:hover:text-white transition-colors"
+                  >
+                    Editar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDelete(dep.id)}
+                    disabled={isPending}
+                    className="text-xs text-red-400 hover:text-red-600 transition-colors disabled:opacity-40"
+                  >
+                    Remover
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }

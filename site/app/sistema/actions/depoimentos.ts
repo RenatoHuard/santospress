@@ -17,7 +17,7 @@ export interface DepoimentoPayload {
 
 export type Depoimento = {
   id: string
-  cliente_id: string
+  cliente_id: string | null
   autor_nome: string
   autor_cargo: string | null
   texto: string
@@ -93,4 +93,53 @@ export async function getDepoimentosPublicos(): Promise<DepoimentoPublico[]> {
     .eq('ativo', true)
     .order('criado_em', { ascending: false })
   return (data ?? []) as DepoimentoPublico[]
+}
+
+export type DepoimentoAdmin = Depoimento & {
+  cliente: { id: string; razao_social: string; nome_fantasia: string | null } | null
+}
+
+export async function getTodosDepoimentos(): Promise<DepoimentoAdmin[]> {
+  const { data } = await sb()
+    .from('spress_depoimentos')
+    .select('*, cliente:spress_clientes(id, razao_social, nome_fantasia)')
+    .order('criado_em', { ascending: false })
+  return (data ?? []) as unknown as DepoimentoAdmin[]
+}
+
+export async function criarDepoimentoAdmin(payload: DepoimentoPayload & { cliente_id?: string | null }) {
+  const { error } = await sb()
+    .from('spress_depoimentos')
+    .insert({
+      cliente_id: payload.cliente_id || null,
+      autor_nome: payload.autor_nome,
+      autor_cargo: payload.autor_cargo || null,
+      texto: payload.texto,
+      foto_url: payload.foto_url || null,
+      ativo: false,
+      novo: false,
+    })
+  if (error) throw new Error(error.message)
+}
+
+export async function editarDepoimento(id: string, payload: DepoimentoPayload & { cliente_id?: string | null }) {
+  const { error } = await sb()
+    .from('spress_depoimentos')
+    .update({
+      cliente_id: payload.cliente_id || null,
+      autor_nome: payload.autor_nome,
+      autor_cargo: payload.autor_cargo || null,
+      texto: payload.texto,
+      foto_url: payload.foto_url || null,
+    })
+    .eq('id', id)
+  if (error) throw new Error(error.message)
+}
+
+export async function deletarDepoimento(id: string) {
+  const { error } = await sb()
+    .from('spress_depoimentos')
+    .delete()
+    .eq('id', id)
+  if (error) throw new Error(error.message)
 }
