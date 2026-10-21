@@ -15,8 +15,9 @@ export const MENU_NODES: MenuNode[] = [
   { id: 'funcionarios',    label: 'Colaboradores',       parentId: 'cadastros',   isGroup: false },
   { id: 'clientes',        label: 'Clientes',            parentId: 'cadastros',   isGroup: false },
   { id: 'usuarios-sistema', label: 'Usuários do Sistema', parentId: 'cadastros',  isGroup: false },
-  { id: 'site',         label: 'Site',            parentId: null,          isGroup: true  },
-  { id: 'editar-site',  label: 'Editar Site',     parentId: 'site',        isGroup: false },
+  { id: 'site',              label: 'Site',            parentId: null,          isGroup: true  },
+  { id: 'editar-site',      label: 'Editar Site',     parentId: 'site',        isGroup: false },
+  { id: 'relatorios-site',  label: 'Relatórios Site', parentId: 'site',        isGroup: false },
   { id: 'noticias',          label: 'Notícias',    parentId: 'site',    isGroup: true  },
   { id: 'nova-noticia',      label: 'Nova Notícia', parentId: 'noticias', isGroup: false },
   { id: 'publicacoes',       label: 'Publicações',  parentId: 'noticias', isGroup: false },
@@ -37,7 +38,7 @@ export const CONFIGURABLE_ROLES = [
 ] as const
 
 export const DEFAULT_PERMISSIONS: Record<string, string[]> = {
-  gestor:      ['meus-dados','visualizar','atualizar','kanban','calendario','cadastros','funcionarios','clientes','usuarios-sistema','site','editar-site','noticias','nova-noticia','publicacoes','rascunhos','relatorios','cases','nova-case','publicacoes-cases','rascunhos-cases','relatorios-cases'],
+  gestor:      ['meus-dados','visualizar','atualizar','kanban','calendario','cadastros','funcionarios','clientes','usuarios-sistema','site','editar-site','relatorios-site','noticias','nova-noticia','publicacoes','rascunhos','relatorios','cases','nova-case','publicacoes-cases','rascunhos-cases','relatorios-cases'],
   rh:          ['meus-dados','visualizar','atualizar','kanban','calendario','cadastros','funcionarios'],
   colaborador: ['meus-dados','visualizar','atualizar','kanban','calendario','site','noticias','publicacoes','cases','publicacoes-cases'],
   atendente:   ['meus-dados','visualizar','atualizar','kanban','calendario','cadastros','clientes','site','noticias','publicacoes','cases','publicacoes-cases'],

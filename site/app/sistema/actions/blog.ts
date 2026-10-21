@@ -158,7 +158,7 @@ export async function publicarPost(id: string) {
 
 // ── Analytics ──────────────────────────────────────────────────────
 
-export async function getBlogAnalytics(days: number) {
+export async function getBlogAnalytics(days: number, tipo: 'noticia' | 'case' = 'noticia') {
   const sb    = serviceClient()
   const since = days > 0
     ? new Date(Date.now() - days * 86400000).toISOString()
@@ -170,6 +170,7 @@ export async function getBlogAnalytics(days: number) {
       .gte('created_at', since),
     sb.from('spress_blog_posts')
       .select('id, titulo, slug, capa_url, status, publicado_em')
+      .eq('tipo', tipo)
       .order('publicado_em', { ascending: false }),
   ])
 

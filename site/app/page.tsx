@@ -3,6 +3,7 @@ import Image from 'next/image'
 import { supabase } from '@/lib/supabase'
 import { BlogCard } from '@/components/BlogCard'
 import type { BlogPost } from '@/lib/types'
+import { SitePageViewTracker } from '@/components/SitePageViewTracker'
 import { getDepoimentosPublicos, type DepoimentoPublico } from '@/app/sistema/actions/depoimentos'
 import { DepoimentosCarousel } from '@/components/DepoimentosCarousel'
 
@@ -93,6 +94,7 @@ export default async function Home() {
 
   return (
     <main>
+      <SitePageViewTracker path="/" />
       {/* ── Hero ─────────────────────────────────────────── */}
       <section className="relative bg-navy overflow-hidden">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-gold/25 via-transparent to-transparent pointer-events-none" />

@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { BlogCard } from '@/components/BlogCard'
 import type { BlogPost } from '@/lib/types'
+import { SitePageViewTracker } from '@/components/SitePageViewTracker'
 
 export const dynamic = 'force-dynamic'
 
@@ -28,6 +29,7 @@ export default async function CasesPage() {
 
   return (
     <main className="min-h-screen">
+      <SitePageViewTracker path="/cases" />
       <div className="bg-navy py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <span className="text-gold font-semibold text-xs uppercase tracking-widest">Portfólio</span>

@@ -70,3 +70,95 @@ export async function salvarMvvCompleto(dados: Record<string, string>) {
   revalidatePath('/missao-visao-valores')
   revalidatePath('/sistema/site')
 }
+
+// ── Rastreamento de visitas ao site público ────────────────────────
+
+export async function registrarVisitaSite(
+  pagePath: string,
+  sessionId: string,
+  referrer: string,
+  userAgent: string,
+) {
+  try {
+    await serviceClient().from('spress_site_visitas').insert({
+      page_path:  pagePath,
+      session_id: sessionId || null,
+      referrer:   referrer  || null,
+      user_agent: userAgent || null,
+    })
+  } catch {
+    // silently ignore
+  }
+}
+
+export async function getSitePageAnalytics(days: number) {
+  const sb    = serviceClient()
+  const since = days > 0
+    ? new Date(Date.now() - days * 86400000).toISOString()
+    : new Date(0).toISOString()
+
+  const { data: visitas } = await sb
+    .from('spress_site_visitas')
+    .select('page_path, session_id, referrer, created_at')
+    .gte('created_at', since)
+
+  const v = visitas ?? []
+
+  const byDay: Record<string, number> = {}
+  for (const row of v) {
+    const day = row.created_at.slice(0, 10)
+    byDay[day] = (byDay[day] ?? 0) + 1
+  }
+
+  const uniqueSessions = new Set(v.map((r) => r.session_id).filter(Boolean)).size
+
+  const pageViews:  Record<string, number>      = {}
+  const pageUnique: Record<string, Set<string>> = {}
+  for (const row of v) {
+    pageViews[row.page_path]  = (pageViews[row.page_path] ?? 0) + 1
+    if (!pageUnique[row.page_path]) pageUnique[row.page_path] = new Set()
+    if (row.session_id) pageUnique[row.page_path].add(row.session_id)
+  }
+
+  const PAGE_LABELS: Record<string, string> = {
+    '/':                     'Home',
+    '/noticias':             'Notícias',
+    '/cases':                'Cases',
+    '/equipe':               'Equipe',
+    '/missao-visao-valores': 'Missão, Visão e Valores',
+  }
+
+  const topPages = Object.entries(pageViews)
+    .map(([path, views]) => ({
+      path,
+      label:  PAGE_LABELS[path] ?? path,
+      views,
+      unique: pageUnique[path]?.size ?? 0,
+    }))
+    .sort((a, b) => b.views - a.views)
+
+  const sources: Record<string, number> = {}
+  for (const row of v) {
+    let src = 'Direto'
+    if (row.referrer) {
+      try {
+        const host = new URL(row.referrer).hostname.replace('www.', '')
+        src = host || 'Direto'
+      } catch { src = 'Outro' }
+    }
+    sources[src] = (sources[src] ?? 0) + 1
+  }
+
+  const trafficSources = Object.entries(sources)
+    .sort(([, a], [, b]) => b - a)
+    .slice(0, 8)
+    .map(([source, count]) => ({ source, count }))
+
+  return {
+    totalViews: v.length,
+    uniqueSessions,
+    byDay,
+    topPages,
+    trafficSources,
+  }
+}

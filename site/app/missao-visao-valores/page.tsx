@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { supabase } from '@/lib/supabase'
+import { SitePageViewTracker } from '@/components/SitePageViewTracker'
 
 export const revalidate = 60
 
@@ -40,6 +41,7 @@ export default async function MissaoVisaoValoresPage() {
 
   return (
     <main>
+      <SitePageViewTracker path="/missao-visao-valores" />
       {/* ── Hero ── */}
       <section className="relative bg-navy overflow-hidden">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-gold/20 via-transparent to-transparent pointer-events-none" />
