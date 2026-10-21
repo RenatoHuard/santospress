@@ -13,36 +13,60 @@ import {
 // ── Configuração de status ──────────────────────────────────────────
 
 const STATUS_CONFIG = [
-  { nome: 'Backlog',             color: '#94a3b8', colorHex: 'bg-slate-400',  short: 'BL'  },
-  { nome: 'Priorizados',         color: '#3b82f6', colorHex: 'bg-blue-500',   short: 'PR'  },
-  { nome: 'Em Desenvolvimento',  color: '#f59e0b', colorHex: 'bg-amber-500',  short: 'DEV' },
-  { nome: 'Cancelados',          color: '#ef4444', colorHex: 'bg-red-500',    short: 'CAN' },
-  { nome: 'Concluídos',          color: '#22c55e', colorHex: 'bg-green-500',  short: 'OK'  },
+  { nome: 'Backlog',            color: '#94a3b8' },
+  { nome: 'Priorizados',        color: '#3b82f6' },
+  { nome: 'Em Desenvolvimento', color: '#f59e0b' },
+  { nome: 'Cancelados',         color: '#ef4444' },
+  { nome: 'Concluídos',         color: '#22c55e' },
 ]
 
-const PERIOD_OPTIONS = [
-  { value: '1m',  label: 'Este Mês' },
-  { value: '3m',  label: '3 Meses'  },
-  { value: '6m',  label: '6 Meses'  },
-  { value: '12m', label: '1 Ano'    },
-]
+const MONTH_LABELS: Record<string, string> = {
+  '01': 'Jan', '02': 'Fev', '03': 'Mar', '04': 'Abr',
+  '05': 'Mai', '06': 'Jun', '07': 'Jul', '08': 'Ago',
+  '09': 'Set', '10': 'Out', '11': 'Nov', '12': 'Dez',
+}
 
-// ── Helpers de data ─────────────────────────────────────────────────
+function formatMonth(yyyymm: string): string {
+  const [y, m] = yyyymm.split('-')
+  return `${MONTH_LABELS[m]} ${y.slice(2)}`
+}
 
-function getPeriodRange(period: string): { from: Date; to: Date } {
-  const to = new Date()
-  to.setHours(23, 59, 59, 999)
-  const from = new Date()
-  from.setHours(0, 0, 0, 0)
-  if (period === '1m') {
-    from.setDate(1)
-  } else if (period === '3m') {
-    from.setMonth(from.getMonth() - 2); from.setDate(1)
-  } else if (period === '6m') {
-    from.setMonth(from.getMonth() - 5); from.setDate(1)
-  } else {
-    from.setMonth(from.getMonth() - 11); from.setDate(1)
+function formatMonthFull(yyyymm: string): string {
+  const [y, m] = yyyymm.split('-')
+  return `${MONTH_LABELS[m]} ${y}`
+}
+
+function currentYYYYMM(): string {
+  const n = new Date()
+  return `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, '0')}`
+}
+
+function getMonthOptions(): { value: string; label: string }[] {
+  const opts = []
+  const now = new Date()
+  for (let i = 0; i < 24; i++) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
+    const mm = String(d.getMonth() + 1).padStart(2, '0')
+    const yyyymm = `${d.getFullYear()}-${mm}`
+    opts.push({ value: yyyymm, label: `${MONTH_LABELS[mm]} ${d.getFullYear()}` })
   }
+  return opts
+}
+
+function getMonthRange(yyyymm: string): { from: Date; to: Date } {
+  const [y, m] = yyyymm.split('-').map(Number)
+  return {
+    from: new Date(y, m - 1, 1, 0, 0, 0, 0),
+    to:   new Date(y, m,     0, 23, 59, 59, 999),
+  }
+}
+
+function getPeriodRange(duration: string): { from: Date; to: Date } {
+  const to = new Date(); to.setHours(23, 59, 59, 999)
+  const from = new Date(); from.setHours(0, 0, 0, 0)
+  if      (duration === '3m')  { from.setMonth(from.getMonth() -  2); from.setDate(1) }
+  else if (duration === '6m')  { from.setMonth(from.getMonth() -  5); from.setDate(1) }
+  else                         { from.setMonth(from.getMonth() - 11); from.setDate(1) }
   return { from, to }
 }
 
@@ -56,18 +80,7 @@ function getMonthsInRange(from: Date, to: Date): string[] {
   return months
 }
 
-const MONTH_LABELS: Record<string, string> = {
-  '01': 'Jan', '02': 'Fev', '03': 'Mar', '04': 'Abr',
-  '05': 'Mai', '06': 'Jun', '07': 'Jul', '08': 'Ago',
-  '09': 'Set', '10': 'Out', '11': 'Nov', '12': 'Dez',
-}
-
-function formatMonth(yyyymm: string): string {
-  const [y, m] = yyyymm.split('-')
-  return `${MONTH_LABELS[m]} ${y.slice(2)}`
-}
-
-// ── Componente de barras por status ────────────────────────────────
+// ── Gráfico de distribuição por status (modo Mês) ───────────────────
 
 interface StatusBarData { nome: string; color: string; count: number }
 
@@ -76,24 +89,24 @@ function StatusBarChart({
   onBarClick,
   activeBar,
 }: {
-  data: StatusBarData[]
+  data:        StatusBarData[]
   onBarClick?: (nome: string) => void
-  activeBar?: string | null
+  activeBar?:  string | null
 }) {
-  const max = Math.max(...data.map((d) => d.count), 1)
-  const BAR_W = 52
-  const GAP   = 14
-  const H     = 150
+  const max    = Math.max(...data.map((d) => d.count), 1)
+  const BAR_W  = 56
+  const GAP    = 16
+  const H      = 160
   const totalW = data.length * (BAR_W + GAP) - GAP
 
   return (
     <div className="overflow-x-auto">
-      <svg width={totalW} height={H + 44} style={{ overflow: 'visible', minWidth: totalW }}>
+      <svg width={totalW} height={H + 48} style={{ overflow: 'visible', minWidth: totalW }}>
         {data.map((d, i) => {
-          const barH   = Math.max(d.count > 0 ? 4 : 0, (d.count / max) * H)
-          const x      = i * (BAR_W + GAP)
-          const y      = H - barH
-          const faded  = activeBar != null && activeBar !== d.nome
+          const barH  = Math.max(d.count > 0 ? 4 : 0, (d.count / max) * H)
+          const x     = i * (BAR_W + GAP)
+          const y     = H - barH
+          const faded = activeBar != null && activeBar !== d.nome
           return (
             <g
               key={d.nome}
@@ -102,26 +115,22 @@ function StatusBarChart({
             >
               <rect
                 x={x} y={y} width={BAR_W} height={barH}
-                fill={d.color} rx={5}
-                opacity={faded ? 0.3 : 1}
+                fill={d.color} rx={6}
+                opacity={faded ? 0.28 : 1}
                 style={{ transition: 'opacity 0.2s' }}
               />
               {d.count > 0 && (
-                <text
-                  x={x + BAR_W / 2} y={y - 6}
-                  textAnchor="middle" fontSize={13} fontWeight="700"
-                  fill={faded ? '#bbb' : '#444'}
-                  className="dark:fill-white"
+                <text x={x + BAR_W / 2} y={y - 7} textAnchor="middle" fontSize={14} fontWeight="700"
+                  fill={faded ? '#bbb' : '#444'} className="dark:fill-white"
                 >
                   {d.count}
                 </text>
               )}
-              <text
-                x={x + BAR_W / 2} y={H + 18}
-                textAnchor="middle" fontSize={10}
-                fill="#888"
-              >
+              <text x={x + BAR_W / 2} y={H + 20} textAnchor="middle" fontSize={11} fill="#888">
                 {d.nome.split(' ')[0].slice(0, 7)}
+              </text>
+              <text x={x + BAR_W / 2} y={H + 36} textAnchor="middle" fontSize={10} fill="#aaa">
+                {d.nome.includes(' ') ? d.nome.split(' ').slice(1).join(' ').slice(0, 8) : ''}
               </text>
             </g>
           )
@@ -131,7 +140,7 @@ function StatusBarChart({
   )
 }
 
-// ── Componente de barras mensais empilhadas ─────────────────────────
+// ── Gráfico de evolução mensal empilhado (modo Período) ─────────────
 
 interface MonthData {
   month:    string
@@ -150,25 +159,26 @@ function MonthlyStackedChart({
   activeMonth?:  string | null
 }) {
   const maxTotal = Math.max(...months.map((m) => m.total), 1)
-  const BAR_W    = 42
-  const GAP      = 14
-  const H        = 150
+  const BAR_W    = 44
+  const GAP      = 18
+  const H        = 180
   const totalW   = months.length * (BAR_W + GAP) - GAP
 
   return (
     <div className="overflow-x-auto">
       <svg width={totalW} height={H + 44} style={{ overflow: 'visible', minWidth: totalW }}>
         {months.map((m, i) => {
-          const x      = i * (BAR_W + GAP)
-          const faded  = activeMonth != null && activeMonth !== m.month
-          const segs   = m.statuses.filter((s) => s.count > 0)
+          const x     = i * (BAR_W + GAP)
+          const faded = activeMonth != null && activeMonth !== m.month
 
           let bottom = H
-          const bars = segs.map((s) => {
-            const segH = Math.max(2, (s.count / maxTotal) * H)
-            bottom -= segH
-            return { ...s, segH, y: bottom }
-          })
+          const bars = m.statuses
+            .filter((s) => s.count > 0)
+            .map((s) => {
+              const segH = Math.max(2, (s.count / maxTotal) * H)
+              bottom -= segH
+              return { ...s, segH, y: bottom }
+            })
 
           return (
             <g
@@ -180,26 +190,21 @@ function MonthlyStackedChart({
                 <rect
                   key={b.nome}
                   x={x} y={b.y} width={BAR_W} height={b.segH}
-                  fill={b.color} opacity={faded ? 0.28 : 1}
+                  fill={b.color} opacity={faded ? 0.22 : 1}
                   style={{ transition: 'opacity 0.2s' }}
                 />
               ))}
               {m.total > 0 && (
                 <text
                   x={x + BAR_W / 2}
-                  y={H - (m.total / maxTotal) * H - 6}
-                  textAnchor="middle" fontSize={11} fontWeight="700"
-                  fill={faded ? '#bbb' : '#444'}
-                  className="dark:fill-white"
+                  y={H - (m.total / maxTotal) * H - 7}
+                  textAnchor="middle" fontSize={12} fontWeight="700"
+                  fill={faded ? '#ccc' : '#444'} className="dark:fill-white"
                 >
                   {m.total}
                 </text>
               )}
-              <text
-                x={x + BAR_W / 2} y={H + 18}
-                textAnchor="middle" fontSize={10}
-                fill="#888"
-              >
+              <text x={x + BAR_W / 2} y={H + 18} textAnchor="middle" fontSize={11} fill="#888">
                 {m.label}
               </text>
             </g>
@@ -217,7 +222,7 @@ function StatusLegend() {
     <div className="flex flex-wrap gap-3">
       {STATUS_CONFIG.map((s) => (
         <div key={s.nome} className="flex items-center gap-1.5">
-          <span className="inline-block w-3 h-3 rounded-sm" style={{ backgroundColor: s.color }} />
+          <span className="inline-block w-3 h-3 rounded-sm flex-shrink-0" style={{ backgroundColor: s.color }} />
           <span className="text-xs text-gray-500 dark:text-gray-400">{s.nome}</span>
         </div>
       ))}
@@ -227,55 +232,50 @@ function StatusLegend() {
 
 // ── Página principal ────────────────────────────────────────────────
 
-export default function GestaoPage() {
-  const [tab,              setTab]              = useState<'cliente' | 'atendente'>('cliente')
-  const [period,           setPeriod]           = useState('3m')
-  const [clientes,         setClientes]         = useState<GestaoCliente[]>([])
-  const [atendentes,       setAtendentes]       = useState<GestaoAtendente[]>([])
-  const [selectedId,       setSelectedId]       = useState<string>('')
-  const [demands,          setDemands]          = useState<DemandaRow[]>([])
-  const [loading,          setLoading]          = useState(false)
-  const [activeBar,        setActiveBar]        = useState<string | null>(null)
-  const [activeMonth,      setActiveMonth]      = useState<string | null>(null)
+type ViewMode = 'mes' | 'periodo'
 
-  // Carrega listas de clientes e atendentes
+export default function GestaoPage() {
+  const [tab,          setTab]          = useState<'cliente' | 'atendente'>('cliente')
+  const [viewMode,     setViewMode]     = useState<ViewMode>('periodo')
+  const [selectedMes,  setSelectedMes]  = useState(currentYYYYMM)
+  const [periodDur,    setPeriodDur]    = useState('3m')
+  const [clientes,     setClientes]     = useState<GestaoCliente[]>([])
+  const [atendentes,   setAtendentes]   = useState<GestaoAtendente[]>([])
+  const [selectedId,   setSelectedId]   = useState('')
+  const [demands,      setDemands]      = useState<DemandaRow[]>([])
+  const [loading,      setLoading]      = useState(false)
+  const [activeBar,    setActiveBar]    = useState<string | null>(null)
+  const [activeMonth,  setActiveMonth]  = useState<string | null>(null)
+
+  const monthOptions = getMonthOptions()
+
   useEffect(() => {
     Promise.all([getGestaoClientes(), getGestaoAtendentes()]).then(([c, a]) => {
-      setClientes(c)
-      setAtendentes(a)
+      setClientes(c); setAtendentes(a)
     })
   }, [])
 
-  // Reseta seleção ao trocar tab
   useEffect(() => {
-    setSelectedId('')
-    setDemands([])
-    setActiveBar(null)
-    setActiveMonth(null)
+    setSelectedId(''); setDemands([]); setActiveBar(null); setActiveMonth(null)
   }, [tab])
 
-  // Busca dados quando muda seleção ou período
   const loadData = useCallback(async () => {
     if (!selectedId) return
-    const { from, to } = getPeriodRange(period)
-    setLoading(true)
-    setActiveBar(null)
-    setActiveMonth(null)
+    const { from, to } = viewMode === 'mes'
+      ? getMonthRange(selectedMes)
+      : getPeriodRange(periodDur)
+    setLoading(true); setActiveBar(null); setActiveMonth(null)
     try {
       const rows = await getDemandaStats(tab, selectedId, from.toISOString(), to.toISOString())
       setDemands(rows)
     } finally {
       setLoading(false)
     }
-  }, [tab, selectedId, period])
+  }, [tab, selectedId, viewMode, selectedMes, periodDur])
 
   useEffect(() => { loadData() }, [loadData])
 
-  // ── Dados dos gráficos ──────────────────────────────────────────
-
-  const { from, to } = getPeriodRange(period)
-  const months       = getMonthsInRange(from, to)
-  const isSingleMonth = period === '1m'
+  // ── Dados derivados ────────────────────────────────────────────
 
   const statusData: StatusBarData[] = STATUS_CONFIG.map((s) => ({
     nome:  s.nome,
@@ -283,57 +283,67 @@ export default function GestaoPage() {
     count: demands.filter((d) => d.coluna_nome === s.nome).length,
   }))
 
+  const { from: periodFrom, to: periodTo } = viewMode === 'mes'
+    ? getMonthRange(selectedMes)
+    : getPeriodRange(periodDur)
+
+  const months = getMonthsInRange(periodFrom, periodTo)
+
   const monthlyData: MonthData[] = months.map((m) => {
-    const monthDemands = demands.filter((d) => d.created_at.slice(0, 7) === m)
+    const md = demands.filter((d) => d.created_at.slice(0, 7) === m)
     return {
       month:    m,
       label:    formatMonth(m),
-      total:    monthDemands.length,
+      total:    md.length,
       statuses: STATUS_CONFIG.map((s) => ({
         nome:  s.nome,
         color: s.color,
-        count: monthDemands.filter((d) => d.coluna_nome === s.nome).length,
+        count: md.filter((d) => d.coluna_nome === s.nome).length,
       })),
     }
   })
 
-  // Totais rápidos
   const total     = demands.length
   const backlog   = demands.filter((d) => d.coluna_nome === 'Backlog').length
   const emDev     = demands.filter((d) => d.coluna_nome === 'Em Desenvolvimento').length
   const concluido = demands.filter((d) => d.coluna_nome === 'Concluídos').length
 
-  // Filtragem da tabela (apenas aba atendente)
+  // Tabela: filtra por status (modo mês) ou mês (modo período)
   const tableDemands = demands.filter((d) => {
-    if (activeMonth && d.created_at.slice(0, 7) !== activeMonth) return false
     if (activeBar   && d.coluna_nome !== activeBar)               return false
+    if (activeMonth && d.created_at.slice(0, 7) !== activeMonth)  return false
     return true
   })
 
-  // ── Handlers ───────────────────────────────────────────────────
+  const hasTableFilter = !!(activeBar || activeMonth)
 
   function handleBarClick(nome: string) {
-    setActiveBar((prev) => (prev === nome ? null : nome))
+    if (tab !== 'atendente') return
+    setActiveBar((p) => (p === nome ? null : nome))
     setActiveMonth(null)
   }
 
   function handleMonthClick(month: string) {
-    setActiveMonth((prev) => (prev === month ? null : month))
+    if (tab !== 'atendente') return
+    setActiveMonth((p) => (p === month ? null : month))
     setActiveBar(null)
   }
 
-  const entityList   = tab === 'cliente' ? clientes : atendentes
-  const placeholder  = tab === 'cliente' ? 'Selecione um cliente…' : 'Selecione um atendente…'
+  function clearFilter() { setActiveBar(null); setActiveMonth(null) }
+
+  const entityList  = tab === 'cliente' ? clientes : atendentes
+  const placeholder = tab === 'cliente' ? 'Selecione um cliente…' : 'Selecione um atendente…'
 
   return (
     <div className="p-6 max-w-5xl mx-auto space-y-6">
+
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Gestão de Demandas</h1>
         <p className="text-sm text-gray-500 mt-1">Visão gerencial do pipeline por cliente e atendente</p>
       </div>
 
-      {/* Tabs */}
+      {/* Tabs Cliente / Atendente */}
       <div className="flex gap-1 bg-gray-100 dark:bg-[#1a1a1a] rounded-xl p-1 w-fit">
         {(['cliente', 'atendente'] as const).map((t) => (
           <button
@@ -352,6 +362,7 @@ export default function GestaoPage() {
 
       {/* Filtros */}
       <div className="flex flex-wrap gap-3 items-center">
+        {/* Seletor de entidade */}
         <select
           value={selectedId}
           onChange={(e) => setSelectedId(e.target.value)}
@@ -363,21 +374,51 @@ export default function GestaoPage() {
           ))}
         </select>
 
-        <div className="flex gap-1">
-          {PERIOD_OPTIONS.map((opt) => (
+        {/* Modo de visualização */}
+        <div className="flex gap-1 bg-gray-100 dark:bg-[#1a1a1a] rounded-lg p-1">
+          {(['mes', 'periodo'] as const).map((m) => (
             <button
-              key={opt.value}
-              onClick={() => setPeriod(opt.value)}
-              className={`px-3 py-2 rounded-lg text-sm font-medium border transition-all ${
-                period === opt.value
-                  ? 'bg-gold text-white border-gold'
-                  : 'border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-400 hover:border-gold hover:text-gold'
+              key={m}
+              onClick={() => { setViewMode(m); setActiveBar(null); setActiveMonth(null) }}
+              className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
+                viewMode === m
+                  ? 'bg-white dark:bg-[#2a2a2a] text-gray-900 dark:text-white shadow'
+                  : 'text-gray-500 hover:text-gray-700'
               }`}
             >
-              {opt.label}
+              {m === 'mes' ? 'Mês' : 'Período'}
             </button>
           ))}
         </div>
+
+        {/* Seletor de mês ou duração de período */}
+        {viewMode === 'mes' ? (
+          <select
+            value={selectedMes}
+            onChange={(e) => setSelectedMes(e.target.value)}
+            className="border border-gray-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm bg-white dark:bg-[#1c1c1c] text-gray-900 dark:text-white"
+          >
+            {monthOptions.map((o) => (
+              <option key={o.value} value={o.value}>{o.label}</option>
+            ))}
+          </select>
+        ) : (
+          <div className="flex gap-1">
+            {[{ v: '3m', l: '3 Meses' }, { v: '6m', l: '6 Meses' }, { v: '12m', l: '1 Ano' }].map((opt) => (
+              <button
+                key={opt.v}
+                onClick={() => setPeriodDur(opt.v)}
+                className={`px-3 py-2 rounded-lg text-sm font-medium border transition-all ${
+                  periodDur === opt.v
+                    ? 'bg-gold text-white border-gold'
+                    : 'border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-400 hover:border-gold hover:text-gold'
+                }`}
+              >
+                {opt.l}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Conteúdo */}
@@ -395,82 +436,97 @@ export default function GestaoPage() {
         </div>
       ) : (
         <div className="space-y-6">
+
           {/* Cards de totais */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             {[
-              { label: 'Total',           value: total,     color: 'text-gray-700 dark:text-gray-200' },
-              { label: 'Backlog',         value: backlog,   color: 'text-slate-500' },
-              { label: 'Em Dev.',         value: emDev,     color: 'text-amber-500' },
-              { label: 'Concluídos',      value: concluido, color: 'text-green-500' },
-            ].map((card) => (
-              <div key={card.label} className="bg-white dark:bg-[#1c1c1c] rounded-xl border border-gray-100 dark:border-white/8 p-4">
-                <p className="text-xs text-gray-400 uppercase tracking-wider">{card.label}</p>
-                <p className={`text-3xl font-bold mt-1 ${card.color}`}>{card.value}</p>
+              { label: 'Total',      value: total,     color: 'text-gray-700 dark:text-gray-200' },
+              { label: 'Backlog',    value: backlog,   color: 'text-slate-500'                   },
+              { label: 'Em Dev.',    value: emDev,     color: 'text-amber-500'                   },
+              { label: 'Concluídos', value: concluido, color: 'text-green-500'                   },
+            ].map((c) => (
+              <div key={c.label} className="bg-white dark:bg-[#1c1c1c] rounded-xl border border-gray-100 dark:border-white/8 p-4">
+                <p className="text-xs text-gray-400 uppercase tracking-wider">{c.label}</p>
+                <p className={`text-3xl font-bold mt-1 ${c.color}`}>{c.value}</p>
               </div>
             ))}
           </div>
 
-          {/* Distribuição por status */}
-          <div className="bg-white dark:bg-[#1c1c1c] rounded-xl border border-gray-100 dark:border-white/8 p-5">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h2 className="font-semibold text-gray-800 dark:text-white">Distribuição por Status</h2>
-                <p className="text-xs text-gray-400 mt-0.5">
-                  {isSingleMonth ? 'Demandas criadas neste mês' : 'Total no período selecionado'}
-                  {activeBar && (
-                    <span className="ml-2 text-gold">
-                      — filtrado: {activeBar}
-                      <button onClick={() => setActiveBar(null)} className="ml-1 hover:text-red-400">✕</button>
-                    </span>
-                  )}
-                </p>
-              </div>
-              <StatusLegend />
-            </div>
-            {total === 0 ? (
-              <p className="text-sm text-gray-400 py-8 text-center">Nenhuma demanda no período</p>
-            ) : (
-              <StatusBarChart
-                data={statusData}
-                onBarClick={tab === 'atendente' ? handleBarClick : undefined}
-                activeBar={activeBar}
-              />
-            )}
-          </div>
-
-          {/* Evolução mensal — apenas para períodos > 1 mês */}
-          {!isSingleMonth && total > 0 && (
+          {/* ── Modo Mês: gráfico de distribuição por status ── */}
+          {viewMode === 'mes' && (
             <div className="bg-white dark:bg-[#1c1c1c] rounded-xl border border-gray-100 dark:border-white/8 p-5">
-              <div className="flex items-center justify-between mb-4">
+              <div className="flex flex-wrap items-start justify-between gap-3 mb-5">
                 <div>
-                  <h2 className="font-semibold text-gray-800 dark:text-white">Evolução Mensal</h2>
+                  <h2 className="font-semibold text-gray-800 dark:text-white">
+                    Distribuição por Status
+                    <span className="ml-2 text-sm font-normal text-gray-400">
+                      — {formatMonthFull(selectedMes)}
+                    </span>
+                  </h2>
                   <p className="text-xs text-gray-400 mt-0.5">
-                    Demandas criadas por mês, empilhadas por status
-                    {activeMonth && (
+                    {total === 0 ? 'Nenhuma demanda criada neste mês' : `${total} demanda${total !== 1 ? 's' : ''} criada${total !== 1 ? 's' : ''} neste mês`}
+                    {activeBar && (
                       <span className="ml-2 text-gold">
-                        — filtrado: {formatMonth(activeMonth)}
-                        <button onClick={() => setActiveMonth(null)} className="ml-1 hover:text-red-400">✕</button>
+                        — filtrado: {activeBar}
+                        <button onClick={clearFilter} className="ml-1 hover:text-red-400">✕</button>
                       </span>
                     )}
                   </p>
                 </div>
                 <StatusLegend />
               </div>
-              <MonthlyStackedChart
-                months={monthlyData}
-                onMonthClick={tab === 'atendente' ? handleMonthClick : undefined}
-                activeMonth={activeMonth}
-              />
+              {total === 0 ? (
+                <p className="text-sm text-gray-400 py-8 text-center">Nenhuma demanda no período</p>
+              ) : (
+                <StatusBarChart
+                  data={statusData}
+                  onBarClick={tab === 'atendente' ? handleBarClick : undefined}
+                  activeBar={activeBar}
+                />
+              )}
             </div>
           )}
 
-          {/* Tabela de demandas — apenas aba atendente, visível quando há filtro ativo */}
-          {tab === 'atendente' && (activeBar || activeMonth) && (
+          {/* ── Modo Período: gráfico empilhado por mês ── */}
+          {viewMode === 'periodo' && (
+            <div className="bg-white dark:bg-[#1c1c1c] rounded-xl border border-gray-100 dark:border-white/8 p-5">
+              <div className="flex flex-wrap items-start justify-between gap-3 mb-5">
+                <div>
+                  <h2 className="font-semibold text-gray-800 dark:text-white">Demandas por Mês</h2>
+                  <p className="text-xs text-gray-400 mt-0.5">
+                    Demandas criadas por mês, empilhadas por status
+                    {tab === 'atendente' && (
+                      <span className="text-gray-400"> · clique numa coluna para ver os detalhes</span>
+                    )}
+                    {activeMonth && (
+                      <span className="ml-2 text-gold">
+                        — filtrado: {formatMonthFull(activeMonth)}
+                        <button onClick={clearFilter} className="ml-1 hover:text-red-400">✕</button>
+                      </span>
+                    )}
+                  </p>
+                </div>
+                <StatusLegend />
+              </div>
+              {total === 0 ? (
+                <p className="text-sm text-gray-400 py-8 text-center">Nenhuma demanda no período</p>
+              ) : (
+                <MonthlyStackedChart
+                  months={monthlyData}
+                  onMonthClick={tab === 'atendente' ? handleMonthClick : undefined}
+                  activeMonth={activeMonth}
+                />
+              )}
+            </div>
+          )}
+
+          {/* ── Tabela de detalhe (apenas Visão Atendente com filtro ativo) ── */}
+          {tab === 'atendente' && hasTableFilter && (
             <div className="bg-white dark:bg-[#1c1c1c] rounded-xl border border-gray-100 dark:border-white/8 overflow-hidden">
               <div className="px-5 py-4 border-b border-gray-100 dark:border-white/8">
                 <h2 className="font-semibold text-gray-800 dark:text-white">
                   Demandas
-                  {activeMonth && ` — ${formatMonth(activeMonth)}`}
+                  {activeMonth && ` — ${formatMonthFull(activeMonth)}`}
                   {activeBar   && ` — ${activeBar}`}
                 </h2>
                 <p className="text-xs text-gray-400 mt-0.5">{tableDemands.length} demanda{tableDemands.length !== 1 ? 's' : ''}</p>
@@ -497,7 +553,7 @@ export default function GestaoPage() {
                             <td className="px-5 py-3 text-gray-900 dark:text-white font-medium">{d.titulo}</td>
                             <td className="px-5 py-3">
                               <span
-                                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-white text-xs font-medium"
+                                className="inline-flex items-center px-2.5 py-1 rounded-full text-white text-xs font-medium"
                                 style={{ backgroundColor: sc?.color ?? '#94a3b8' }}
                               >
                                 {d.coluna_nome}
@@ -515,6 +571,7 @@ export default function GestaoPage() {
               )}
             </div>
           )}
+
         </div>
       )}
     </div>
