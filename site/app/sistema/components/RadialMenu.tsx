@@ -273,7 +273,8 @@ export function RadialMenu() {
       icon: <IconSite px={24} />,
       largeIcon: <IconSite px={36} />,
       subItems: [
-        { id: 'editar-site', label: 'Editar Site', href: '/sistema/site', icon: <IconEditar /> },
+        { id: 'editar-site',     label: 'Editar Site', href: '/sistema/site',                        icon: <IconEditar /> },
+        { id: 'relatorios-site', label: 'Relatórios',  href: '/sistema/blog/relatorios?tab=site',    icon: <IconRelatorio /> },
         {
           type: 'subgroup',
           id: 'noticias',
