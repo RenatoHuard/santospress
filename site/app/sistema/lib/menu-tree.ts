@@ -9,8 +9,9 @@ export const MENU_NODES: MenuNode[] = [
   { id: 'meus-dados',   label: 'Meus Dados',     parentId: null,          isGroup: true  },
   { id: 'visualizar',   label: 'Visualizar',      parentId: 'meus-dados',  isGroup: false },
   { id: 'atualizar',    label: 'Atualizar Dados', parentId: 'meus-dados',  isGroup: false },
-  { id: 'kanban',       label: 'Kanban',          parentId: null,          isGroup: false },
-  { id: 'calendario',   label: 'Calendário',      parentId: null,          isGroup: false },
+  { id: 'kanban',       label: 'Kanban',          parentId: null,          isGroup: true  },
+  { id: 'calendario',   label: 'Calendário',      parentId: 'kanban',      isGroup: false },
+  { id: 'gestao',       label: 'Gestão',          parentId: 'kanban',      isGroup: false },
   { id: 'cadastros',       label: 'Cadastros',          parentId: null,          isGroup: true  },
   { id: 'funcionarios',    label: 'Colaboradores',       parentId: 'cadastros',   isGroup: false },
   { id: 'clientes',        label: 'Clientes',            parentId: 'cadastros',   isGroup: false },
@@ -38,7 +39,7 @@ export const CONFIGURABLE_ROLES = [
 ] as const
 
 export const DEFAULT_PERMISSIONS: Record<string, string[]> = {
-  gestor:      ['meus-dados','visualizar','atualizar','kanban','calendario','cadastros','funcionarios','clientes','usuarios-sistema','site','editar-site','relatorios-site','noticias','nova-noticia','publicacoes','rascunhos','relatorios','cases','nova-case','publicacoes-cases','rascunhos-cases','relatorios-cases'],
+  gestor:      ['meus-dados','visualizar','atualizar','kanban','calendario','gestao','cadastros','funcionarios','clientes','usuarios-sistema','site','editar-site','relatorios-site','noticias','nova-noticia','publicacoes','rascunhos','relatorios','cases','nova-case','publicacoes-cases','rascunhos-cases','relatorios-cases'],
   rh:          ['meus-dados','visualizar','atualizar','kanban','calendario','cadastros','funcionarios'],
   colaborador: ['meus-dados','visualizar','atualizar','kanban','calendario','site','noticias','publicacoes','cases','publicacoes-cases'],
   atendente:   ['meus-dados','visualizar','atualizar','kanban','calendario','cadastros','clientes','site','noticias','publicacoes','cases','publicacoes-cases'],
