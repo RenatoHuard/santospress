@@ -188,6 +188,11 @@ export default async function CasePostPage({ params }: Props) {
 
       <div className="bg-white">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+          {post.resumo && (
+            <p className="text-gray-500 text-lg mb-8 leading-relaxed border-l-4 border-gold pl-4">
+              {post.resumo}
+            </p>
+          )}
           {renderContent(post.conteudo ?? '')}
           <div className="mt-14 pt-8 border-t border-gray-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <Link href="/cases" className="text-gold font-semibold hover:underline text-sm">
