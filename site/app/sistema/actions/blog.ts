@@ -164,18 +164,26 @@ export async function getBlogAnalytics(days: number, tipo: 'noticia' | 'case' = 
     ? new Date(Date.now() - days * 86400000).toISOString()
     : new Date(0).toISOString()
 
-  const [{ data: visitas }, { data: posts }] = await Promise.all([
-    sb.from('spress_blog_visitas')
-      .select('post_id, session_id, referrer, created_at')
-      .gte('created_at', since),
-    sb.from('spress_blog_posts')
-      .select('id, titulo, slug, capa_url, status, publicado_em')
-      .eq('tipo', tipo)
-      .order('publicado_em', { ascending: false }),
-  ])
+  // Busca posts do tipo primeiro para filtrar visitas pelo post_id
+  const { data: posts } = await sb
+    .from('spress_blog_posts')
+    .select('id, titulo, slug, capa_url, status, publicado_em')
+    .eq('tipo', tipo)
+    .order('publicado_em', { ascending: false })
 
-  const v  = visitas ?? []
-  const p  = posts   ?? []
+  const p       = posts ?? []
+  const postIds = p.map((post) => post.id)
+
+  // Visitas apenas dos posts deste tipo
+  const { data: visitas } = postIds.length > 0
+    ? await sb
+        .from('spress_blog_visitas')
+        .select('post_id, session_id, referrer, created_at')
+        .in('post_id', postIds)
+        .gte('created_at', since)
+    : { data: [] }
+
+  const v = visitas ?? []
 
   // Pageviews por dia
   const byDay: Record<string, number> = {}
