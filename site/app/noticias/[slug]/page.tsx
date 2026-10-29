@@ -111,9 +111,31 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params
   const post = await getPost(slug)
   if (!post) return {}
+
+  const title       = post.seo_titulo  || post.titulo
+  const description = post.seo_descricao || post.resumo || undefined
+  const url         = `https://santospress.com.br/noticias/${post.slug}`
+  const images      = post.capa_url
+    ? [{ url: post.capa_url, alt: post.titulo }]
+    : []
+
   return {
-    title: `${post.titulo} | Santos Press Blog`,
-    description: post.resumo ?? undefined,
+    title:       `${title} | Santos Press`,
+    description,
+    openGraph: {
+      title,
+      description,
+      url,
+      type:          'article',
+      publishedTime: post.publicado_em ?? undefined,
+      images,
+    },
+    twitter: {
+      card:        'summary_large_image',
+      title,
+      description,
+      images:      post.capa_url ? [post.capa_url] : [],
+    },
   }
 }
 
