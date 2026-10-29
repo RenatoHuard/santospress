@@ -1,10 +1,10 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
-import { getBlogAnalytics } from '../../actions/blog'
+import { getBlogAnalytics, despublicarPost } from '../../actions/blog'
 import { getSitePageAnalytics } from '../../actions/site'
 
 // ── Tipos ──────────────────────────────────────────────────────────
@@ -90,9 +90,27 @@ function SparkBar({ byDay, days }: { byDay: Record<string, number>; days: number
 // ── Post card ──────────────────────────────────────────────────────
 
 function PostCard({ post, max, sortBy, tipo }: { post: TopPost; max: number; sortBy: string; tipo: 'noticia' | 'case' }) {
-  const [expanded, setExpanded] = useState(false)
+  const [expanded,      setExpanded]      = useState(false)
+  const [localStatus,   setLocalStatus]   = useState(post.status)
+  const [despublicando, setDespublicando] = useState(false)
+  const [actionError,   setActionError]   = useState<string | null>(null)
+
   const editHref = tipo === 'case' ? `/sistema/cases/${post.id}` : `/sistema/blog/${post.id}`
   const viewHref = tipo === 'case' ? `/cases/${post.slug}` : `/noticias/${post.slug}`
+
+  async function handleDespublicar(e: React.MouseEvent) {
+    e.stopPropagation()
+    setDespublicando(true)
+    setActionError(null)
+    try {
+      await despublicarPost(post.id, post.slug, tipo)
+      setLocalStatus('rascunho')
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'Erro ao despublicar')
+    } finally {
+      setDespublicando(false)
+    }
+  }
 
   return (
     <div
@@ -140,18 +158,57 @@ function PostCard({ post, max, sortBy, tipo }: { post: TopPost; max: number; sor
               <p className="text-[11px] text-gray-400 mt-0.5">Visitantes únicos</p>
             </div>
             <div className="text-center">
-              <p className="text-xl font-bold text-gray-900 dark:text-white">{post.status === 'publicado' ? '✓' : '—'}</p>
-              <p className="text-[11px] text-gray-400 mt-0.5">{post.status === 'publicado' ? 'Publicado' : 'Rascunho'}</p>
+              <p className={`text-xl font-bold ${localStatus === 'publicado' ? 'text-emerald-500' : 'text-amber-500'}`}>
+                {localStatus === 'publicado' ? '✓' : '—'}
+              </p>
+              <p className="text-[11px] text-gray-400 mt-0.5">{localStatus === 'publicado' ? 'Publicado' : 'Rascunho'}</p>
             </div>
           </div>
+
+          {actionError && (
+            <p className="text-xs text-red-500 mb-3 text-center">{actionError}</p>
+          )}
+
           <div className="flex gap-3">
-            <Link href={editHref} onClick={e => e.stopPropagation()} className="flex-1 text-center text-xs py-2 rounded-xl border border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-400 hover:border-gold hover:text-gold transition-colors">
+            <Link
+              href={editHref}
+              onClick={e => e.stopPropagation()}
+              className="flex-1 text-center text-xs py-2 rounded-xl border border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-400 hover:border-gold hover:text-gold transition-colors"
+            >
               Editar post
             </Link>
-            {post.slug && post.status === 'publicado' && (
-              <Link href={viewHref} target="_blank" onClick={e => e.stopPropagation()} className="flex-1 text-center text-xs py-2 rounded-xl border border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-400 hover:border-gold hover:text-gold transition-colors">
+
+            {post.slug && localStatus === 'publicado' && (
+              <Link
+                href={viewHref}
+                target="_blank"
+                onClick={e => e.stopPropagation()}
+                className="flex-1 text-center text-xs py-2 rounded-xl border border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-400 hover:border-gold hover:text-gold transition-colors"
+              >
                 Ver publicação ↗
               </Link>
+            )}
+
+            {localStatus === 'publicado' && (
+              <button
+                onClick={handleDespublicar}
+                disabled={despublicando}
+                className="flex-1 flex items-center justify-center gap-1.5 text-xs py-2 rounded-xl border border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-400 hover:border-amber-400 hover:text-amber-600 dark:hover:text-amber-400 disabled:opacity-50 transition-colors"
+              >
+                {despublicando ? (
+                  <>
+                    <span className="w-3 h-3 border-2 border-amber-400 border-t-transparent rounded-full animate-spin inline-block" />
+                    Aguarde...
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                    </svg>
+                    Despublicar
+                  </>
+                )}
+              </button>
             )}
           </div>
         </div>

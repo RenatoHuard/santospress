@@ -256,6 +256,29 @@ export async function getClientesBasico() {
   return (data ?? []) as { id: string; razao_social: string; nome_fantasia: string | null }[]
 }
 
+export async function despublicarPost(id: string, slug: string | null, tipo: string) {
+  const { error } = await serviceClient()
+    .from('spress_blog_posts')
+    .update({ status: 'rascunho', publicado_em: null })
+    .eq('id', id)
+  if (error) throw new Error(error.message)
+  const base = tipo === 'case' ? '/cases' : '/noticias'
+  if (slug) revalidatePath(`${base}/${slug}`)
+  revalidatePath(base)
+  revalidatePath('/')
+}
+
+export async function excluirPost(id: string) {
+  const { data, error } = await serviceClient()
+    .from('spress_blog_posts')
+    .delete()
+    .eq('id', id)
+    .eq('status', 'rascunho')
+    .select('id')
+  if (error) throw new Error(error.message)
+  if (!data?.length) throw new Error('Post não encontrado ou não é um rascunho')
+}
+
 export async function registrarVisita(
   postId: string,
   sessionId: string,
