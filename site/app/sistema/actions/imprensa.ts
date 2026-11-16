@@ -165,6 +165,21 @@ export interface ImprensaConfig {
   valor: Record<string, unknown>
 }
 
+// ── Opções distintas de veículos (para combobox) ──────────────────────
+
+export async function getVeiculoOpcoes(
+  campo: 'tipo' | 'periodicidade' | 'regiao' | 'cidade',
+): Promise<string[]> {
+  await requireStaff()
+  const { data } = await sb()
+    .from('spress_veiculos_imprensa')
+    .select(campo)
+    .not(campo, 'is', null)
+    .order(campo)
+  const valores = [...new Set((data as Record<string, unknown>[] ?? []).map(r => r[campo]).filter(Boolean))]
+  return valores as string[]
+}
+
 // ── Veículos ─────────────────────────────────────────────────────────
 
 export async function getVeiculos(filtros?: {

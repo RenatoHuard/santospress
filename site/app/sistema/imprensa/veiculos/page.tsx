@@ -1,7 +1,11 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState, useTransition } from 'react'
-import { getVeiculos, criarVeiculo, atualizarVeiculo, deletarVeiculo, type Veiculo } from '../../actions/imprensa'
+import {
+  getVeiculos, getVeiculoOpcoes, criarVeiculo, atualizarVeiculo, deletarVeiculo,
+  type Veiculo,
+} from '../../actions/imprensa'
+import { ComboInput } from '../../components/ComboInput'
 
 const TIER_STYLE: Record<string, string> = {
   tier1: 'bg-gold/15 text-yellow-700 dark:text-yellow-400',
@@ -29,9 +33,20 @@ const EMPTY: FormData = {
   principal: false, ativo: true, observacoes: '',
 }
 
+// Opções pré-carregadas para campos com combo
+interface OpcoesCampos {
+  tipo: string[]
+  periodicidade: string[]
+  regiao: string[]
+  cidade: string[]
+}
+
+const OPCOES_VAZIAS: OpcoesCampos = { tipo: [], periodicidade: [], regiao: [], cidade: [] }
+
 export default function VeiculosPage() {
   const [rows, setRows] = useState<Veiculo[]>([])
   const [loading, setLoading] = useState(true)
+  const [opcoes, setOpcoes] = useState<OpcoesCampos>(OPCOES_VAZIAS)
   const [busca, setBusca] = useState('')
   const [ativoFiltro, setAtivoFiltro] = useState<'todos' | 'ativo' | 'inativo'>('ativo')
   const [tierFiltro, setTierFiltro] = useState('')
@@ -61,20 +76,48 @@ export default function VeiculosPage() {
 
   useEffect(() => { load() }, [])
 
+  async function carregarOpcoes() {
+    const [tipo, periodicidade, regiao, cidade] = await Promise.all([
+      getVeiculoOpcoes('tipo'),
+      getVeiculoOpcoes('periodicidade'),
+      getVeiculoOpcoes('regiao'),
+      getVeiculoOpcoes('cidade'),
+    ])
+    setOpcoes({ tipo, periodicidade, regiao, cidade })
+  }
+
   function handleBusca(v: string) {
     setBusca(v)
     if (buscaTimer.current) clearTimeout(buscaTimer.current)
     buscaTimer.current = setTimeout(() => load(v, ativoFiltro, tierFiltro), 350)
   }
 
-  function abrirCriar() { setForm(EMPTY); setEditing(null); setErro(null); setModal('criar') }
+  function abrirCriar() {
+    setForm(EMPTY)
+    setEditing(null)
+    setErro(null)
+    setModal('criar')
+    carregarOpcoes()
+  }
+
   function abrirEditar(v: Veiculo) {
     setForm({
       nome: v.nome, tipo: v.tipo ?? '', regiao: v.regiao ?? '', cidade: v.cidade ?? '',
       tier: v.tier ?? '', periodicidade: v.periodicidade ?? '',
       principal: v.principal, ativo: v.ativo, observacoes: v.observacoes ?? '',
     })
-    setEditing(v); setErro(null); setModal('editar')
+    setEditing(v)
+    setErro(null)
+    setModal('editar')
+    carregarOpcoes()
+  }
+
+  function mergeOpcao(campo: keyof OpcoesCampos, valor: string) {
+    if (!valor.trim()) return
+    setOpcoes(prev => {
+      if (prev[campo].includes(valor)) return prev
+      return { ...prev, [campo]: [...prev[campo], valor].sort() }
+    })
   }
 
   function handleSalvar() {
@@ -84,17 +127,24 @@ export default function VeiculosPage() {
       try {
         const payload = {
           nome: form.nome.trim(),
-          tipo: form.tipo || undefined,
-          regiao: form.regiao || undefined,
-          cidade: form.cidade || undefined,
+          tipo: form.tipo.trim() || undefined,
+          regiao: form.regiao.trim() || undefined,
+          cidade: form.cidade.trim() || undefined,
           tier: (form.tier || undefined) as 'tier1' | 'tier2' | 'tier3' | undefined,
-          periodicidade: form.periodicidade || undefined,
+          periodicidade: form.periodicidade.trim() || undefined,
           principal: form.principal,
           ativo: form.ativo,
-          observacoes: form.observacoes || undefined,
+          observacoes: form.observacoes.trim() || undefined,
         }
         if (modal === 'criar') await criarVeiculo(payload)
         else if (editing) await atualizarVeiculo(editing.id, payload)
+
+        // Adiciona novos valores nas opções em memória
+        if (payload.tipo) mergeOpcao('tipo', payload.tipo)
+        if (payload.periodicidade) mergeOpcao('periodicidade', payload.periodicidade)
+        if (payload.regiao) mergeOpcao('regiao', payload.regiao)
+        if (payload.cidade) mergeOpcao('cidade', payload.cidade)
+
         setModal(null)
         load()
       } catch (e) {
@@ -132,19 +182,24 @@ export default function VeiculosPage() {
         </button>
       </div>
 
+      {/* Filtros */}
       <div className="flex flex-wrap gap-3 mb-5">
         <input
           type="text" placeholder="Buscar…" value={busca}
           onChange={e => handleBusca(e.target.value)}
           className="flex-1 min-w-[180px] bg-white dark:bg-[#111] border border-gray-200 dark:border-white/10 rounded-xl px-3 py-2 text-sm outline-none focus:border-gold/50"
         />
-        <select value={ativoFiltro} onChange={e => { setAtivoFiltro(e.target.value as typeof ativoFiltro); load(busca, e.target.value as typeof ativoFiltro, tierFiltro) }}
+        <select
+          value={ativoFiltro}
+          onChange={e => { setAtivoFiltro(e.target.value as typeof ativoFiltro); load(busca, e.target.value as typeof ativoFiltro, tierFiltro) }}
           className="bg-white dark:bg-[#111] border border-gray-200 dark:border-white/10 rounded-xl px-3 py-2 text-sm outline-none">
           <option value="ativo">Ativos</option>
           <option value="inativo">Inativos</option>
           <option value="todos">Todos</option>
         </select>
-        <select value={tierFiltro} onChange={e => { setTierFiltro(e.target.value); load(busca, ativoFiltro, e.target.value) }}
+        <select
+          value={tierFiltro}
+          onChange={e => { setTierFiltro(e.target.value); load(busca, ativoFiltro, e.target.value) }}
           className="bg-white dark:bg-[#111] border border-gray-200 dark:border-white/10 rounded-xl px-3 py-2 text-sm outline-none">
           <option value="">Todos os tiers</option>
           <option value="tier1">Tier 1</option>
@@ -153,6 +208,7 @@ export default function VeiculosPage() {
         </select>
       </div>
 
+      {/* Tabela */}
       <div className="bg-white dark:bg-[#111] border border-gray-100 dark:border-white/5 rounded-2xl overflow-hidden">
         {loading ? (
           <div className="flex justify-center py-16">
@@ -178,10 +234,11 @@ export default function VeiculosPage() {
                   <tr key={v.id} className="hover:bg-gray-50 dark:hover:bg-white/2 transition-colors">
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
-                        {v.principal && (
-                          <span className="text-gold" title="Veículo principal">★</span>
-                        )}
-                        <span className="font-medium text-gray-900 dark:text-white">{v.nome}</span>
+                        {v.principal && <span className="text-gold" title="Veículo principal">★</span>}
+                        <div>
+                          <span className="font-medium text-gray-900 dark:text-white">{v.nome}</span>
+                          {v.cidade && <p className="text-xs text-gray-400">{v.cidade}</p>}
+                        </div>
                       </div>
                     </td>
                     <td className="px-4 py-3 text-gray-500 dark:text-gray-400 hidden md:table-cell">{v.tipo ?? '—'}</td>
@@ -236,35 +293,70 @@ export default function VeiculosPage() {
                 </svg>
               </button>
             </div>
+
             <div className="p-6 space-y-4">
+              {/* Nome */}
               <div>
                 <label className={LABEL}>Nome *</label>
-                <input className={INPUT} value={form.nome} onChange={e => setForm(f => ({ ...f, nome: e.target.value }))} />
+                <input
+                  className={INPUT}
+                  value={form.nome}
+                  onChange={e => setForm(f => ({ ...f, nome: e.target.value }))}
+                />
               </div>
+
+              {/* Tipo + Periodicidade */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className={LABEL}>Tipo</label>
-                  <input className={INPUT} placeholder="TV, Rádio, Portal, Revista…" value={form.tipo} onChange={e => setForm(f => ({ ...f, tipo: e.target.value }))} />
+                  <ComboInput
+                    value={form.tipo}
+                    onChange={v => setForm(f => ({ ...f, tipo: v }))}
+                    options={opcoes.tipo}
+                    placeholder="TV, Rádio, Portal…"
+                  />
                 </div>
                 <div>
                   <label className={LABEL}>Periodicidade</label>
-                  <input className={INPUT} placeholder="Diário, Semanal…" value={form.periodicidade} onChange={e => setForm(f => ({ ...f, periodicidade: e.target.value }))} />
+                  <ComboInput
+                    value={form.periodicidade}
+                    onChange={v => setForm(f => ({ ...f, periodicidade: v }))}
+                    options={opcoes.periodicidade}
+                    placeholder="Diário, Semanal…"
+                  />
                 </div>
               </div>
+
+              {/* Região + Cidade */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className={LABEL}>Região</label>
-                  <input className={INPUT} value={form.regiao} onChange={e => setForm(f => ({ ...f, regiao: e.target.value }))} />
+                  <ComboInput
+                    value={form.regiao}
+                    onChange={v => setForm(f => ({ ...f, regiao: v }))}
+                    options={opcoes.regiao}
+                    placeholder="Nacional, SP, RJ…"
+                  />
                 </div>
                 <div>
                   <label className={LABEL}>Cidade</label>
-                  <input className={INPUT} value={form.cidade} onChange={e => setForm(f => ({ ...f, cidade: e.target.value }))} />
+                  <ComboInput
+                    value={form.cidade}
+                    onChange={v => setForm(f => ({ ...f, cidade: v }))}
+                    options={opcoes.cidade}
+                    placeholder="São Paulo, Rio…"
+                  />
                 </div>
               </div>
+
+              {/* Tier + flags */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className={LABEL}>Tier</label>
-                  <select className={INPUT} value={form.tier} onChange={e => setForm(f => ({ ...f, tier: e.target.value as FormData['tier'] }))}>
+                  <select
+                    className={INPUT}
+                    value={form.tier}
+                    onChange={e => setForm(f => ({ ...f, tier: e.target.value as FormData['tier'] }))}>
                     <option value="">— sem tier —</option>
                     <option value="tier1">Tier 1 (top)</option>
                     <option value="tier2">Tier 2</option>
@@ -273,23 +365,42 @@ export default function VeiculosPage() {
                 </div>
                 <div className="flex flex-col gap-2 pt-5">
                   <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 cursor-pointer">
-                    <input type="checkbox" checked={form.principal} onChange={e => setForm(f => ({ ...f, principal: e.target.checked }))}
-                      className="w-4 h-4 rounded border-gray-300 text-gold focus:ring-gold/30" />
+                    <input
+                      type="checkbox"
+                      checked={form.principal}
+                      onChange={e => setForm(f => ({ ...f, principal: e.target.checked }))}
+                      className="w-4 h-4 rounded border-gray-300 text-gold focus:ring-gold/30"
+                    />
                     Principal
                   </label>
                   <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 cursor-pointer">
-                    <input type="checkbox" checked={form.ativo} onChange={e => setForm(f => ({ ...f, ativo: e.target.checked }))}
-                      className="w-4 h-4 rounded border-gray-300 text-gold focus:ring-gold/30" />
+                    <input
+                      type="checkbox"
+                      checked={form.ativo}
+                      onChange={e => setForm(f => ({ ...f, ativo: e.target.checked }))}
+                      className="w-4 h-4 rounded border-gray-300 text-gold focus:ring-gold/30"
+                    />
                     Ativo
                   </label>
                 </div>
               </div>
+
+              {/* Observações */}
               <div>
                 <label className={LABEL}>Observações</label>
-                <textarea rows={2} className={INPUT + ' resize-none'} value={form.observacoes} onChange={e => setForm(f => ({ ...f, observacoes: e.target.value }))} />
+                <textarea
+                  rows={2}
+                  className={INPUT + ' resize-none'}
+                  value={form.observacoes}
+                  onChange={e => setForm(f => ({ ...f, observacoes: e.target.value }))}
+                />
               </div>
-              {erro && <p className="text-sm text-red-500 bg-red-50 dark:bg-red-950/30 rounded-xl px-3 py-2">{erro}</p>}
+
+              {erro && (
+                <p className="text-sm text-red-500 bg-red-50 dark:bg-red-950/30 rounded-xl px-3 py-2">{erro}</p>
+              )}
             </div>
+
             <div className="flex justify-end gap-3 px-6 pb-6">
               <button onClick={() => setModal(null)}
                 className="px-4 py-2 rounded-xl border border-gray-200 dark:border-white/10 text-sm text-gray-600 dark:text-gray-400">
@@ -305,15 +416,21 @@ export default function VeiculosPage() {
         </div>
       )}
 
+      {/* Confirm delete */}
       {confirmDelete && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
           <div className="bg-white dark:bg-[#1a1a1a] rounded-2xl shadow-2xl p-6 max-w-sm w-full">
             <h3 className="font-bold text-gray-900 dark:text-white mb-2">Excluir veículo?</h3>
             <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">Esta ação não pode ser desfeita.</p>
             <div className="flex justify-end gap-3">
-              <button onClick={() => setConfirmDelete(null)} className="px-4 py-2 rounded-xl border border-gray-200 dark:border-white/10 text-sm text-gray-600">Cancelar</button>
-              <button onClick={() => handleDeletar(confirmDelete)} disabled={isPending}
-                className="px-4 py-2 rounded-xl bg-red-500 text-white text-sm font-semibold hover:bg-red-600 disabled:opacity-50">Excluir</button>
+              <button onClick={() => setConfirmDelete(null)}
+                className="px-4 py-2 rounded-xl border border-gray-200 dark:border-white/10 text-sm text-gray-600">
+                Cancelar
+              </button>
+              <button onClick={() => handleDeletar(confirmDelete!)} disabled={isPending}
+                className="px-4 py-2 rounded-xl bg-red-500 text-white text-sm font-semibold hover:bg-red-600 disabled:opacity-50">
+                Excluir
+              </button>
             </div>
           </div>
         </div>
