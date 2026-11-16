@@ -9,8 +9,8 @@ import { getUnseenSolicitacoesCount } from '../actions/solicitacoes'
 
 // ── Tipos ──────────────────────────────────────────────────────────
 
-type GroupId    = 'site' | 'cadastros' | 'sistema' | 'kanban'
-type SubGroupId = 'noticias' | 'cases'
+type GroupId    = 'site' | 'cadastros' | 'sistema' | 'kanban' | 'imprensa'
+type SubGroupId = 'noticias' | 'cases' | 'blog'
 
 interface SubItem {
   id: string
@@ -164,6 +164,48 @@ const IconSistema = ({ px = 24 }: { px?: number }) => (
   </svg>
 )
 
+const IconBlog = ({ px = 24 }: { px?: number }) => (
+  <svg style={{ width: px, height: px }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
+  </svg>
+)
+
+const IconImprensa = ({ px = 24 }: { px?: number }) => (
+  <svg style={{ width: px, height: px }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M12 7.5h1.5m-1.5 3h1.5m-7.5 3h7.5m-7.5 3h7.5m3-9h3.375c.621 0 1.125.504 1.125 1.125V18a2.25 2.25 0 01-2.25 2.25M16.5 7.5V18a2.25 2.25 0 002.25 2.25M16.5 7.5V4.875c0-.621-.504-1.125-1.125-1.125H4.125C3.504 3.75 3 4.254 3 4.875V18a2.25 2.25 0 002.25 2.25h13.5M6 7.5h3v3H6v-3z" />
+  </svg>
+)
+
+const IconMailing = () => (
+  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
+  </svg>
+)
+
+const IconJornalistas = () => (
+  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+  </svg>
+)
+
+const IconVeiculos = () => (
+  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 017.843 4.582M12 3a8.997 8.997 0 00-7.843 4.582m15.686 0A11.953 11.953 0 0112 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0121 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0112 16.5c-3.162 0-6.133-.815-8.716-2.247m0 0A9.015 9.015 0 013 12c0-1.605.42-3.113 1.157-4.418" />
+  </svg>
+)
+
+const IconReleases = () => (
+  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
+  </svg>
+)
+
+const IconClipping = () => (
+  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" />
+  </svg>
+)
+
 const IconCases = ({ px = 24 }: { px?: number }) => (
   <svg style={{ width: px, height: px }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
     <path strokeLinecap="round" strokeLinejoin="round" d="M20.25 14.15v4.25c0 1.094-.787 2.036-1.872 2.18-2.087.277-4.216.42-6.378.42s-4.291-.143-6.378-.42c-1.085-.144-1.872-1.086-1.872-2.18v-4.25m16.5 0a2.18 2.18 0 00.75-1.661V8.706c0-1.081-.768-2.015-1.837-2.175a48.114 48.114 0 00-3.413-.387m4.5 8.006c-.194.165-.42.295-.673.38A23.978 23.978 0 0112 15.75c-2.648 0-5.195-.429-7.577-1.22a2.016 2.016 0 01-.673-.38m0 0A2.18 2.18 0 013 12.489V8.706c0-1.081.768-2.015 1.837-2.175a48.111 48.111 0 013.413-.387m7.5 0V5.25A2.25 2.25 0 0013.5 3h-3a2.25 2.25 0 00-2.25 2.25v.894m7.5 0a48.667 48.667 0 00-7.5 0M12 12.75h.008v.008H12v-.008z" />
@@ -184,6 +226,7 @@ const PREFERRED_ANGLES: Record<number, number[]> = {
   2: [180, 0],
   3: [-90, 0, 180],
   4: [-135, -45, 45, 135],
+  5: [-126, -54, 18, 90, 162],
 }
 
 function getPositions(count: number, radius = 165) {
@@ -214,10 +257,17 @@ export function RadialMenu() {
   }, [])
 
   const noticiaSubItems = useMemo<SubItem[]>(() => [
-    { id: 'nova-noticia', label: 'Nova Notícia', href: '/sistema/blog/novo',         icon: <IconNovaNoticia /> },
-    { id: 'publicacoes',  label: 'Publicações',  href: '/sistema/blog',              icon: <IconPublicacoes /> },
-    { id: 'rascunhos',    label: 'Rascunhos',    href: '/sistema/blog/rascunhos',    icon: <IconRascunho /> },
-    { id: 'relatorios',   label: 'Relatórios',   href: '/sistema/blog/relatorios',   icon: <IconRelatorio /> },
+    { id: 'nova-noticia', label: 'Nova Notícia', href: '/sistema/noticias/novo',         icon: <IconNovaNoticia /> },
+    { id: 'publicacoes',  label: 'Publicações',  href: '/sistema/noticias',              icon: <IconPublicacoes /> },
+    { id: 'rascunhos',    label: 'Rascunhos',    href: '/sistema/noticias/rascunhos',    icon: <IconRascunho /> },
+    { id: 'relatorios',   label: 'Relatórios',   href: '/sistema/noticias/relatorios',   icon: <IconRelatorio /> },
+  ], [])
+
+  const blogSubItems = useMemo<SubItem[]>(() => [
+    { id: 'nova-blog',        label: 'Novo Post',   href: '/sistema/blog/novo',         icon: <IconNovaNoticia /> },
+    { id: 'publicacoes-blog', label: 'Publicações', href: '/sistema/blog',              icon: <IconPublicacoes /> },
+    { id: 'rascunhos-blog',   label: 'Rascunhos',   href: '/sistema/blog/rascunhos',    icon: <IconRascunho /> },
+    { id: 'relatorios-blog',  label: 'Relatórios',  href: '/sistema/blog/relatorios',   icon: <IconRelatorio /> },
   ], [])
 
   const casesSubItems = useMemo<SubItem[]>(() => [
@@ -296,9 +346,32 @@ export function RadialMenu() {
           largeIcon: <IconCases px={36} />,
           subItems:  casesSubItems,
         } as SubGroupItem,
+        {
+          type: 'subgroup',
+          id: 'blog',
+          label: 'Blog',
+          icon:      <IconBlog px={24} />,
+          largeIcon: <IconBlog px={36} />,
+          subItems:  blogSubItems,
+        } as SubGroupItem,
       ],
     },
-  ], [noticiaSubItems, casesSubItems, unseenCount])
+    {
+      type: 'group',
+      id: 'imprensa',
+      label: 'Imprensa',
+      icon: <IconImprensa px={24} />,
+      largeIcon: <IconImprensa px={36} />,
+      subItems: [
+        { id: 'imprensa-dashboard',   label: 'Painel',      href: '/sistema/imprensa',             icon: <IconRelatorio /> },
+        { id: 'imprensa-mailing',     label: 'Mailing',     href: '/sistema/imprensa/mailing',      icon: <IconMailing /> },
+        { id: 'imprensa-jornalistas', label: 'Jornalistas', href: '/sistema/imprensa/jornalistas',  icon: <IconJornalistas /> },
+        { id: 'imprensa-veiculos',    label: 'Veículos',    href: '/sistema/imprensa/veiculos',     icon: <IconVeiculos /> },
+        { id: 'imprensa-releases',    label: 'Releases',    href: '/sistema/imprensa/releases',     icon: <IconReleases /> },
+        { id: 'imprensa-clipping',    label: 'Clipping',    href: '/sistema/imprensa/clipping',     icon: <IconClipping /> },
+      ],
+    },
+  ], [noticiaSubItems, casesSubItems, blogSubItems, unseenCount])
 
   const mainPositions = getPositions(MAIN_ITEMS.length)
 
