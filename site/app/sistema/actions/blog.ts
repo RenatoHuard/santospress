@@ -2,6 +2,7 @@
 
 import { createClient } from '@supabase/supabase-js'
 import { revalidatePath } from 'next/cache'
+import { requireStaff } from '@/lib/auth-guard'
 
 function serviceClient() {
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -38,6 +39,7 @@ export interface PostPayload {
 }
 
 export async function salvarPost(payload: PostPayload): Promise<string> {
+  await requireStaff()
   const sb = serviceClient()
 
   // Preserva publicado_em original ao editar post já publicado.
@@ -66,14 +68,16 @@ export async function salvarPost(payload: PostPayload): Promise<string> {
     social_link_preview: payload.social_link_preview ?? null,
   }
 
+  const basePath = row.tipo === 'case' ? '/cases' : row.tipo === 'blog' ? '/blog' : '/noticias'
+
   if (payload.id) {
     const { error } = await sb
       .from('spress_blog_posts')
       .update(row)
       .eq('id', payload.id)
     if (error) throw new Error(error.message)
-    revalidatePath(`/noticias/${payload.slug}`)
-    revalidatePath('/noticias')
+    revalidatePath(`${basePath}/${payload.slug}`)
+    revalidatePath(basePath)
     revalidatePath('/')
     return payload.id
   }
@@ -85,12 +89,13 @@ export async function salvarPost(payload: PostPayload): Promise<string> {
     .single()
   if (error) throw new Error(error.message)
 
-  revalidatePath('/noticias')
+  revalidatePath(basePath)
   revalidatePath('/')
   return data.id
 }
 
 export async function uploadBlogImagem(formData: FormData): Promise<string> {
+  await requireStaff()
   const sb = serviceClient()
   const file = formData.get('file') as File
 
@@ -109,6 +114,7 @@ export async function uploadBlogImagem(formData: FormData): Promise<string> {
 }
 
 export async function getFuncionariosBasico() {
+  await requireStaff()
   const { data } = await serviceClient()
     .from('spress_usuarios')
     .select('id, nome, email, is_coringa')
@@ -119,6 +125,7 @@ export async function getFuncionariosBasico() {
 }
 
 export async function getBlogPost(id: string) {
+  await requireStaff()
   const { data } = await serviceClient()
     .from('spress_blog_posts')
     .select('*')
@@ -128,6 +135,7 @@ export async function getBlogPost(id: string) {
 }
 
 export async function getBlogPosts(tipo = 'noticia') {
+  await requireStaff()
   const { data } = await serviceClient()
     .from('spress_blog_posts')
     .select('id, titulo, slug, status, categoria, capa_url, publicado_em, created_at')
@@ -137,6 +145,7 @@ export async function getBlogPosts(tipo = 'noticia') {
 }
 
 export async function getBlogDrafts(tipo = 'noticia') {
+  await requireStaff()
   const { data } = await serviceClient()
     .from('spress_blog_posts')
     .select('id, titulo, slug, resumo, categoria, capa_url, created_at, updated_at')
@@ -147,18 +156,22 @@ export async function getBlogDrafts(tipo = 'noticia') {
 }
 
 export async function publicarPost(id: string) {
-  const { error } = await serviceClient()
+  await requireStaff()
+  const sb = serviceClient()
+  const { data: post } = await sb.from('spress_blog_posts').select('tipo, slug').eq('id', id).single()
+  const { error } = await sb
     .from('spress_blog_posts')
     .update({ status: 'publicado', publicado_em: new Date().toISOString() })
     .eq('id', id)
   if (error) throw new Error(error.message)
-  revalidatePath('/noticias')
+  const base = post?.tipo === 'case' ? '/cases' : post?.tipo === 'blog' ? '/blog' : '/noticias'
+  if (post?.slug) revalidatePath(`${base}/${post.slug}`)
+  revalidatePath(base)
   revalidatePath('/')
 }
 
-// ── Analytics ──────────────────────────────────────────────────────
-
-export async function getBlogAnalytics(days: number, tipo: 'noticia' | 'case' = 'noticia') {
+export async function getBlogAnalytics(days: number, tipo: 'noticia' | 'case' | 'blog' = 'noticia') {
+  await requireStaff()
   const sb    = serviceClient()
   const since = days > 0
     ? new Date(Date.now() - days * 86400000).toISOString()
@@ -248,6 +261,7 @@ export async function getBlogAnalytics(days: number, tipo: 'noticia' | 'case' = 
 }
 
 export async function getClientesBasico() {
+  await requireStaff()
   const { data } = await serviceClient()
     .from('spress_clientes')
     .select('id, razao_social, nome_fantasia, status')
@@ -257,18 +271,20 @@ export async function getClientesBasico() {
 }
 
 export async function despublicarPost(id: string, slug: string | null, tipo: string) {
+  await requireStaff()
   const { error } = await serviceClient()
     .from('spress_blog_posts')
     .update({ status: 'rascunho', publicado_em: null })
     .eq('id', id)
   if (error) throw new Error(error.message)
-  const base = tipo === 'case' ? '/cases' : '/noticias'
+  const base = tipo === 'case' ? '/cases' : tipo === 'blog' ? '/blog' : '/noticias'
   if (slug) revalidatePath(`${base}/${slug}`)
   revalidatePath(base)
   revalidatePath('/')
 }
 
 export async function excluirPost(id: string) {
+  await requireStaff()
   const { data, error } = await serviceClient()
     .from('spress_blog_posts')
     .delete()

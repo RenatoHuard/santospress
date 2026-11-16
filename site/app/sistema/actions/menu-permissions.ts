@@ -2,6 +2,7 @@
 
 import { createClient } from '@supabase/supabase-js'
 import { DEFAULT_PERMISSIONS } from '../lib/menu-tree'
+import { requireUser, requireStaff } from '@/lib/auth-guard'
 
 function sb() {
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -10,6 +11,7 @@ function sb() {
 }
 
 export async function getMenuPermissions(role: string): Promise<string[]> {
+  await requireUser()
   const { data } = await sb()
     .from('spress_menu_permissions')
     .select('item_id')
@@ -20,6 +22,7 @@ export async function getMenuPermissions(role: string): Promise<string[]> {
 }
 
 export async function saveRolePermissions(role: string, enabledIds: string[]): Promise<void> {
+  await requireStaff()
   await sb().from('spress_menu_permissions').delete().eq('role', role)
   if (enabledIds.length > 0) {
     await sb().from('spress_menu_permissions').insert(

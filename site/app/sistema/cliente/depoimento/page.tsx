@@ -3,7 +3,6 @@
 import { useEffect, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { supabase } from '@/lib/supabase'
 import { getClientePortalData } from '@/app/sistema/actions/auth'
 import { criarDepoimento } from '@/app/sistema/actions/depoimentos'
 
@@ -23,13 +22,11 @@ export default function RegistrarDepoimentoPage() {
   const [isPending, startTransition] = useTransition()
 
   useEffect(() => {
-    supabase.auth.getUser().then(async ({ data: { user } }) => {
-      if (!user) { router.replace('/login'); return }
-      const data = await getClientePortalData(user.id)
+    getClientePortalData().then(data => {
       if (!data) { router.replace('/sistema'); return }
       setClienteId(data.id)
       setLoading(false)
-    })
+    }).catch(() => router.replace('/login'))
   }, [router])
 
   function handleSubmit(e: React.FormEvent) {

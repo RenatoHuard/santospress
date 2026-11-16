@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { supabase } from '@/lib/supabase'
+import { getBrowserSupabase } from '@/lib/supabase-browser'
 import { getClientePortalData } from '@/app/sistema/actions/auth'
 import { TopNav } from '@/app/sistema/components/TopNav'
 
@@ -33,17 +33,15 @@ export default function ClientePortalPage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    supabase.auth.getUser().then(async ({ data: { user } }) => {
-      if (!user) { router.replace('/login'); return }
-      const data = await getClientePortalData(user.id)
+    getClientePortalData().then(data => {
       if (!data) { router.replace('/sistema'); return }
       setCliente(data as ClienteData)
       setLoading(false)
-    })
+    }).catch(() => router.replace('/login'))
   }, [router])
 
   async function handleLogout() {
-    await supabase.auth.signOut()
+    await getBrowserSupabase().auth.signOut()
     router.replace('/login')
   }
 

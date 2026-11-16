@@ -14,7 +14,7 @@ export default function UsuariosSistemaPage() {
   useEffect(() => {
     supabase.auth.getUser().then(async ({ data }) => {
       if (!data.user) { router.push('/login'); return }
-      const ok = await isSuperAdmin(data.user.id)
+      const ok = await isSuperAdmin()
       if (!ok) { setDenied(true); return }
       setReady(true)
     })

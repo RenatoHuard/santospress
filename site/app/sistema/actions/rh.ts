@@ -1,6 +1,7 @@
 ﻿'use server'
 
 import { createClient } from '@supabase/supabase-js'
+import { requireUser, requireStaff } from '@/lib/auth-guard'
 
 function serviceClient() {
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -14,6 +15,7 @@ function nullify(obj: Record<string, unknown>) {
 
 // â”€â”€ Dados pessoais â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export async function getFuncPessoal(usuarioId: string) {
+  await requireStaff()
   const { data } = await serviceClient()
     .from('spress_func_pessoal')
     .select('*')
@@ -23,6 +25,7 @@ export async function getFuncPessoal(usuarioId: string) {
 }
 
 export async function saveFuncPessoal(usuarioId: string, payload: Record<string, unknown>) {
+  await requireStaff()
   const { error } = await serviceClient()
     .from('spress_func_pessoal')
     .upsert(
@@ -34,6 +37,7 @@ export async function saveFuncPessoal(usuarioId: string, payload: Record<string,
 
 // â”€â”€ DocumentaÃ§Ã£o â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export async function getFuncDocumentos(usuarioId: string) {
+  await requireStaff()
   const { data } = await serviceClient()
     .from('spress_func_documentos')
     .select('*')
@@ -43,6 +47,7 @@ export async function getFuncDocumentos(usuarioId: string) {
 }
 
 export async function saveFuncDocumentos(usuarioId: string, payload: Record<string, unknown>) {
+  await requireStaff()
   const { error } = await serviceClient()
     .from('spress_func_documentos')
     .upsert(
@@ -54,6 +59,7 @@ export async function saveFuncDocumentos(usuarioId: string, payload: Record<stri
 
 // â”€â”€ Dependentes â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export async function getFuncDependentes(usuarioId: string) {
+  await requireStaff()
   const { data } = await serviceClient()
     .from('spress_func_dependentes')
     .select('*')
@@ -66,6 +72,7 @@ export async function addFuncDependente(
   usuarioId: string,
   payload: { nome: string; data_nascimento?: string; cpf?: string; parentesco?: string }
 ) {
+  await requireStaff()
   const { error } = await serviceClient()
     .from('spress_func_dependentes')
     .insert({ ...nullify(payload as unknown as Record<string, unknown>), usuario_id: usuarioId })
@@ -73,11 +80,13 @@ export async function addFuncDependente(
 }
 
 export async function removeFuncDependente(id: string) {
+  await requireStaff()
   await serviceClient().from('spress_func_dependentes').delete().eq('id', id)
 }
 
 // â”€â”€ Contrato â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export async function getFuncContrato(usuarioId: string) {
+  await requireStaff()
   const { data } = await serviceClient()
     .from('spress_func_contrato')
     .select('*')
@@ -87,6 +96,7 @@ export async function getFuncContrato(usuarioId: string) {
 }
 
 export async function saveFuncContrato(usuarioId: string, payload: Record<string, unknown>) {
+  await requireStaff()
   const { error } = await serviceClient()
     .from('spress_func_contrato')
     .upsert(
@@ -97,6 +107,7 @@ export async function saveFuncContrato(usuarioId: string, payload: Record<string
 }
 
 export async function uploadFuncFoto(formData: FormData): Promise<string> {
+  await requireStaff()
   const file = formData.get('file') as File
   const usuarioId = formData.get('usuarioId') as string
   if (!file || !usuarioId) throw new Error('Dados invÃ¡lidos')
@@ -115,6 +126,7 @@ export async function uploadFuncFoto(formData: FormData): Promise<string> {
 }
 
 export async function getFuncionariosSimples() {
+  await requireStaff()
   const { data } = await serviceClient()
     .from('spress_usuarios')
     .select('id, nome')
@@ -124,6 +136,7 @@ export async function getFuncionariosSimples() {
 
 // â”€â”€ BancÃ¡rio e benefÃ­cios â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export async function getFuncBancario(usuarioId: string) {
+  await requireStaff()
   const { data } = await serviceClient()
     .from('spress_func_bancario')
     .select('*')
@@ -133,6 +146,7 @@ export async function getFuncBancario(usuarioId: string) {
 }
 
 export async function saveFuncBancario(usuarioId: string, payload: Record<string, unknown>) {
+  await requireStaff()
   const { error } = await serviceClient()
     .from('spress_func_bancario')
     .upsert(
@@ -144,6 +158,7 @@ export async function saveFuncBancario(usuarioId: string, payload: Record<string
 
 // â”€â”€ SaÃºde â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export async function getFuncSaude(usuarioId: string) {
+  await requireStaff()
   const { data } = await serviceClient()
     .from('spress_func_saude')
     .select('*')
@@ -153,6 +168,7 @@ export async function getFuncSaude(usuarioId: string) {
 }
 
 export async function saveFuncSaude(usuarioId: string, payload: Record<string, unknown>) {
+  await requireStaff()
   const { error } = await serviceClient()
     .from('spress_func_saude')
     .upsert(
@@ -164,6 +180,7 @@ export async function saveFuncSaude(usuarioId: string, payload: Record<string, u
 
 // â”€â”€ OcorrÃªncias â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export async function getFuncOcorrencias(usuarioId: string) {
+  await requireStaff()
   const { data } = await serviceClient()
     .from('spress_func_ocorrencias')
     .select('*')
@@ -176,6 +193,7 @@ export async function addFuncOcorrencia(
   usuarioId: string,
   payload: { tipo: string; data_inicio: string; data_fim?: string; descricao?: string }
 ) {
+  await requireStaff()
   const { error } = await serviceClient()
     .from('spress_func_ocorrencias')
     .insert({ ...nullify(payload as unknown as Record<string, unknown>), usuario_id: usuarioId })
@@ -183,11 +201,13 @@ export async function addFuncOcorrencia(
 }
 
 export async function removeFuncOcorrencia(id: string) {
+  await requireStaff()
   await serviceClient().from('spress_func_ocorrencias').delete().eq('id', id)
 }
 
 // â”€â”€ Upload de documento do colaborador â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export async function uploadColaboradorDoc(formData: FormData): Promise<string> {
+  await requireStaff()
   const file = formData.get('file') as File
   const usuarioId = formData.get('usuarioId') as string
   const tipo = formData.get('tipo') as string
@@ -209,6 +229,7 @@ export async function uploadColaboradorDoc(formData: FormData): Promise<string> 
 
 // â”€â”€ Atestados mÃ©dicos â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export async function getFuncAtestados(usuarioId: string) {
+  await requireStaff()
   const { data } = await serviceClient()
     .from('spress_func_atestados')
     .select('*')
@@ -221,6 +242,7 @@ export async function addFuncAtestado(
   usuarioId: string,
   payload: { data: string; descricao?: string; arquivo_url?: string }
 ) {
+  await requireStaff()
   const { error } = await serviceClient()
     .from('spress_func_atestados')
     .insert({ ...nullify(payload as unknown as Record<string, unknown>), usuario_id: usuarioId })
@@ -228,11 +250,13 @@ export async function addFuncAtestado(
 }
 
 export async function removeFuncAtestado(id: string) {
+  await requireStaff()
   await serviceClient().from('spress_func_atestados').delete().eq('id', id)
 }
 
 // â”€â”€ Notas de serviÃ§o â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export async function getFuncNotasServico(usuarioId: string) {
+  await requireStaff()
   const { data } = await serviceClient()
     .from('spress_func_notas_servico')
     .select('*')
@@ -245,6 +269,7 @@ export async function addFuncNotaServico(
   usuarioId: string,
   payload: { data: string; descricao?: string; valor?: number | null; arquivo_url?: string }
 ) {
+  await requireStaff()
   const { error } = await serviceClient()
     .from('spress_func_notas_servico')
     .insert({ ...nullify(payload as unknown as Record<string, unknown>), usuario_id: usuarioId })
@@ -252,6 +277,7 @@ export async function addFuncNotaServico(
 }
 
 export async function removeFuncNotaServico(id: string) {
+  await requireStaff()
   await serviceClient().from('spress_func_notas_servico').delete().eq('id', id)
 }
 
@@ -260,6 +286,7 @@ export async function getColaboradorRole(authUserId: string): Promise<{
   role: string
   acesso_financeiro: boolean
 } | null> {
+  await requireStaff()
   const { data } = await serviceClient()
     .from('spress_usuarios')
     .select('role, setor_id, spress_setores!setor_id(acesso_financeiro)')
@@ -277,6 +304,7 @@ export async function getColaboradorRole(authUserId: string): Promise<{
 
 // â”€â”€ Busca o spress_usuarios.id a partir do auth_user_id â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export async function getMeuUsuarioId(authUserId: string): Promise<string | null> {
+  await requireStaff()
   const { data } = await serviceClient()
     .from('spress_usuarios')
     .select('id')
@@ -286,6 +314,7 @@ export async function getMeuUsuarioId(authUserId: string): Promise<string | null
 }
 
 export async function getMeusDadosBasicos(authUserId: string): Promise<{ id: string; nome: string } | null> {
+  await requireUser()
   const { data } = await serviceClient()
     .from('spress_usuarios')
     .select('id, nome')

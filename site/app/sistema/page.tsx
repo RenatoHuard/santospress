@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { supabase } from '@/lib/supabase'
 import { getDashboardStats } from './actions'
 import { getMeusRoles } from './actions/auth'
 import { getMenuPermissions } from './actions/menu-permissions'
@@ -26,9 +25,7 @@ export default function DashboardPage() {
   const [menuPerms, setMenuPerms] = useState<Set<string> | null>(null)
 
   useEffect(() => {
-    supabase.auth.getUser().then(async ({ data: { user } }) => {
-      if (!user) return
-      const realRoles = await getMeusRoles(user.id)
+    getMeusRoles().then(async (realRoles) => {
       const r = getEffectiveRoles(realRoles)
       if (isCliente(r)) {
         // Admins simulando 'cliente' não têm entrada em spress_clientes — mostra placeholder

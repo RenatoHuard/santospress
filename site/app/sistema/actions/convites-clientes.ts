@@ -1,6 +1,7 @@
 'use server'
 
 import { createClient } from '@supabase/supabase-js'
+import { requireStaff } from '@/lib/auth-guard'
 
 function serviceClient() {
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -15,6 +16,7 @@ export async function criarConviteCliente(
   nome_contato?: string,
   cargo_contato?: string,
 ): Promise<string> {
+  await requireStaff()
   const sb = serviceClient()
   const { data, error } = await sb
     .from('spress_convites_clientes')
@@ -35,6 +37,7 @@ export async function criarConviteContato(
   clienteId: string,
   contatoId: string,
 ): Promise<string> {
+  await requireStaff()
   const sb = serviceClient()
   const { data, error } = await sb
     .from('spress_convites_clientes')
@@ -301,6 +304,7 @@ export async function aceitarConviteClienteGoogle(
 // ── Listagem e cancelamento ───────────────────────────────────────────
 
 export async function getConvitesClientes() {
+  await requireStaff()
   const { data } = await serviceClient()
     .from('spress_convites_clientes')
     .select('id, token, empresa_sugerida, expires_at, usado_em, created_at, cliente_id_existente')
@@ -309,5 +313,6 @@ export async function getConvitesClientes() {
 }
 
 export async function cancelarConviteCliente(id: string) {
+  await requireStaff()
   await serviceClient().from('spress_convites_clientes').delete().eq('id', id)
 }

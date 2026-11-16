@@ -2,6 +2,7 @@
 
 import { createClient } from '@supabase/supabase-js'
 import { revalidatePath } from 'next/cache'
+import { requireStaff } from '@/lib/auth-guard'
 
 function serviceClient() {
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -12,6 +13,7 @@ function serviceClient() {
 export type ConteudoSite = Record<string, Record<string, string>>
 
 export async function getConteudoSite(): Promise<ConteudoSite> {
+  await requireStaff()
   const { data } = await serviceClient()
     .from('spress_conteudo_site')
     .select('secao, chave, valor')
@@ -25,6 +27,7 @@ export async function getConteudoSite(): Promise<ConteudoSite> {
 }
 
 export async function salvarSecaoSite(secao: string, dados: Record<string, string>) {
+  await requireStaff()
   const sb = serviceClient()
 
   const rows = Object.entries(dados).map(([chave, valor]) => ({
@@ -46,6 +49,7 @@ export async function salvarSecaoSite(secao: string, dados: Record<string, strin
 
 // Replace-all strategy para MVV (suporta add/remove de valores)
 export async function salvarMvvCompleto(dados: Record<string, string>) {
+  await requireStaff()
   const sb = serviceClient()
 
   const { error: delError } = await sb
@@ -92,6 +96,7 @@ export async function registrarVisitaSite(
 }
 
 export async function getSitePageAnalytics(days: number) {
+  await requireStaff()
   const sb    = serviceClient()
   const since = days > 0
     ? new Date(Date.now() - days * 86400000).toISOString()

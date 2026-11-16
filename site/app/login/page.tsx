@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { supabase } from '@/lib/supabase'
+import { getBrowserSupabase } from '@/lib/supabase-browser'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -35,9 +35,9 @@ export default function LoginPage() {
       sessionStorage.removeItem('google_login_pending')
       setGoogleLoading(true)
       try {
-        const tipo = await checkUserType(userId)
+        const tipo = await checkUserType()
         if (tipo === 'unknown') {
-          await supabase.auth.signOut()
+          await getBrowserSupabase().auth.signOut()
           setError('Acesso não autorizado. Contacte o administrador.')
           setGoogleLoading(false)
           googleHandledRef.current = false
@@ -50,11 +50,11 @@ export default function LoginPage() {
       }
     }
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    getBrowserSupabase().auth.getSession().then(({ data: { session } }) => {
       if (session?.user) processSession(session.user.id)
     })
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    const { data: { subscription } } = getBrowserSupabase().auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_IN' && session?.user) processSession(session.user.id)
     })
 
@@ -66,7 +66,7 @@ export default function LoginPage() {
     setGoogleLoading(true)
     sessionStorage.setItem('google_login_pending', '1')
     const base = process.env.NEXT_PUBLIC_SITE_URL ?? window.location.origin
-    await supabase.auth.signInWithOAuth({
+    await getBrowserSupabase().auth.signInWithOAuth({
       provider: 'google',
       options: { redirectTo: `${base}/login` },
     })
@@ -77,7 +77,7 @@ export default function LoginPage() {
     setLoading(true)
     setError(null)
 
-    const { data: signInData, error } = await supabase.auth.signInWithPassword({ email, password })
+    const { data: signInData, error } = await getBrowserSupabase().auth.signInWithPassword({ email, password })
 
     if (error) {
       setError('E-mail ou senha inválidos. Tente novamente.')
@@ -89,9 +89,9 @@ export default function LoginPage() {
     if (!userId) { router.push('/sistema'); return }
 
     try {
-      const tipo = await checkUserType(userId)
+      const tipo = await checkUserType()
       if (tipo === 'unknown') {
-        await supabase.auth.signOut()
+        await getBrowserSupabase().auth.signOut()
         setError('Acesso não autorizado. Contacte o administrador.')
         setLoading(false)
         return

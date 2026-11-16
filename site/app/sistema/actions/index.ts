@@ -1,6 +1,7 @@
 'use server'
 
 import { createClient } from '@supabase/supabase-js'
+import { requireStaff } from '@/lib/auth-guard'
 
 function serviceClient() {
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -16,6 +17,7 @@ function anonClient() {
 }
 
 export async function getDashboardStats() {
+  await requireStaff()
   try {
     const sb = serviceClient()
     const [f, c] = await Promise.allSettled([
@@ -33,12 +35,14 @@ export async function getDashboardStats() {
 }
 
 export async function getSetores() {
+  await requireStaff()
   const sb = serviceClient()
   const { data } = await sb.from('spress_setores').select('id, nome').order('nome')
   return data ?? []
 }
 
 export async function getFuncionarios() {
+  await requireStaff()
   const sb = serviceClient()
   const { data } = await sb
     .from('spress_usuarios')
@@ -48,6 +52,7 @@ export async function getFuncionarios() {
 }
 
 export async function getFuncionario(id: string) {
+  await requireStaff()
   const sb = serviceClient()
   const { data } = await sb
     .from('spress_usuarios')
@@ -69,6 +74,7 @@ export async function criarFuncionario(payload: {
   foto_url: string
   descricao_site: string
 }): Promise<string> {
+  await requireStaff()
   const sb = serviceClient()
 
   const { data: authData, error: authError } = await sb.auth.admin.createUser({
@@ -117,6 +123,7 @@ export async function atualizarFuncionario(
     descricao_site: string
   }
 ) {
+  await requireStaff()
   const sb = serviceClient()
   const roles = payload.roles.length > 0 ? payload.roles : ['colaborador']
   const { error } = await sb
@@ -137,11 +144,13 @@ export async function atualizarFuncionario(
 }
 
 export async function updateFuncFotoUrl(id: string, url: string) {
+  await requireStaff()
   const sb = serviceClient()
   await sb.from('spress_usuarios').update({ foto_url: url || null }).eq('id', id)
 }
 
 export async function toggleFuncionarioAtivo(id: string, ativo: boolean) {
+  await requireStaff()
   const sb = serviceClient()
   await sb.from('spress_usuarios').update({ ativo }).eq('id', id)
 }
@@ -153,6 +162,7 @@ export async function alterarSenhaFuncionario(
   novaSenha: string,
   feitoPor: string,
 ) {
+  await requireStaff()
   const sb = serviceClient()
 
   const { data: func } = await sb
@@ -181,6 +191,7 @@ export async function alterarEmailFuncionario(
   novoEmail: string,
   feitoPor: string,
 ) {
+  await requireStaff()
   const sb = serviceClient()
 
   const { data: func } = await sb
@@ -212,6 +223,7 @@ export async function alterarEmailFuncionario(
 }
 
 export async function getAuditCredenciais(usuarioId: string) {
+  await requireStaff()
   const { data } = await serviceClient()
     .from('spress_audit_credenciais')
     .select('id, tipo, feito_por, valor_antigo, created_at')
@@ -225,6 +237,7 @@ export async function excluirColaborador(
   id: string,
   feitoPor: string,
 ): Promise<{ success: boolean; erro?: string }> {
+  await requireStaff()
   try {
     const sb = serviceClient()
 

@@ -56,7 +56,7 @@ export default function CadastrosLayout({ children }: { children: React.ReactNod
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
       if (!data.user) return
-      isSuperAdmin(data.user.id).then((ok) => {
+      isSuperAdmin().then((ok) => {
         if (ok) setItems([...BASE_ITEMS, SYS_USERS_ITEM])
       })
     })

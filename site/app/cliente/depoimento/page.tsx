@@ -27,7 +27,7 @@ export default function RegistrarDepoimentoPage() {
     supabase.auth.getUser().then(async ({ data: { user } }) => {
       if (!user) { router.replace('/login'); return }
 
-      const data = await getClientePortalData(user.id)
+      const data = await getClientePortalData()
       if (data) {
         setClienteId(data.id)
         setLoading(false)

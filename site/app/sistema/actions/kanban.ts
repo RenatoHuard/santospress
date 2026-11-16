@@ -1,6 +1,7 @@
 'use server'
 
 import { createClient } from '@supabase/supabase-js'
+import { requireStaff } from '@/lib/auth-guard'
 
 function sb() {
   return createClient(
@@ -103,6 +104,7 @@ export interface Quadro {
 // ── Quadros ──────────────────────────────────────────────────────────
 
 export async function getQuadros(): Promise<Quadro[]> {
+  await requireStaff()
   const client = sb()
 
   const { data: quadros } = await client
@@ -137,6 +139,7 @@ export async function getQuadros(): Promise<Quadro[]> {
 }
 
 export async function getQuadrosVisiveis(usuarioId: string): Promise<Quadro[]> {
+  await requireStaff()
   if (!usuarioId) return []
   const client = sb()
 
@@ -192,6 +195,7 @@ export async function criarQuadro(
   visibilidade: string = 'publico',
   criadorId?: string,
 ): Promise<{ id: string } | null> {
+  await requireStaff()
   const client = sb()
   const { data, error } = await client
     .from('spress_quadros')
@@ -209,20 +213,24 @@ export async function criarQuadro(
 }
 
 export async function atualizarVisibilidadeQuadro(quadroId: string, visibilidade: string): Promise<void> {
+  await requireStaff()
   await sb().from('spress_quadros').update({ visibilidade }).eq('id', quadroId)
 }
 
 export async function renomearQuadro(quadroId: string, nome: string): Promise<void> {
+  await requireStaff()
   await sb().from('spress_quadros').update({ nome }).eq('id', quadroId)
 }
 
 export async function deletarQuadro(quadroId: string): Promise<void> {
+  await requireStaff()
   await sb().from('spress_quadros').delete().eq('id', quadroId)
 }
 
 // ── Kanban Data ──────────────────────────────────────────────────────
 
 export async function getKanbanData(quadroId: string): Promise<KanbanData | null> {
+  await requireStaff()
   const client = sb()
 
   const [{ data: quadro }, { data: colunas }, { data: demandas }, { data: usuarios }, { data: clientesRaw }, { data: etiquetasBoard }] =
@@ -309,6 +317,7 @@ export async function getKanbanData(quadroId: string): Promise<KanbanData | null
 // ── Colunas ──────────────────────────────────────────────────────────
 
 export async function criarColuna(quadroId: string, nome: string): Promise<{ id: string; ordem: number } | null> {
+  await requireStaff()
   const client = sb()
   const { data: last } = await client
     .from('spress_colunas')
@@ -330,14 +339,17 @@ export async function criarColuna(quadroId: string, nome: string): Promise<{ id:
 }
 
 export async function renomearColuna(colunaId: string, nome: string): Promise<void> {
+  await requireStaff()
   await sb().from('spress_colunas').update({ nome }).eq('id', colunaId)
 }
 
 export async function deletarColuna(colunaId: string): Promise<void> {
+  await requireStaff()
   await sb().from('spress_colunas').delete().eq('id', colunaId)
 }
 
 export async function reordenarColunas(reordens: { id: string; ordem: number }[]): Promise<void> {
+  await requireStaff()
   const client = sb()
   await Promise.all(reordens.map(r => client.from('spress_colunas').update({ ordem: r.ordem }).eq('id', r.id)))
 }
@@ -359,6 +371,7 @@ export async function criarCard(
   quadroId: string,
   dados: NovoCardInput,
 ): Promise<KanbanCard | null> {
+  await requireStaff()
   const client = sb()
 
   const { data: last } = await client
@@ -405,6 +418,7 @@ export async function criarCard(
 // ── Checklist ────────────────────────────────────────────────────────
 
 export async function getChecklist(demandaId: string): Promise<ChecklistItem[]> {
+  await requireStaff()
   const { data } = await sb()
     .from('spress_checklist_items')
     .select('id, demanda_id, texto, concluido, ordem, created_at')
@@ -414,6 +428,7 @@ export async function getChecklist(demandaId: string): Promise<ChecklistItem[]> 
 }
 
 export async function addChecklistItem(demandaId: string, texto: string): Promise<ChecklistItem | null> {
+  await requireStaff()
   const client = sb()
   const { data: last } = await client
     .from('spress_checklist_items')
@@ -432,21 +447,25 @@ export async function addChecklistItem(demandaId: string, texto: string): Promis
 }
 
 export async function toggleChecklistItem(itemId: string, concluido: boolean): Promise<void> {
+  await requireStaff()
   await sb().from('spress_checklist_items').update({ concluido }).eq('id', itemId)
 }
 
 export async function deleteChecklistItem(itemId: string): Promise<void> {
+  await requireStaff()
   await sb().from('spress_checklist_items').delete().eq('id', itemId)
 }
 
 // ── Etiquetas ────────────────────────────────────────────────────────
 
 export async function getEtiquetasBoard(quadroId: string): Promise<Etiqueta[]> {
+  await requireStaff()
   const { data } = await sb().from('spress_etiquetas').select('id, quadro_id, nome, cor').eq('quadro_id', quadroId)
   return data ?? []
 }
 
 export async function criarEtiqueta(quadroId: string, cor: string, nome?: string): Promise<Etiqueta | null> {
+  await requireStaff()
   const { data, error } = await sb()
     .from('spress_etiquetas')
     .insert({ quadro_id: quadroId, cor, nome: nome || null })
@@ -457,14 +476,17 @@ export async function criarEtiqueta(quadroId: string, cor: string, nome?: string
 }
 
 export async function atualizarEtiqueta(etiquetaId: string, dados: { nome?: string | null; cor?: string }): Promise<void> {
+  await requireStaff()
   await sb().from('spress_etiquetas').update(dados).eq('id', etiquetaId)
 }
 
 export async function deletarEtiqueta(etiquetaId: string): Promise<void> {
+  await requireStaff()
   await sb().from('spress_etiquetas').delete().eq('id', etiquetaId)
 }
 
 export async function toggleEtiquetaCard(demandaId: string, etiquetaId: string, ativo: boolean): Promise<void> {
+  await requireStaff()
   const client = sb()
   if (ativo) {
     await client.from('spress_demanda_etiquetas').insert({ demanda_id: demandaId, etiqueta_id: etiquetaId })
@@ -476,6 +498,7 @@ export async function toggleEtiquetaCard(demandaId: string, etiquetaId: string, 
 // ── Comentários ──────────────────────────────────────────────────────
 
 export async function getComentarios(demandaId: string): Promise<Comentario[]> {
+  await requireStaff()
   const client = sb()
   const { data: rows } = await client
     .from('spress_demanda_comentarios')
@@ -510,6 +533,7 @@ export async function addComentario(
   autorId: string,
   autorNome?: string | null,
 ): Promise<{ data: Comentario | null; error: string | null }> {
+  await requireStaff()
   const { data, error } = await sb()
     .from('spress_demanda_comentarios')
     .insert({ demanda_id: demandaId, texto, autor_id: autorId })
@@ -523,6 +547,7 @@ export async function addComentario(
 }
 
 export async function deleteComentario(comentarioId: string): Promise<void> {
+  await requireStaff()
   await sb().from('spress_demanda_comentarios').delete().eq('id', comentarioId)
 }
 
@@ -553,6 +578,7 @@ export interface CalendarioData {
 }
 
 export async function getCalendarioData(): Promise<CalendarioData> {
+  await requireStaff()
   const client = sb()
 
   const [
@@ -681,6 +707,7 @@ export async function getCalendarioData(): Promise<CalendarioData> {
 // ── Membros do Quadro ────────────────────────────────────────────────
 
 export async function getMembrosQuadro(quadroId: string): Promise<UsuarioSimples[]> {
+  await requireStaff()
   const client = sb()
   const { data } = await client
     .from('spress_quadro_membros')
@@ -700,12 +727,14 @@ export async function getMembrosQuadro(quadroId: string): Promise<UsuarioSimples
 }
 
 export async function adicionarMembroQuadro(quadroId: string, usuarioId: string): Promise<void> {
+  await requireStaff()
   await sb()
     .from('spress_quadro_membros')
     .upsert({ quadro_id: quadroId, usuario_id: usuarioId })
 }
 
 export async function removerMembroQuadro(quadroId: string, usuarioId: string): Promise<void> {
+  await requireStaff()
   await sb()
     .from('spress_quadro_membros')
     .delete()
@@ -716,6 +745,7 @@ export async function removerMembroQuadro(quadroId: string, usuarioId: string): 
 // ── Auth ─────────────────────────────────────────────────────────────
 
 export async function getUsuarioByAuthId(authUserId: string): Promise<UsuarioSimples | null> {
+  await requireStaff()
   const { data } = await sb()
     .from('spress_usuarios')
     .select('id, nome, cargo, foto_url, roles')
@@ -725,6 +755,7 @@ export async function getUsuarioByAuthId(authUserId: string): Promise<UsuarioSim
 }
 
 export async function moverCard(cardId: string, colunaId: string, ordem: number): Promise<void> {
+  await requireStaff()
   await sb()
     .from('spress_demandas')
     .update({ coluna_id: colunaId, ordem })
@@ -732,6 +763,7 @@ export async function moverCard(cardId: string, colunaId: string, ordem: number)
 }
 
 export async function reordenarCards(reordens: { id: string; ordem: number; coluna_id: string }[]): Promise<void> {
+  await requireStaff()
   const client = sb()
   await Promise.all(
     reordens.map(r =>
@@ -741,6 +773,7 @@ export async function reordenarCards(reordens: { id: string; ordem: number; colu
 }
 
 export async function atualizarCard(cardId: string, dados: Partial<NovoCardInput> & { concluida_em?: string | null }): Promise<void> {
+  await requireStaff()
   await sb()
     .from('spress_demandas')
     .update({ ...dados, updated_at: new Date().toISOString() })
@@ -748,5 +781,6 @@ export async function atualizarCard(cardId: string, dados: Partial<NovoCardInput
 }
 
 export async function deletarCard(cardId: string): Promise<void> {
+  await requireStaff()
   await sb().from('spress_demandas').delete().eq('id', cardId)
 }

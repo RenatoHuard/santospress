@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
-import { supabase } from '@/lib/supabase'
+import { getBrowserSupabase } from '@/lib/supabase-browser'
 import { getMeusRoles } from './actions/auth'
 import { apenasPerfilProprio } from './lib/roles'
 import { VersionBanner } from './components/VersionBanner'
@@ -13,13 +13,13 @@ export default function SistemaLayout({ children }: { children: React.ReactNode 
   const [ready, setReady] = useState(false)
 
   useEffect(() => {
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
+    getBrowserSupabase().auth.getSession().then(async ({ data: { session } }) => {
       if (!session) {
         router.replace('/login')
         return
       }
 
-      const roles = await getMeusRoles(session.user.id)
+      const roles = await getMeusRoles()
 
       // Colaboradores/atendentes/clientes têm acesso restrito
       const rotasPermitidas = [
@@ -30,6 +30,8 @@ export default function SistemaLayout({ children }: { children: React.ReactNode 
         '/sistema/calendario',
         '/sistema/cadastros',
         '/sistema/cliente',
+        '/sistema/noticias',
+        '/sistema/imprensa',
       ]
       if (
         apenasPerfilProprio(roles) &&

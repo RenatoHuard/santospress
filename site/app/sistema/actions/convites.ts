@@ -1,6 +1,7 @@
 'use server'
 
 import { createClient } from '@supabase/supabase-js'
+import { requireStaff } from '@/lib/auth-guard'
 
 function serviceClient() {
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -25,6 +26,7 @@ export interface ConviteInput {
 
 // Admin cria convite e retorna o token
 export async function criarConvite(data: ConviteInput): Promise<string> {
+  await requireStaff()
   const sb = serviceClient()
   const roles = data.roles.length > 0 ? data.roles : ['colaborador']
   const { data: row, error } = await sb
@@ -204,6 +206,7 @@ export async function aceitarConviteGoogle(
 
 // Admin lista colaboradores pendentes de aprovação
 export async function getColaboradoresPendentes() {
+  await requireStaff()
   const sb = serviceClient()
   const { data } = await sb
     .from('spress_usuarios')
@@ -215,6 +218,7 @@ export async function getColaboradoresPendentes() {
 
 // Admin aprova colaborador
 export async function aprovarColaborador(usuarioId: string) {
+  await requireStaff()
   const sb = serviceClient()
   const { error } = await sb
     .from('spress_usuarios')
@@ -225,6 +229,7 @@ export async function aprovarColaborador(usuarioId: string) {
 
 // Admin rejeita colaborador (remove tudo)
 export async function rejeitarColaborador(usuarioId: string) {
+  await requireStaff()
   const sb = serviceClient()
 
   const { data: func } = await sb
@@ -250,6 +255,7 @@ export async function rejeitarColaborador(usuarioId: string) {
 
 // Admin lista todos os convites
 export async function getConvites() {
+  await requireStaff()
   const sb = serviceClient()
   const { data } = await sb
     .from('spress_convites')
@@ -260,12 +266,14 @@ export async function getConvites() {
 
 // Admin cancela convite
 export async function cancelarConvite(id: string) {
+  await requireStaff()
   const sb = serviceClient()
   await sb.from('spress_convites').delete().eq('id', id)
 }
 
 // Lista setores para o modal de convite
 export async function getSetores() {
+  await requireStaff()
   const sb = serviceClient()
   const { data } = await sb
     .from('spress_setores')

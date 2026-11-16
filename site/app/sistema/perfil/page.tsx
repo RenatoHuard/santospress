@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { supabase } from '@/lib/supabase'
+import { getBrowserSupabase } from '@/lib/supabase-browser'
 import { getMeusDadosBasicos } from '../actions/rh'
 import { getMeusRoles } from '../actions/auth'
 import { TopNav } from '../components/TopNav'
@@ -24,11 +24,11 @@ export default function MeusDadosPage() {
     const params = new URLSearchParams(window.location.search)
     if (params.get('modo') === 'editar') setModo('editar')
 
-    supabase.auth.getUser().then(async ({ data: { user } }) => {
+    getBrowserSupabase().auth.getUser().then(async ({ data: { user } }) => {
       if (!user) { router.replace('/login'); return }
       const [basicos, roles] = await Promise.all([
         getMeusDadosBasicos(user.id),
-        getMeusRoles(user.id),
+        getMeusRoles(),
       ])
       if (!basicos) { router.replace('/sistema'); return }
       setUsuarioId(basicos.id)

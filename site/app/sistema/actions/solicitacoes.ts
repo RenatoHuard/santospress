@@ -1,6 +1,7 @@
 'use server'
 
 import { createClient } from '@supabase/supabase-js'
+import { requireUser } from '@/lib/auth-guard'
 
 function sb() {
   return createClient(
@@ -25,6 +26,7 @@ export interface Solicitacao {
 }
 
 export async function getSolicitacoes(authUserId: string): Promise<Solicitacao[]> {
+  await requireUser()
   const client = sb()
 
   const { data: usuario } = await client
@@ -70,6 +72,7 @@ export async function getSolicitacoes(authUserId: string): Promise<Solicitacao[]
 }
 
 export async function getUnseenSolicitacoesCount(authUserId: string): Promise<number> {
+  await requireUser()
   const client = sb()
 
   const { data: usuario } = await client
@@ -98,6 +101,7 @@ export async function getUnseenSolicitacoesCount(authUserId: string): Promise<nu
 }
 
 export async function marcarComoVista(demandaId: string): Promise<void> {
+  await requireUser()
   await sb()
     .from('spress_demandas')
     .update({ visto_em: new Date().toISOString() })

@@ -1,6 +1,7 @@
 'use server'
 
 import { createClient } from '@supabase/supabase-js'
+import { requireUser, requireStaff } from '@/lib/auth-guard'
 
 function sb() {
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -53,6 +54,7 @@ export async function criarDepoimento(clienteId: string, payload: DepoimentoPayl
 }
 
 export async function getDepoimentosCliente(clienteId: string): Promise<Depoimento[]> {
+  await requireStaff()
   const { data } = await sb()
     .from('spress_depoimentos')
     .select('*')
@@ -62,6 +64,7 @@ export async function getDepoimentosCliente(clienteId: string): Promise<Depoimen
 }
 
 export async function toggleDepoimento(id: string, ativo: boolean) {
+  await requireStaff()
   const { error } = await sb()
     .from('spress_depoimentos')
     .update({ ativo, novo: false })
@@ -70,6 +73,7 @@ export async function toggleDepoimento(id: string, ativo: boolean) {
 }
 
 export async function marcarDepoimentosComoVistos(clienteId: string) {
+  await requireStaff()
   await sb()
     .from('spress_depoimentos')
     .update({ novo: false })
@@ -78,6 +82,7 @@ export async function marcarDepoimentosComoVistos(clienteId: string) {
 }
 
 export async function getDepoimentosNovos(): Promise<DepoimentoNovo[]> {
+  await requireStaff()
   const { data } = await sb()
     .from('spress_depoimentos')
     .select('id, autor_nome, criado_em, cliente:spress_clientes(id, razao_social, nome_fantasia)')
@@ -100,6 +105,7 @@ export type DepoimentoAdmin = Depoimento & {
 }
 
 export async function getTodosDepoimentos(): Promise<DepoimentoAdmin[]> {
+  await requireStaff()
   const { data } = await sb()
     .from('spress_depoimentos')
     .select('*, cliente:spress_clientes(id, razao_social, nome_fantasia)')
@@ -108,6 +114,7 @@ export async function getTodosDepoimentos(): Promise<DepoimentoAdmin[]> {
 }
 
 export async function criarDepoimentoAdmin(payload: DepoimentoPayload & { cliente_id?: string | null }) {
+  await requireStaff()
   const { error } = await sb()
     .from('spress_depoimentos')
     .insert({
@@ -123,6 +130,7 @@ export async function criarDepoimentoAdmin(payload: DepoimentoPayload & { client
 }
 
 export async function editarDepoimento(id: string, payload: DepoimentoPayload & { cliente_id?: string | null }) {
+  await requireStaff()
   const { error } = await sb()
     .from('spress_depoimentos')
     .update({
@@ -137,6 +145,7 @@ export async function editarDepoimento(id: string, payload: DepoimentoPayload & 
 }
 
 export async function deletarDepoimento(id: string) {
+  await requireStaff()
   const { error } = await sb()
     .from('spress_depoimentos')
     .delete()
@@ -147,6 +156,7 @@ export async function deletarDepoimento(id: string) {
 export type ClienteSimples = { id: string; razao_social: string; nome_fantasia: string | null }
 
 export async function getClientesParaSelect(): Promise<ClienteSimples[]> {
+  await requireStaff()
   const { data } = await sb()
     .from('spress_clientes')
     .select('id, razao_social, nome_fantasia')

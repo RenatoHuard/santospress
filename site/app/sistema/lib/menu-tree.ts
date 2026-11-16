@@ -29,6 +29,23 @@ export const MENU_NODES: MenuNode[] = [
   { id: 'publicacoes-cases', label: 'Publicações',  parentId: 'cases',   isGroup: false },
   { id: 'rascunhos-cases',   label: 'Rascunhos',    parentId: 'cases',   isGroup: false },
   { id: 'relatorios-cases',  label: 'Relatórios',   parentId: 'cases',   isGroup: false },
+  { id: 'blog',              label: 'Blog',         parentId: 'site',    isGroup: true  },
+  { id: 'nova-blog',         label: 'Novo Post',    parentId: 'blog',    isGroup: false },
+  { id: 'publicacoes-blog',  label: 'Publicações',  parentId: 'blog',    isGroup: false },
+  { id: 'rascunhos-blog',    label: 'Rascunhos',    parentId: 'blog',    isGroup: false },
+  { id: 'relatorios-blog',   label: 'Relatórios',   parentId: 'blog',    isGroup: false },
+  { id: 'imprensa',               label: 'Imprensa',       parentId: null,       isGroup: true  },
+  { id: 'imprensa-dashboard',     label: 'Painel',         parentId: 'imprensa', isGroup: false },
+  { id: 'imprensa-mailing',       label: 'Mailing',        parentId: 'imprensa', isGroup: false },
+  { id: 'imprensa-jornalistas',   label: 'Jornalistas',    parentId: 'imprensa', isGroup: false },
+  { id: 'imprensa-veiculos',      label: 'Veículos',       parentId: 'imprensa', isGroup: false },
+  { id: 'imprensa-releases',      label: 'Releases',       parentId: 'imprensa', isGroup: false },
+  { id: 'imprensa-clipping',      label: 'Clipping',       parentId: 'imprensa', isGroup: false },
+  { id: 'imprensa-metas',         label: 'Metas',          parentId: 'imprensa', isGroup: false },
+  { id: 'imprensa-ranking',       label: 'Ranking',        parentId: 'imprensa', isGroup: false },
+  { id: 'imprensa-alertas',       label: 'Alertas',        parentId: 'imprensa', isGroup: false },
+  { id: 'imprensa-config',        label: 'Configurações',  parentId: 'imprensa', isGroup: false },
+  { id: 'imprensa-importar',      label: 'Importar',       parentId: 'imprensa', isGroup: false },
 ]
 
 export const CONFIGURABLE_ROLES = [
@@ -38,11 +55,15 @@ export const CONFIGURABLE_ROLES = [
   { key: 'atendente',   label: 'Atendente',   color: 'orange' },
 ] as const
 
+const IMPRENSA_BASE = ['imprensa','imprensa-dashboard','imprensa-mailing','imprensa-jornalistas','imprensa-veiculos','imprensa-releases','imprensa-clipping','imprensa-metas','imprensa-ranking','imprensa-alertas']
+const IMPRENSA_ADMIN = [...IMPRENSA_BASE, 'imprensa-config', 'imprensa-importar']
+const IMPRENSA_COLAB = ['imprensa','imprensa-dashboard','imprensa-mailing','imprensa-jornalistas','imprensa-veiculos','imprensa-releases','imprensa-clipping','imprensa-ranking','imprensa-alertas']
+
 export const DEFAULT_PERMISSIONS: Record<string, string[]> = {
-  gestor:      ['meus-dados','visualizar','atualizar','kanban','calendario','gestao','cadastros','funcionarios','clientes','usuarios-sistema','site','editar-site','relatorios-site','noticias','nova-noticia','publicacoes','rascunhos','relatorios','cases','nova-case','publicacoes-cases','rascunhos-cases','relatorios-cases'],
+  gestor:      ['meus-dados','visualizar','atualizar','kanban','calendario','gestao','cadastros','funcionarios','clientes','usuarios-sistema','site','editar-site','relatorios-site','noticias','nova-noticia','publicacoes','rascunhos','relatorios','cases','nova-case','publicacoes-cases','rascunhos-cases','relatorios-cases','blog','nova-blog','publicacoes-blog','rascunhos-blog','relatorios-blog',...IMPRENSA_ADMIN],
   rh:          ['meus-dados','visualizar','atualizar','kanban','calendario','cadastros','funcionarios'],
-  colaborador: ['meus-dados','visualizar','atualizar','kanban','calendario','site','noticias','publicacoes','cases','publicacoes-cases'],
-  atendente:   ['meus-dados','visualizar','atualizar','kanban','calendario','cadastros','clientes','site','noticias','publicacoes','cases','publicacoes-cases'],
+  colaborador: ['meus-dados','visualizar','atualizar','kanban','calendario','site','noticias','publicacoes','cases','publicacoes-cases','blog','publicacoes-blog',...IMPRENSA_COLAB],
+  atendente:   ['meus-dados','visualizar','atualizar','kanban','calendario','cadastros','clientes','site','noticias','publicacoes','cases','publicacoes-cases','blog','publicacoes-blog',...IMPRENSA_BASE],
 }
 
 export function getAncestors(id: string): string[] {

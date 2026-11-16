@@ -1,6 +1,7 @@
 'use server'
 
 import { createClient } from '@supabase/supabase-js'
+import { requireUser, requireStaff } from '@/lib/auth-guard'
 
 function sb() {
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -10,12 +11,9 @@ function sb() {
 
 export type UserType = 'funcionario' | 'cliente' | 'sistema' | 'unknown'
 
-/**
- * Dado o auth_user_id de um usuário recém-logado, determina se é funcionário,
- * cliente, usuário do sistema (admin) ou desconhecido (sem cadastro SantosPress).
- * Retorna 'unknown' para usuários de outros sistemas no mesmo banco.
- */
-export async function checkUserType(authUserId: string): Promise<UserType> {
+export async function checkUserType(): Promise<UserType> {
+  const user = await requireUser()
+  const authUserId = user.id
   const admin = sb()
 
   const [funcRes, clienteRes, contatoRes, sysRes] = await Promise.all([
@@ -31,21 +29,21 @@ export async function checkUserType(authUserId: string): Promise<UserType> {
   return 'unknown'
 }
 
-/** Verifica se o auth_user_id pertence a um superadmin do sistema. */
-export async function isSuperAdmin(authUserId: string): Promise<boolean> {
+export async function isSuperAdmin(): Promise<boolean> {
+  const user = await requireUser()
   const { data } = await sb()
     .from('spress_sys_users')
     .select('id')
-    .eq('auth_user_id', authUserId)
+    .eq('auth_user_id', user.id)
     .eq('is_superadmin', true)
     .eq('ativo', true)
     .maybeSingle()
   return !!data
 }
 
-/** Retorna o array de roles do usuário (novo sistema multi-role).
- *  Funcionários vêm de spress_usuarios; clientes recebem ['cliente'] automaticamente. */
-export async function getMeusRoles(authUserId: string): Promise<string[]> {
+export async function getMeusRoles(): Promise<string[]> {
+  const user = await requireUser()
+  const authUserId = user.id
   const { data: usuario } = await sb()
     .from('spress_usuarios')
     .select('roles')
@@ -70,18 +68,16 @@ export async function getMeusRoles(authUserId: string): Promise<string[]> {
   return []
 }
 
-/** Compatibilidade — retorna o primeiro role ou o campo legado. */
-export async function getMeuRole(authUserId: string): Promise<string | null> {
-  const roles = await getMeusRoles(authUserId)
+export async function getMeuRole(): Promise<string | null> {
+  const roles = await getMeusRoles()
   return roles[0] ?? null
 }
 
-/** Busca dados básicos do cliente pelo auth_user_id.
- *  Suporta tanto o titular do cadastro quanto contatos com acesso. */
-export async function getClientePortalData(authUserId: string) {
+export async function getClientePortalData() {
+  const user = await requireUser()
+  const authUserId = user.id
   const admin = sb()
 
-  // 1. Titular do cadastro
   const { data: direto } = await admin
     .from('spress_clientes')
     .select('id, razao_social, nome_fantasia, cnpj, segmento, status, email, telefone, cidade, uf')
@@ -89,7 +85,6 @@ export async function getClientePortalData(authUserId: string) {
     .maybeSingle()
   if (direto) return direto
 
-  // 2. Contato com acesso (convite secundário)
   const { data: contato } = await admin
     .from('spress_clientes_contatos')
     .select('cliente_id')
@@ -105,8 +100,8 @@ export async function getClientePortalData(authUserId: string) {
   return viaContato ?? null
 }
 
-/** Altera a senha de um cliente no Supabase Auth. */
 export async function alterarSenhaCliente(clienteId: string, novaSenha: string) {
+  await requireStaff()
   const admin = sb()
   const { data: cliente } = await admin
     .from('spress_clientes')

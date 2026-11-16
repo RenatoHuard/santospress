@@ -1,6 +1,7 @@
 'use server'
 
 import { createClient } from '@supabase/supabase-js'
+import { requireStaff } from '@/lib/auth-guard'
 
 function serviceClient() {
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -23,6 +24,7 @@ export interface DemandaRow {
 }
 
 export async function getGestaoClientes(): Promise<GestaoCliente[]> {
+  await requireStaff()
   const { data } = await serviceClient()
     .from('spress_clientes')
     .select('id, nome_fantasia, razao_social')
@@ -35,6 +37,7 @@ export async function getGestaoClientes(): Promise<GestaoCliente[]> {
 }
 
 export async function getGestaoAtendentes(): Promise<GestaoAtendente[]> {
+  await requireStaff()
   const { data } = await serviceClient()
     .from('spress_usuarios')
     .select('id, nome')
@@ -49,6 +52,7 @@ export async function getDemandaStats(
   from: string,
   to: string,
 ): Promise<DemandaRow[]> {
+  await requireStaff()
   const sb = serviceClient()
 
   const filter = tipo === 'cliente' ? { cliente_id: entityId } : { atendente_id: entityId }

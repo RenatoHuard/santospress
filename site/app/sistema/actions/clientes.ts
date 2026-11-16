@@ -2,6 +2,7 @@
 
 import { createClient } from '@supabase/supabase-js'
 import { revalidatePath } from 'next/cache'
+import { requireStaff } from '@/lib/auth-guard'
 
 function sb() {
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -12,6 +13,7 @@ function sb() {
 // â”€â”€ Cliente principal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export async function getClientes() {
+  await requireStaff()
   const { data } = await sb()
     .from('spress_clientes')
     .select('id, razao_social, nome_fantasia, cnpj, segmento, status, email, telefone')
@@ -20,6 +22,7 @@ export async function getClientes() {
 }
 
 export async function getCliente(id: string) {
+  await requireStaff()
   const { data } = await sb()
     .from('spress_clientes')
     .select('*')
@@ -54,6 +57,7 @@ function nullify<T extends Record<string, unknown>>(obj: T) {
 }
 
 export async function criarCliente(payload: ClientePayload & { senha: string }): Promise<string> {
+  await requireStaff()
   const { senha, ...rest } = payload
   const admin = sb()
 
@@ -90,6 +94,7 @@ export async function criarCliente(payload: ClientePayload & { senha: string }):
 }
 
 export async function atualizarCliente(id: string, payload: ClientePayload) {
+  await requireStaff()
   const { error } = await sb()
     .from('spress_clientes')
     .update({ ...nullify(payload as unknown as Record<string, unknown>), updated_at: new Date().toISOString() })
@@ -99,6 +104,7 @@ export async function atualizarCliente(id: string, payload: ClientePayload) {
 }
 
 export async function toggleClienteStatus(id: string, status: string) {
+  await requireStaff()
   await sb().from('spress_clientes').update({ status }).eq('id', id)
 }
 
@@ -119,6 +125,7 @@ export interface ContatoPayload {
 }
 
 export async function getClienteContatos(clienteId: string) {
+  await requireStaff()
   const { data } = await sb()
     .from('spress_clientes_contatos')
     .select('*')
@@ -128,6 +135,7 @@ export async function getClienteContatos(clienteId: string) {
 }
 
 export async function salvarContato(clienteId: string, payload: ContatoPayload) {
+  await requireStaff()
   const row = { ...nullify(payload as unknown as Record<string, unknown>), cliente_id: clienteId }
   if (payload.id) {
     const { error } = await sb().from('spress_clientes_contatos').update(row).eq('id', payload.id)
@@ -139,6 +147,7 @@ export async function salvarContato(clienteId: string, payload: ContatoPayload) 
 }
 
 export async function deletarContato(id: string) {
+  await requireStaff()
   await sb().from('spress_clientes_contatos').delete().eq('id', id)
 }
 
@@ -155,6 +164,7 @@ export interface FinanceiroPayload {
 }
 
 export async function getClienteFinanceiro(clienteId: string) {
+  await requireStaff()
   const { data } = await sb()
     .from('spress_clientes_financeiro')
     .select('*')
@@ -164,6 +174,7 @@ export async function getClienteFinanceiro(clienteId: string) {
 }
 
 export async function salvarClienteFinanceiro(clienteId: string, payload: FinanceiroPayload) {
+  await requireStaff()
   const { error } = await sb()
     .from('spress_clientes_financeiro')
     .upsert({ ...nullify(payload as unknown as Record<string, unknown>), cliente_id: clienteId, updated_at: new Date().toISOString() }, { onConflict: 'cliente_id' })
@@ -184,6 +195,7 @@ export interface ContratoPayload {
 }
 
 export async function getClienteContratos(clienteId: string) {
+  await requireStaff()
   const { data } = await sb()
     .from('spress_clientes_contratos')
     .select('*')
@@ -193,6 +205,7 @@ export async function getClienteContratos(clienteId: string) {
 }
 
 export async function salvarContrato(clienteId: string, payload: ContratoPayload) {
+  await requireStaff()
   const row = {
     ...nullify(payload as unknown as Record<string, unknown>),
     cliente_id: clienteId,
@@ -209,10 +222,12 @@ export async function salvarContrato(clienteId: string, payload: ContratoPayload
 }
 
 export async function deletarContrato(id: string) {
+  await requireStaff()
   await sb().from('spress_clientes_contratos').delete().eq('id', id)
 }
 
 export async function uploadContratoArquivo(formData: FormData): Promise<string> {
+  await requireStaff()
   const file = formData.get('file') as File
   const clienteId = formData.get('clienteId') as string
 
@@ -228,6 +243,7 @@ export async function uploadContratoArquivo(formData: FormData): Promise<string>
 }
 
 export async function getContratoSignedUrl(path: string): Promise<string> {
+  await requireStaff()
   const { data } = await sb().storage.from('contratos-clientes').createSignedUrl(path, 3600)
   return data?.signedUrl ?? ''
 }
@@ -243,6 +259,7 @@ export interface CRMPayload {
 }
 
 export async function getClienteCRM(clienteId: string) {
+  await requireStaff()
   const { data } = await sb()
     .from('spress_clientes_crm')
     .select('*, responsavel:spress_usuarios(nome)')
@@ -252,6 +269,7 @@ export async function getClienteCRM(clienteId: string) {
 }
 
 export async function addCRMEntry(clienteId: string, payload: CRMPayload) {
+  await requireStaff()
   const { error } = await sb().from('spress_clientes_crm').insert({
     ...nullify(payload as unknown as Record<string, unknown>),
     cliente_id: clienteId,

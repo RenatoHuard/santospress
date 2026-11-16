@@ -1,6 +1,7 @@
 'use server'
 
 import { createClient } from '@supabase/supabase-js'
+import { requireStaff } from '@/lib/auth-guard'
 
 function sb() {
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -18,6 +19,7 @@ export type SysUser = {
 }
 
 export async function getSysUsers(): Promise<SysUser[]> {
+  await requireStaff()
   const { data, error } = await sb()
     .from('spress_sys_users')
     .select('id, nome, email, is_superadmin, ativo, created_at')
@@ -32,6 +34,7 @@ export async function createSysUser(
   senha: string,
   is_superadmin: boolean,
 ) {
+  await requireStaff()
   const admin = sb()
 
   const { data: authData, error: authError } = await admin.auth.admin.createUser({
@@ -54,6 +57,7 @@ export async function createSysUser(
 }
 
 export async function alterarSenhaSysUser(id: string, novaSenha: string) {
+  await requireStaff()
   const admin = sb()
   const { data } = await admin
     .from('spress_sys_users')
@@ -69,6 +73,7 @@ export async function alterarSenhaSysUser(id: string, novaSenha: string) {
 }
 
 export async function toggleSysUserAtivo(id: string, ativo: boolean) {
+  await requireStaff()
   const { error } = await sb()
     .from('spress_sys_users')
     .update({ ativo })
@@ -78,6 +83,7 @@ export async function toggleSysUserAtivo(id: string, ativo: boolean) {
 }
 
 export async function deleteSysUser(id: string) {
+  await requireStaff()
   const admin = sb()
 
   const { data } = await admin
