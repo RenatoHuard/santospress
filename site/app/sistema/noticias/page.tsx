@@ -1,8 +1,7 @@
-'use client'
+﻿'use client'
 
 import { useCallback, useEffect, useState, useTransition } from 'react'
 import Link from 'next/link'
-import Image from 'next/image'
 import { getBlogPosts, despublicarPost, excluirPost } from '../actions/blog'
 
 type Post = {
@@ -152,8 +151,9 @@ export default function NoticiasListPage() {
             >
               <Link href={`/sistema/noticias/${post.id}`} className="block">
                 <div className="relative h-36 bg-gray-100 dark:bg-[#1a1a1a]">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
                   {post.capa_url ? (
-                    <Image src={post.capa_url} alt={post.titulo} fill className="object-contain p-1" />
+                    <img src={post.capa_url} alt={post.titulo} className="w-full h-full object-contain p-1" />
                   ) : (
                     <div className="absolute inset-0 flex items-center justify-center">
                       <svg className="w-8 h-8 text-gray-300 dark:text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}>

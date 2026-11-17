@@ -1,9 +1,8 @@
-'use client'
+﻿'use client'
 
 import React, { useCallback, useEffect, useState } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import Image from 'next/image'
 import { getBlogAnalytics, despublicarPost } from '../../actions/blog'
 import { getSitePageAnalytics } from '../../actions/site'
 
@@ -119,8 +118,9 @@ function PostCard({ post, max, sortBy, tipo }: { post: TopPost; max: number; sor
     >
       <div className="flex items-center gap-4 p-4">
         <div className="w-16 h-12 rounded-xl overflow-hidden bg-gray-100 dark:bg-[#1a1a1a] shrink-0">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           {post.capa_url ? (
-            <Image src={post.capa_url} alt={post.titulo} width={64} height={48} className="object-cover w-full h-full" />
+            <img src={post.capa_url} alt={post.titulo} className="object-cover w-full h-full" />
           ) : (
             <div className="w-full h-full flex items-center justify-center">
               <svg className="w-5 h-5 text-gray-300 dark:text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">

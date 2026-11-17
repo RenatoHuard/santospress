@@ -1,8 +1,7 @@
-'use client'
+﻿'use client'
 
 import { useCallback, useEffect, useState, useTransition } from 'react'
 import Link from 'next/link'
-import Image from 'next/image'
 import { getBlogDrafts, publicarPost, excluirPost } from '../../actions/blog'
 
 type Draft = {
@@ -137,8 +136,9 @@ export default function BlogRascunhosPage() {
               >
                 {/* Thumbnail */}
                 <div className="w-32 shrink-0 bg-gray-100 dark:bg-[#1a1a1a] relative">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
                   {draft.capa_url ? (
-                    <Image src={draft.capa_url} alt={draft.titulo || ''} fill className="object-contain" />
+                    <img src={draft.capa_url} alt={draft.titulo || ''} className="w-full h-full object-contain" />
                   ) : (
                     <div className="absolute inset-0 flex items-center justify-center">
                       <svg className="w-7 h-7 text-gray-300 dark:text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}>
