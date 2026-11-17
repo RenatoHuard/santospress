@@ -3,8 +3,11 @@
 import { useCallback, useEffect, useRef, useState, useTransition } from 'react'
 import {
   getJornalistas, getVeiculos, criarJornalista, atualizarJornalista, deletarJornalista,
+  getJornalistaOpcoes,
   type Jornalista, type Veiculo,
 } from '../../actions/imprensa'
+import { REGIOES_IMPRENSA, EDITORIAS_IMPRENSA } from '../../lib/imprensa-constants'
+import { ComboInput } from '../../components/ComboInput'
 
 const SITUACAO_STYLE: Record<string, string> = {
   ativo:         'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400',
@@ -42,6 +45,7 @@ export default function JornalistasPage() {
   const [page, setPage] = useState(1)
   const [loading, setLoading] = useState(true)
   const [veiculos, setVeiculos] = useState<Veiculo[]>([])
+  const [opcoesEditoria, setOpcoesEditoria] = useState<string[]>([...EDITORIAS_IMPRENSA])
   const [busca, setBusca] = useState('')
   const [situacaoFiltro, setSituacaoFiltro] = useState('')
   const [modal, setModal] = useState<'criar' | 'editar' | null>(null)
@@ -88,11 +92,26 @@ export default function JornalistasPage() {
     load(1, busca, v)
   }
 
+  async function carregarOpcoesEditoria() {
+    try {
+      const dbOpcoes = await getJornalistaOpcoes('editoria')
+      setOpcoesEditoria(prev => [...new Set([...EDITORIAS_IMPRENSA, ...prev, ...dbOpcoes])].sort())
+    } catch {
+      /* opções opcionais */
+    }
+  }
+
+  function mergeEditoria(valor: string) {
+    if (!valor.trim()) return
+    setOpcoesEditoria(prev => prev.includes(valor) ? prev : [...prev, valor].sort())
+  }
+
   function abrirCriar() {
     setForm(EMPTY)
     setEditing(null)
     setErro(null)
     setModal('criar')
+    carregarOpcoesEditoria()
   }
 
   function abrirEditar(j: Jornalista) {
@@ -106,6 +125,7 @@ export default function JornalistasPage() {
     setEditing(j)
     setErro(null)
     setModal('editar')
+    carregarOpcoesEditoria()
   }
 
   function handleSalvar() {
@@ -131,6 +151,7 @@ export default function JornalistasPage() {
         } else if (editing) {
           await atualizarJornalista(editing.id, payload)
         }
+        if (payload.editoria) mergeEditoria(payload.editoria)
         setModal(null)
         load(page)
       } catch (e) {
@@ -306,13 +327,21 @@ export default function JornalistasPage() {
                 </div>
                 <div>
                   <label className={LABEL}>Região</label>
-                  <input className={INPUT} placeholder="ex: SP, RJ, Nacional…" value={form.regiao} onChange={e => setForm(f => ({ ...f, regiao: e.target.value }))} />
+                  <select className={INPUT} value={form.regiao} onChange={e => setForm(f => ({ ...f, regiao: e.target.value }))}>
+                    <option value="">— sem região —</option>
+                    {REGIOES_IMPRENSA.map(r => <option key={r} value={r}>{r}</option>)}
+                  </select>
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className={LABEL}>Editoria</label>
-                  <input className={INPUT} value={form.editoria} onChange={e => setForm(f => ({ ...f, editoria: e.target.value }))} />
+                  <ComboInput
+                    value={form.editoria}
+                    onChange={v => setForm(f => ({ ...f, editoria: v }))}
+                    options={opcoesEditoria}
+                    placeholder="Política, Economia…"
+                  />
                 </div>
                 <div>
                   <label className={LABEL}>Programa / Coluna</label>

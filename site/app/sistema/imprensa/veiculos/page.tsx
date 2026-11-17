@@ -6,6 +6,7 @@ import {
   type Veiculo,
 } from '../../actions/imprensa'
 import { ComboInput } from '../../components/ComboInput'
+import { TIPOS_MIDIA, REGIOES_IMPRENSA } from '../../lib/imprensa-constants'
 
 const TIER_STYLE: Record<string, string> = {
   tier1: 'bg-gold/15 text-yellow-700 dark:text-yellow-400',
@@ -22,26 +23,24 @@ type FormData = {
   regiao: string
   cidade: string
   tier: '' | 'tier1' | 'tier2' | 'tier3'
-  periodicidade: string
   principal: boolean
   ativo: boolean
   observacoes: string
 }
 
 const EMPTY: FormData = {
-  nome: '', tipo: '', regiao: '', cidade: '', tier: '', periodicidade: '',
+  nome: '', tipo: '', regiao: '', cidade: '', tier: '',
   principal: false, ativo: true, observacoes: '',
 }
 
 // Opções pré-carregadas para campos com combo
 interface OpcoesCampos {
   tipo: string[]
-  periodicidade: string[]
   regiao: string[]
   cidade: string[]
 }
 
-const OPCOES_VAZIAS: OpcoesCampos = { tipo: [], periodicidade: [], regiao: [], cidade: [] }
+const OPCOES_VAZIAS: OpcoesCampos = { tipo: [], regiao: [], cidade: [] }
 
 export default function VeiculosPage() {
   const [rows, setRows] = useState<Veiculo[]>([])
@@ -78,15 +77,22 @@ export default function VeiculosPage() {
 
   async function carregarOpcoes() {
     try {
-      const [tipo, periodicidade, regiao, cidade] = await Promise.all([
+      const [tipo, regiao, cidade] = await Promise.all([
         getVeiculoOpcoes('tipo'),
-        getVeiculoOpcoes('periodicidade'),
         getVeiculoOpcoes('regiao'),
         getVeiculoOpcoes('cidade'),
       ])
-      setOpcoes({ tipo, periodicidade, regiao, cidade })
+      setOpcoes({
+        tipo: [...new Set([...TIPOS_MIDIA, ...tipo])].sort(),
+        regiao: [...new Set([...REGIOES_IMPRENSA, ...regiao])],
+        cidade,
+      })
     } catch {
-      /* opções opcionais — não bloqueia o formulário */
+      setOpcoes(prev => ({
+        ...prev,
+        tipo: [...TIPOS_MIDIA].sort(),
+        regiao: [...REGIOES_IMPRENSA],
+      }))
     }
   }
 
@@ -107,7 +113,7 @@ export default function VeiculosPage() {
   function abrirEditar(v: Veiculo) {
     setForm({
       nome: v.nome, tipo: v.tipo ?? '', regiao: v.regiao ?? '', cidade: v.cidade ?? '',
-      tier: v.tier ?? '', periodicidade: v.periodicidade ?? '',
+      tier: v.tier ?? '',
       principal: v.principal, ativo: v.ativo, observacoes: v.observacoes ?? '',
     })
     setEditing(v)
@@ -135,7 +141,6 @@ export default function VeiculosPage() {
           regiao: form.regiao.trim() || undefined,
           cidade: form.cidade.trim() || undefined,
           tier: (form.tier || undefined) as 'tier1' | 'tier2' | 'tier3' | undefined,
-          periodicidade: form.periodicidade.trim() || undefined,
           principal: form.principal,
           ativo: form.ativo,
           observacoes: form.observacoes.trim() || undefined,
@@ -145,7 +150,6 @@ export default function VeiculosPage() {
 
         // Adiciona novos valores nas opções em memória
         if (payload.tipo) mergeOpcao('tipo', payload.tipo)
-        if (payload.periodicidade) mergeOpcao('periodicidade', payload.periodicidade)
         if (payload.regiao) mergeOpcao('regiao', payload.regiao)
         if (payload.cidade) mergeOpcao('cidade', payload.cidade)
 
@@ -309,26 +313,15 @@ export default function VeiculosPage() {
                 />
               </div>
 
-              {/* Tipo + Periodicidade */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className={LABEL}>Tipo</label>
-                  <ComboInput
-                    value={form.tipo}
-                    onChange={v => setForm(f => ({ ...f, tipo: v }))}
-                    options={opcoes.tipo}
-                    placeholder="TV, Rádio, Portal…"
-                  />
-                </div>
-                <div>
-                  <label className={LABEL}>Periodicidade</label>
-                  <ComboInput
-                    value={form.periodicidade}
-                    onChange={v => setForm(f => ({ ...f, periodicidade: v }))}
-                    options={opcoes.periodicidade}
-                    placeholder="Diário, Semanal…"
-                  />
-                </div>
+              {/* Tipo */}
+              <div>
+                <label className={LABEL}>Tipo</label>
+                <ComboInput
+                  value={form.tipo}
+                  onChange={v => setForm(f => ({ ...f, tipo: v }))}
+                  options={opcoes.tipo}
+                  placeholder="TV, Rádio, Portal…"
+                />
               </div>
 
               {/* Região + Cidade */}

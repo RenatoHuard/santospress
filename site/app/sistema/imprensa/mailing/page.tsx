@@ -6,6 +6,7 @@ import {
   getVeiculos, consultarMailing, registrarExportacao,
   type Mailing, type Veiculo,
 } from '../../actions/imprensa'
+import { REGIOES_IMPRENSA, EDITORIAS_IMPRENSA } from '../../lib/imprensa-constants'
 
 // ── Tipos ────────────────────────────────────────────────────────────
 
@@ -37,12 +38,11 @@ const CAMPOS_DISPONIVEIS = [
 ]
 
 const SITUACOES = ['ativo', 'desatualizado', 'revisar']
-const REGIOES = ['Nacional', 'SP', 'RJ', 'MG', 'RS', 'PR', 'SC', 'BA', 'PE', 'CE', 'GO', 'DF', 'AM', 'PA']
 
 type Filtros = {
   situacao: string[]
   regiao: string[]
-  editoria: string
+  editoria: string[]
   veiculo_ids: string[]
   busca: string
 }
@@ -174,7 +174,7 @@ function ListaMailings({ onNovo }: { onNovo: () => void }) {
 function ConstrutorMailing({ onSalvo }: { onSalvo: () => void }) {
   const [veiculos, setVeiculos] = useState<Veiculo[]>([])
   const [filtros, setFiltros] = useState<Filtros>({
-    situacao: ['ativo'], regiao: [], editoria: '', veiculo_ids: [], busca: '',
+    situacao: ['ativo'], regiao: [], editoria: [], veiculo_ids: [], busca: '',
   })
   const [campos, setCampos] = useState<string[]>(['nome', 'email', 'telefone', 'cargo', 'editoria', 'veiculo'])
   const [resultado, setResultado] = useState<JornalistaRow[]>([])
@@ -200,7 +200,7 @@ function ConstrutorMailing({ onSalvo }: { onSalvo: () => void }) {
       const res = await consultarMailing({
         situacao: filtros.situacao.length ? filtros.situacao : undefined,
         regiao: filtros.regiao.length ? filtros.regiao : undefined,
-        editoria: filtros.editoria ? filtros.editoria.split(',').map(e => e.trim()).filter(Boolean) : undefined,
+        editoria: filtros.editoria.length ? filtros.editoria : undefined,
         veiculo_id: filtros.veiculo_ids.length ? filtros.veiculo_ids : undefined,
         busca: filtros.busca || undefined,
         incluidos: Array.from(selecionados),
@@ -345,6 +345,13 @@ function ConstrutorMailing({ onSalvo }: { onSalvo: () => void }) {
     }))
   }
 
+  function toggleFiltroEditoria(v: string) {
+    setFiltros(f => ({
+      ...f,
+      editoria: f.editoria.includes(v) ? f.editoria.filter(e => e !== v) : [...f.editoria, v],
+    }))
+  }
+
   function toggleFiltroRegiao(v: string) {
     setFiltros(f => ({
       ...f,
@@ -375,7 +382,7 @@ function ConstrutorMailing({ onSalvo }: { onSalvo: () => void }) {
             <div>
               <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Região</p>
               <div className="flex flex-wrap gap-1.5">
-                {REGIOES.map(r => (
+                {REGIOES_IMPRENSA.map(r => (
                   <button key={r} onClick={() => toggleFiltroRegiao(r)}
                     className={`px-2 py-0.5 rounded text-xs font-medium transition-colors ${filtros.regiao.includes(r) ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' : 'bg-gray-100 text-gray-500 dark:bg-white/5 dark:text-gray-500 hover:bg-gray-200 dark:hover:bg-white/10'}`}>
                     {r}
@@ -385,13 +392,15 @@ function ConstrutorMailing({ onSalvo }: { onSalvo: () => void }) {
             </div>
 
             <div>
-              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Editoria</p>
-              <input
-                className="w-full bg-gray-50 dark:bg-[#0a0a0a] border border-gray-200 dark:border-white/8 rounded-lg px-3 py-2 text-sm outline-none focus:border-gold/50"
-                placeholder="economia, política… (sep. vírgula)"
-                value={filtros.editoria}
-                onChange={e => setFiltros(f => ({ ...f, editoria: e.target.value }))}
-              />
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Editoria</p>
+              <div className="flex flex-wrap gap-1.5">
+                {EDITORIAS_IMPRENSA.map(e => (
+                  <button key={e} onClick={() => toggleFiltroEditoria(e)}
+                    className={`px-2 py-0.5 rounded text-xs font-medium transition-colors ${filtros.editoria.includes(e) ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' : 'bg-gray-100 text-gray-500 dark:bg-white/5 dark:text-gray-500 hover:bg-gray-200 dark:hover:bg-white/10'}`}>
+                    {e}
+                  </button>
+                ))}
+              </div>
             </div>
 
             <div>

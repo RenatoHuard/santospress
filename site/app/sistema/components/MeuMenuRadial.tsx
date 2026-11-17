@@ -230,8 +230,8 @@ const CADASTROS_ITEMS = [
 ]
 
 const IMPRENSA_LEVEL_ITEMS = [
-  { id: 'imprensa-dashboard',  label: 'Painel',     href: '/sistema/imprensa', icon: <IconImprensa />,  isGroup: false },
-  { id: 'imprensa-mailing',    label: 'Mailing',    href: '#',                 icon: <IconMailing />,   isGroup: false },
+  { id: 'imprensa-dashboard',  label: 'Painel',     href: '/sistema/imprensa',         icon: <IconImprensa />,  isGroup: false },
+  { id: 'imprensa-mailing',    label: 'Mailing',    href: '/sistema/imprensa/mailing', icon: <IconMailing />,   isGroup: false },
   { id: 'imprensa-cadastro',   label: 'Cadastro',   href: '#',                 icon: <IconCadastros />, isGroup: true  },
   { id: 'imprensa-resultados', label: 'Resultados', href: '#',                 icon: <IconClipping />,  isGroup: true  },
   { id: 'imprensa-gestao',     label: 'Gestão',     href: '#',                 icon: <IconRanking />,   isGroup: true  },
