@@ -270,6 +270,29 @@ export async function getClientesBasico() {
   return (data ?? []) as { id: string; razao_social: string; nome_fantasia: string | null }[]
 }
 
+export type PostVinculado = {
+  id: string
+  titulo: string
+  slug: string | null
+  tipo: string
+  status: string | null
+  capa_url: string | null
+  publicado_em: string | null
+  created_at: string
+}
+
+export async function getPostsPorCliente(cliente_id?: string): Promise<PostVinculado[]> {
+  await requireStaff()
+  let q = serviceClient()
+    .from('spress_blog_posts')
+    .select('id, titulo, slug, tipo, status, capa_url, publicado_em, created_at')
+    .not('cliente_id', 'is', null)
+    .order('publicado_em', { ascending: false })
+  if (cliente_id) q = q.eq('cliente_id', cliente_id)
+  const { data } = await q
+  return (data ?? []) as PostVinculado[]
+}
+
 export async function despublicarPost(id: string, slug: string | null, tipo: string) {
   await requireStaff()
   const { error } = await serviceClient()

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState, useTransition } from 'react'
 import { getReleases, criarRelease, atualizarRelease, deletarRelease, type Release } from '../../actions/imprensa'
+import { getClientesBasico, getPostsPorCliente, type PostVinculado } from '../../actions/blog'
 
 const INPUT = 'w-full bg-gray-50 dark:bg-[#0a0a0a] border border-gray-200 dark:border-white/8 rounded-xl px-3 py-2 text-sm outline-none focus:border-gold/50 focus:ring-2 focus:ring-gold/15 transition'
 const LABEL = 'block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1'
@@ -10,8 +11,8 @@ function fmt(d: string) {
   return new Date(d).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })
 }
 
-type FormData = { titulo: string; corpo: string; arquivo_url: string }
-const EMPTY: FormData = { titulo: '', corpo: '', arquivo_url: '' }
+type FormData = { titulo: string; corpo: string; arquivo_url: string; cliente_id: string }
+const EMPTY: FormData = { titulo: '', corpo: '', arquivo_url: '', cliente_id: '' }
 
 export default function ReleasesPage() {
   const [rows, setRows] = useState<Release[]>([])
@@ -26,6 +27,10 @@ export default function ReleasesPage() {
   const [erro, setErro] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
   const buscaTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const [clientes, setClientes] = useState<{ id: string; razao_social: string; nome_fantasia: string | null }[]>([])
+  const [clientePostsFiltro, setClientePostsFiltro] = useState('')
+  const [posts, setPosts] = useState<PostVinculado[]>([])
+  const [postsLoading, setPostsLoading] = useState(true)
   const PER_PAGE = 30
 
   const load = useCallback(async (p = 1, q = busca) => {
@@ -42,6 +47,11 @@ export default function ReleasesPage() {
   }, [busca])
 
   useEffect(() => { load(1) }, [])
+  useEffect(() => { getClientesBasico().then(setClientes).catch(() => {}) }, [])
+  useEffect(() => {
+    setPostsLoading(true)
+    getPostsPorCliente(clientePostsFiltro || undefined).then(setPosts).catch(() => setPosts([])).finally(() => setPostsLoading(false))
+  }, [clientePostsFiltro])
 
   function handleBusca(v: string) {
     setBusca(v)
@@ -51,7 +61,7 @@ export default function ReleasesPage() {
 
   function abrirCriar() { setForm(EMPTY); setEditing(null); setErro(null); setModal('criar') }
   function abrirEditar(r: Release) {
-    setForm({ titulo: r.titulo, corpo: r.corpo ?? '', arquivo_url: r.arquivo_url ?? '' })
+    setForm({ titulo: r.titulo, corpo: r.corpo ?? '', arquivo_url: r.arquivo_url ?? '', cliente_id: r.cliente_id ?? '' })
     setEditing(r); setErro(null); setModal('editar')
   }
   function abrirVer(r: Release) { setEditing(r); setModal('ver') }
@@ -65,6 +75,7 @@ export default function ReleasesPage() {
           titulo: form.titulo.trim(),
           corpo: form.corpo.trim() || undefined,
           arquivo_url: form.arquivo_url.trim() || undefined,
+          cliente_id: form.cliente_id || undefined,
         }
         if (modal === 'criar') await criarRelease(payload)
         else if (editing) await atualizarRelease(editing.id, payload)
@@ -180,6 +191,57 @@ export default function ReleasesPage() {
         </div>
       )}
 
+      {/* Posts por Cliente */}
+      <div className="mt-10">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-base font-bold text-gray-900 dark:text-white">Posts vinculados a Clientes</h2>
+          <select
+            value={clientePostsFiltro}
+            onChange={e => setClientePostsFiltro(e.target.value)}
+            className="bg-white dark:bg-[#111] border border-gray-200 dark:border-white/10 rounded-xl px-3 py-2 text-sm outline-none focus:border-gold/50 max-w-xs"
+          >
+            <option value="">Todos os clientes</option>
+            {clientes.map(c => <option key={c.id} value={c.id}>{c.nome_fantasia || c.razao_social}</option>)}
+          </select>
+        </div>
+        {postsLoading ? (
+          <div className="flex justify-center py-8">
+            <div className="w-5 h-5 border-2 border-gold border-t-transparent rounded-full animate-spin" />
+          </div>
+        ) : posts.length === 0 ? (
+          <p className="text-sm text-gray-400 py-8 text-center">Nenhum post vinculado a cliente encontrado.</p>
+        ) : (
+          <div className="bg-white dark:bg-[#111] border border-gray-100 dark:border-white/5 rounded-2xl overflow-hidden">
+            <div className="divide-y divide-gray-50 dark:divide-white/3">
+              {posts.map(p => (
+                <div key={p.id} className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-white/2 transition-colors">
+                  <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0 ${
+                    p.tipo === 'case' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400' :
+                    p.tipo === 'blog' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' :
+                    'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
+                  }`}>
+                    {p.tipo === 'case' ? 'Case' : p.tipo === 'blog' ? 'Blog' : 'Notícia'}
+                  </span>
+                  <span className="flex-1 text-sm text-gray-800 dark:text-gray-200 truncate">{p.titulo || 'Sem título'}</span>
+                  <span className="text-xs text-gray-400 shrink-0">
+                    {fmt(p.publicado_em ?? p.created_at)}
+                  </span>
+                  {p.status === 'publicado' && p.slug && (
+                    <a
+                      href={`/${p.tipo === 'case' ? 'cases' : p.tipo === 'blog' ? 'blog' : 'noticias'}/${p.slug}`}
+                      target="_blank" rel="noreferrer"
+                      className="text-xs text-gold hover:underline shrink-0"
+                    >
+                      Ver →
+                    </a>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
       {/* Modal criar/editar */}
       {(modal === 'criar' || modal === 'editar') && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
@@ -198,6 +260,13 @@ export default function ReleasesPage() {
               <div>
                 <label className={LABEL}>Título *</label>
                 <input className={INPUT} value={form.titulo} onChange={e => setForm(f => ({ ...f, titulo: e.target.value }))} />
+              </div>
+              <div>
+                <label className={LABEL}>Cliente</label>
+                <select className={INPUT} value={form.cliente_id} onChange={e => setForm(f => ({ ...f, cliente_id: e.target.value }))}>
+                  <option value="">— sem cliente —</option>
+                  {clientes.map(c => <option key={c.id} value={c.id}>{c.nome_fantasia || c.razao_social}</option>)}
+                </select>
               </div>
               <div>
                 <label className={LABEL}>Conteúdo</label>

@@ -1,6 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
 import { notFound } from 'next/navigation'
-import Image from 'next/image'
 import Link from 'next/link'
 import type { Metadata } from 'next'
 import { ViewTracker } from './ViewTracker'
@@ -168,7 +167,8 @@ export default async function CasePostPage({ params }: Props) {
       <ViewTracker postId={post.id} />
       {post.capa_url ? (
         <div className="relative h-64 md:h-[420px]">
-          <Image src={post.capa_url} alt={post.titulo} fill className="object-cover" priority />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={post.capa_url} alt={post.titulo} className="absolute inset-0 w-full h-full object-cover" />
           <div className="absolute inset-0 bg-navy/75" />
           <div className="absolute inset-0 flex items-end">
             <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 pb-12 w-full">
@@ -237,8 +237,9 @@ export default async function CasePostPage({ params }: Props) {
                   className="group bg-white rounded-xl overflow-hidden border border-gray-100 hover:border-gold/40 hover:shadow-md transition-all"
                 >
                   {s.capa_url && (
-                    <div className="relative h-40 w-full">
-                      <Image src={s.capa_url} alt={s.titulo} fill className="object-cover" />
+                    <div className="h-40 w-full overflow-hidden">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={s.capa_url} alt={s.titulo} className="w-full h-full object-cover" />
                     </div>
                   )}
                   <div className="p-5">

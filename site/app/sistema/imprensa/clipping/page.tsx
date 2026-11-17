@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState, useTransition } from 'react'
 import { getClippings, criarClipping, atualizarClipping, deletarClipping, getVeiculos, type Clipping, type Veiculo } from '../../actions/imprensa'
+import { getClientesBasico } from '../../actions/blog'
 
 const FORMATO_LABEL: Record<string, string> = {
   materia: 'Matéria', nota: 'Nota', artigo: 'Artigo', entrevista: 'Entrevista',
@@ -19,9 +20,9 @@ function fmt(d: string | null) {
 
 type FormData = {
   titulo: string; url: string; formato: string; data_publicacao: string
-  veiculo_id: string; jornalista_id: string
+  veiculo_id: string; jornalista_id: string; cliente_id: string
 }
-const EMPTY: FormData = { titulo: '', url: '', formato: '', data_publicacao: '', veiculo_id: '', jornalista_id: '' }
+const EMPTY: FormData = { titulo: '', url: '', formato: '', data_publicacao: '', veiculo_id: '', jornalista_id: '', cliente_id: '' }
 
 export default function ClippingPage() {
   const [rows, setRows] = useState<Clipping[]>([])
@@ -29,6 +30,7 @@ export default function ClippingPage() {
   const [page, setPage] = useState(1)
   const [loading, setLoading] = useState(true)
   const [veiculos, setVeiculos] = useState<Veiculo[]>([])
+  const [clientes, setClientes] = useState<{ id: string; razao_social: string; nome_fantasia: string | null }[]>([])
   const [formatoFiltro, setFormatoFiltro] = useState('')
   const [modal, setModal] = useState<'criar' | 'editar' | null>(null)
   const [editing, setEditing] = useState<Clipping | null>(null)
@@ -53,6 +55,7 @@ export default function ClippingPage() {
 
   useEffect(() => { load(1) }, [])
   useEffect(() => { getVeiculos({ ativo: true }).then(setVeiculos).catch(() => {}) }, [])
+  useEffect(() => { getClientesBasico().then(setClientes).catch(() => {}) }, [])
 
   function abrirCriar() { setForm(EMPTY); setEditing(null); setErro(null); setModal('criar') }
   function abrirEditar(c: Clipping) {
@@ -60,6 +63,7 @@ export default function ClippingPage() {
       titulo: c.titulo ?? '', url: c.url ?? '', formato: c.formato ?? '',
       data_publicacao: c.data_publicacao?.substring(0, 10) ?? '',
       veiculo_id: c.veiculo_id ?? '', jornalista_id: c.jornalista_id ?? '',
+      cliente_id: c.cliente_id ?? '',
     })
     setEditing(c); setErro(null); setModal('editar')
   }
@@ -74,6 +78,7 @@ export default function ClippingPage() {
           formato: (form.formato || undefined) as Clipping['formato'],
           data_publicacao: form.data_publicacao || undefined,
           veiculo_id: form.veiculo_id || undefined,
+          cliente_id: form.cliente_id || undefined,
         }
         if (modal === 'criar') await criarClipping(payload)
         else if (editing) await atualizarClipping(editing.id, payload)
@@ -206,6 +211,13 @@ export default function ClippingPage() {
               <div>
                 <label className={LABEL}>Título</label>
                 <input className={INPUT} value={form.titulo} onChange={e => setForm(f => ({ ...f, titulo: e.target.value }))} />
+              </div>
+              <div>
+                <label className={LABEL}>Cliente</label>
+                <select className={INPUT} value={form.cliente_id} onChange={e => setForm(f => ({ ...f, cliente_id: e.target.value }))}>
+                  <option value="">— sem cliente —</option>
+                  {clientes.map(c => <option key={c.id} value={c.id}>{c.nome_fantasia || c.razao_social}</option>)}
+                </select>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>

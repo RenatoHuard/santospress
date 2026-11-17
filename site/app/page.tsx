@@ -1,5 +1,4 @@
 import Link from 'next/link'
-import Image from 'next/image'
 import { supabase } from '@/lib/supabase'
 import { BlogCard } from '@/components/BlogCard'
 import type { BlogPost } from '@/lib/types'
@@ -170,14 +169,9 @@ export default async function Home() {
                   <div className="w-full max-w-xs bg-white/6 border border-white/12 rounded-2xl overflow-hidden backdrop-blur-sm">
                     {heroPost.capa_url ? (
                       <Link href={heroHref} className="block">
-                        <div className="relative h-40 w-full">
-                          <Image
-                            src={heroPost.capa_url}
-                            alt={heroPost.titulo}
-                            fill
-                            className="object-cover"
-                            sizes="320px"
-                          />
+                        <div className="relative h-40 w-full overflow-hidden">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={heroPost.capa_url} alt={heroPost.titulo} className="w-full h-full object-cover" />
                           <div className="absolute inset-0 bg-navy/20" />
                         </div>
                       </Link>
@@ -316,14 +310,9 @@ export default async function Home() {
             >
               <div className={cases[0].capa_url ? 'grid md:grid-cols-2' : ''}>
                 {cases[0].capa_url && (
-                  <div className="relative h-56 md:h-80">
-                    <Image
-                      src={cases[0].capa_url}
-                      alt={cases[0].titulo}
-                      fill
-                      className="object-cover"
-                      sizes="(max-width: 768px) 100vw, 50vw"
-                    />
+                  <div className="relative h-56 md:h-80 overflow-hidden">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={cases[0].capa_url} alt={cases[0].titulo} className="w-full h-full object-cover" />
                     <div className="absolute inset-0 bg-navy/30" />
                   </div>
                 )}
@@ -352,14 +341,9 @@ export default async function Home() {
                     className="group block rounded-xl overflow-hidden border border-white/10 hover:border-gold/30 transition-all bg-white/4"
                   >
                     {post.capa_url && (
-                      <div className="relative h-40 w-full">
-                        <Image
-                          src={post.capa_url}
-                          alt={post.titulo}
-                          fill
-                          className="object-cover"
-                          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                        />
+                      <div className="h-40 w-full overflow-hidden">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={post.capa_url} alt={post.titulo} className="w-full h-full object-cover" />
                       </div>
                     )}
                     <div className="p-5">

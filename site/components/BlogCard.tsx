@@ -1,5 +1,4 @@
 import Link from 'next/link'
-import Image from 'next/image'
 import type { BlogPost } from '@/lib/types'
 
 function formatDate(date: string | null) {
@@ -18,12 +17,12 @@ export function BlogCard({ post, href }: { post: BlogPost; href?: string }) {
       className="group block bg-white dark:bg-[#1a1a1a] rounded-2xl overflow-hidden shadow-sm dark:shadow-none hover:shadow-md dark:hover:shadow-none transition-shadow border border-gray-100 dark:border-white/5"
     >
       {post.capa_url ? (
-        <div className="relative h-48 overflow-hidden">
-          <Image
+        <div className="h-48 overflow-hidden">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
             src={post.capa_url}
             alt={post.titulo}
-            fill
-            className="object-cover group-hover:scale-105 transition-transform duration-300"
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
           />
         </div>
       ) : (
