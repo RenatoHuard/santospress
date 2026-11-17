@@ -160,19 +160,22 @@ export async function getBlogDrafts(tipo = 'noticia') {
   return data ?? []
 }
 
-export async function publicarPost(id: string) {
-  await requireStaff()
+export async function publicarPost(id: string): Promise<{ error?: string }> {
+  try { await requireStaff() } catch (e) {
+    return { error: e instanceof Error ? e.message : 'UNAUTHORIZED' }
+  }
   const sb = serviceClient()
   const { data: post } = await sb.from('spress_blog_posts').select('tipo, slug').eq('id', id).single()
   const { error } = await sb
     .from('spress_blog_posts')
     .update({ status: 'publicado', publicado_em: new Date().toISOString() })
     .eq('id', id)
-  if (error) throw new Error(error.message)
+  if (error) return { error: error.message }
   const base = post?.tipo === 'case' ? '/cases' : post?.tipo === 'blog' ? '/blog' : '/noticias'
   if (post?.slug) revalidatePath(`${base}/${post.slug}`)
   revalidatePath(base)
   revalidatePath('/')
+  return {}
 }
 
 export async function getBlogAnalytics(days: number, tipo: 'noticia' | 'case' | 'blog' = 'noticia') {

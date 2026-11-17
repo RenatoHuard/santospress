@@ -61,14 +61,13 @@ export default function NoticiasRascunhosPage() {
   function handlePublicar(id: string) {
     setPublishing(id)
     startTransition(async () => {
-      try {
-        await publicarPost(id)
+      const result = await publicarPost(id)
+      if (result.error) {
+        setError(result.error)
+      } else {
         setDrafts((prev) => prev.filter((d) => d.id !== id))
-      } catch (e) {
-        setError(e instanceof Error ? e.message : 'Erro ao publicar')
-      } finally {
-        setPublishing(null)
       }
+      setPublishing(null)
     })
   }
 
