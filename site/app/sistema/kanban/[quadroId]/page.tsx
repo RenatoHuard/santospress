@@ -3,7 +3,7 @@
 import { useEffect, useState, useTransition } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { supabase } from '@/lib/supabase'
+import { getBrowserSupabase } from '@/lib/supabase-browser'
 import {
   getKanbanData,
   getUsuarioByAuthId,
@@ -48,7 +48,7 @@ export default function KanbanBoardPage() {
       setNomeInput(d.quadro.nome)
       setLoading(false)
     })
-    supabase.auth.getUser().then(async ({ data: { user } }) => {
+    getBrowserSupabase().auth.getUser().then(async ({ data: { user } }) => {
       if (user) setCurrentUser(await getUsuarioByAuthId(user.id))
     })
   }, [quadroId, router])

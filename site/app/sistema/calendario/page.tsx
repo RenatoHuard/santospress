@@ -1,8 +1,8 @@
-'use client'
+﻿'use client'
 
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
-import { supabase } from '@/lib/supabase'
+import { getBrowserSupabase } from '@/lib/supabase-browser'
 import {
   getCalendarioData, getUsuarioByAuthId,
   type Aniversario, type CalendarioCard, type CalendarioData, type Etiqueta, type KanbanCard, type UsuarioSimples,
@@ -51,7 +51,7 @@ export default function CalendarioPage() {
   function ganttNext() { setGanttStart(prev => new Date(prev.getFullYear(), prev.getMonth() + 1, 1)) }
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => {
+    getBrowserSupabase().auth.getUser().then(({ data: { user } }) => {
       if (user) {
         setAuthUserId(user.id)
         getUsuarioByAuthId(user.id).then(u => setCurrentUser(u))

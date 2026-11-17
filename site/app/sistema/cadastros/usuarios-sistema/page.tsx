@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { supabase } from '@/lib/supabase'
+import { getBrowserSupabase } from '@/lib/supabase-browser'
 import { isSuperAdmin } from '../../actions/auth'
 import { UsuariosSistemaClient } from './UsuariosSistemaClient'
 
@@ -12,7 +12,7 @@ export default function UsuariosSistemaPage() {
   const [denied, setDenied] = useState(false)
 
   useEffect(() => {
-    supabase.auth.getUser().then(async ({ data }) => {
+    getBrowserSupabase().auth.getUser().then(async ({ data }) => {
       if (!data.user) { router.push('/login'); return }
       const ok = await isSuperAdmin()
       if (!ok) { setDenied(true); return }

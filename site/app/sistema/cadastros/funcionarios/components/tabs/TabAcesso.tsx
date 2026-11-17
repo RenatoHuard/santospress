@@ -10,7 +10,7 @@ import {
   getAuditCredenciais,
 } from '../../../../actions'
 import { ImageCropUpload } from '../ImageCropUpload'
-import { supabase } from '@/lib/supabase'
+import { getBrowserSupabase } from '@/lib/supabase-browser'
 import { inputCls, Section, Field, G2, Feedback, BoolToggle, MaskedInput } from './_shared'
 import { validateEmail } from './_masks'
 
@@ -66,7 +66,7 @@ export function TabAcesso({ mode, setores, initialData }: Props) {
   // Identidade do admin logado (para auditoria)
   const [adminEmail, setAdminEmail] = useState('')
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    getBrowserSupabase().auth.getSession().then(({ data: { session } }) => {
       setAdminEmail(session?.user?.email ?? 'Sistema')
     })
   }, [])

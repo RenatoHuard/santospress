@@ -1,7 +1,7 @@
-'use client'
+﻿'use client'
 
 import { useState, useEffect } from 'react'
-import { supabase } from '@/lib/supabase'
+import { getBrowserSupabase } from '@/lib/supabase-browser'
 import { isSuperAdmin } from '../actions/auth'
 import { TopNav } from '../components/TopNav'
 import { CornerRadialMenu, type CornerMenuItem } from '../components/CornerRadialMenu'
@@ -54,7 +54,7 @@ export default function CadastrosLayout({ children }: { children: React.ReactNod
   const [items, setItems] = useState<CornerMenuItem[]>(BASE_ITEMS)
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
+    getBrowserSupabase().auth.getUser().then(({ data }) => {
       if (!data.user) return
       isSuperAdmin().then((ok) => {
         if (ok) setItems([...BASE_ITEMS, SYS_USERS_ITEM])

@@ -1,9 +1,9 @@
-'use client'
+﻿'use client'
 
 import { useMemo, useState, useEffect } from 'react'
 import Link from 'next/link'
 import { type ReactNode } from 'react'
-import { supabase } from '@/lib/supabase'
+import { getBrowserSupabase } from '@/lib/supabase-browser'
 import { getUnseenSolicitacoesCount } from '../actions/solicitacoes'
 
 // ── Tipos ──────────────────────────────────────────────────────────
@@ -266,7 +266,7 @@ export function RadialMenu() {
   const [unseenCount, setUnseenCount] = useState(0)
 
   useEffect(() => {
-    supabase.auth.getUser().then(async ({ data: { user } }) => {
+    getBrowserSupabase().auth.getUser().then(async ({ data: { user } }) => {
       if (!user) return
       const count = await getUnseenSolicitacoesCount(user.id)
       setUnseenCount(count)

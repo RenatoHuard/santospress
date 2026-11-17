@@ -5,7 +5,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useTheme } from 'next-themes'
-import { supabase } from '@/lib/supabase'
+import { getBrowserSupabase } from '@/lib/supabase-browser'
 import { ThemeToggle } from '@/components/ThemeToggle'
 import { SimularPerfilDropdown } from './SimularPerfilDropdown'
 import type { User } from '@supabase/supabase-js'
@@ -18,11 +18,11 @@ export function TopNav() {
 
   useEffect(() => {
     setMounted(true)
-    supabase.auth.getUser().then(({ data }) => setUser(data.user))
+    getBrowserSupabase().auth.getUser().then(({ data }) => setUser(data.user))
   }, [])
 
   async function handleLogout() {
-    await supabase.auth.signOut()
+    await getBrowserSupabase().auth.signOut()
     router.push('/login')
   }
 

@@ -1,8 +1,8 @@
-'use client'
+﻿'use client'
 
 import { useEffect, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
-import { supabase } from '@/lib/supabase'
+import { getBrowserSupabase } from '@/lib/supabase-browser'
 import { getSolicitacoes, marcarComoVista, type Solicitacao } from '../actions/solicitacoes'
 import { SolicitacaoCard } from '../components/SolicitacaoCard'
 
@@ -32,7 +32,7 @@ export default function SolicitacoesPage() {
   const [, startTransition] = useTransition()
 
   useEffect(() => {
-    supabase.auth.getUser().then(async ({ data: { user } }) => {
+    getBrowserSupabase().auth.getUser().then(async ({ data: { user } }) => {
       if (!user) { router.replace('/login'); return }
       const data = await getSolicitacoes(user.id)
       setDemandas(data)

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { getFuncBancario, saveFuncBancario, getColaboradorRole } from '../../../../actions/rh'
-import { supabase } from '@/lib/supabase'
+import { getBrowserSupabase } from '@/lib/supabase-browser'
 import { inputCls, Section, Field, G2, TabLoader, SaveBtn, Feedback, BoolToggle } from './_shared'
 
 const TIPOS_CONTA = [
@@ -45,7 +45,7 @@ export function TabFinanceiro({ usuarioId }: { usuarioId: string }) {
     const load = async () => {
       const [data, { data: { user } }] = await Promise.all([
         getFuncBancario(usuarioId),
-        supabase.auth.getUser(),
+        getBrowserSupabase().auth.getUser(),
       ])
       if (data) {
         setForm({

@@ -1,9 +1,9 @@
-'use client'
+﻿'use client'
 
 import { useEffect, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { supabase } from '@/lib/supabase'
+import { getBrowserSupabase } from '@/lib/supabase-browser'
 import {
   getQuadros,
   getQuadrosVisiveis,
@@ -45,7 +45,7 @@ export default function KanbanListPage() {
   const [editingNome, setEditingNome]     = useState('')
 
   useEffect(() => {
-    supabase.auth.getUser().then(async ({ data: { user } }) => {
+    getBrowserSupabase().auth.getUser().then(async ({ data: { user } }) => {
       if (!user) {
         getQuadros().then(d => { setQuadros(d); setLoading(false) })
         return

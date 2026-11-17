@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useState, useCallback, useEffect, useMemo } from 'react'
 import {
@@ -17,7 +17,7 @@ import { SortableContext, arrayMove, horizontalListSortingStrategy } from '@dnd-
 import { KanbanColumn } from './KanbanColumn'
 import { KanbanCard } from './KanbanCard'
 import { CardDetalhes } from './CardDetalhes'
-import { supabase } from '@/lib/supabase'
+import { getBrowserSupabase } from '@/lib/supabase-browser'
 import {
   criarColuna,
   reordenarColunas,
@@ -54,7 +54,7 @@ export function KanbanBoard({ initialData }: Props) {
   const [labelsExpanded, setLabelsExpanded] = useState(false)
 
   useEffect(() => {
-    supabase.auth.getUser().then(async ({ data: { user } }) => {
+    getBrowserSupabase().auth.getUser().then(async ({ data: { user } }) => {
       if (!user) return
       setAuthUserId(user.id)
       const u = await getUsuarioByAuthId(user.id)

@@ -14,7 +14,7 @@ import { TextStyle } from '@tiptap/extension-text-style'
 import Highlight from '@tiptap/extension-highlight'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { supabase } from '@/lib/supabase'
+import { getBrowserSupabase } from '@/lib/supabase-browser'
 import { salvarPost, uploadBlogImagem, type SocialPreview } from '@/app/sistema/actions/blog'
 import { TopNav } from '@/app/sistema/components/TopNav'
 
@@ -432,7 +432,7 @@ export function BlogEditorClient({ funcionarios, clientes, initialPost, tipo, ti
   // ── Detectar autor logado ───────────────────────────────────────
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => {
+    getBrowserSupabase().auth.getUser().then(({ data: { user } }) => {
       if (user?.email) {
         const f = funcionarios.find((f) => f.email === user.email)
         if (f && !initialPost?.autor_id) setAutorId(f.id)
