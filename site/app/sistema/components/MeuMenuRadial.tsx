@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import Image from 'next/image'
 import Link from 'next/link'
 
 type Level = 'closed' | 'main' | 'meus-dados' | 'cadastros' | 'site' | 'noticias' | 'cases' | 'blog'
@@ -503,7 +502,8 @@ export function MeuMenuRadial({ enabledIds }: { enabledIds?: Set<string> | null 
         }}
         aria-label={isMain ? 'Fechar menu' : 'Abrir menu'}
       >
-        <Image src="/images/logo_santospress.png" alt="Santos Press" fill sizes="128px" className="object-contain p-5" />
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/images/logo_santospress.png" alt="Santos Press" className="w-full h-full object-contain p-5" />
       </button>
 
       {/* Click-away */}
