@@ -26,7 +26,13 @@ export async function middleware(request: NextRequest) {
   // Triggers session refresh if the access token is expired and writes
   // the new tokens back to the response cookies — preventing the
   // "Invalid Refresh Token" loop that breaks Server Actions.
-  await supabase.auth.getUser()
+  // Wrapped in try/catch so a failed refresh never crashes the request.
+  try {
+    await supabase.auth.getUser()
+  } catch {
+    // Session refresh failed — let the request proceed; auth-guard will
+    // handle the unauthorized case inside the Server Action.
+  }
 
   return supabaseResponse
 }
