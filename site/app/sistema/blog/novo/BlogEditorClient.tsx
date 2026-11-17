@@ -482,7 +482,7 @@ export function BlogEditorClient({ funcionarios, clientes, initialPost, tipo, ti
         }
         return
       }
-      setSavedId(result.id)
+      setSavedId(result.id ?? null)
       if (forceStatus) setStatus(forceStatus)
       setSaveMsg(effectiveStatus === 'publicado' ? '✓ Publicado!' : '✓ Rascunho salvo')
       setTimeout(() => setSaveMsg(''), 3000)
