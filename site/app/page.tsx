@@ -61,6 +61,30 @@ async function getLatestCases(): Promise<BlogPost[]> {
   return data ?? []
 }
 
+async function getLatestBlogPosts(): Promise<BlogPost[]> {
+  const { data } = await supabase
+    .from('spress_blog_posts')
+    .select('id, titulo, slug, resumo, capa_url, publicado_em')
+    .eq('status', 'publicado')
+    .eq('tipo', 'blog')
+    .order('publicado_em', { ascending: false })
+    .limit(3)
+  return data ?? []
+}
+
+type HeroPost = BlogPost & { tipo: string }
+
+async function getLatestAnyPost(): Promise<HeroPost | null> {
+  const { data } = await supabase
+    .from('spress_blog_posts')
+    .select('id, titulo, slug, resumo, capa_url, publicado_em, tipo')
+    .eq('status', 'publicado')
+    .order('publicado_em', { ascending: false })
+    .limit(1)
+    .single()
+  return (data as HeroPost | null) ?? null
+}
+
 async function getServicos() {
   // Títulos e descrições dos serviços buscados do banco (futuro).
   // Por ora retorna os dados estáticos com ícone do array acima.
@@ -77,10 +101,12 @@ async function getServicos() {
 // ── Página ─────────────────────────────────────────────────────────
 
 export default async function Home() {
-  const [content, posts, cases, services, depoimentos] = await Promise.all([
+  const [content, posts, cases, blogPosts, heroPost, services, depoimentos] = await Promise.all([
     getSiteContent(),
     getLatestPosts(),
     getLatestCases(),
+    getLatestBlogPosts(),
+    getLatestAnyPost(),
     getServicos(),
     getDepoimentosPublicos(),
   ])
@@ -100,7 +126,7 @@ export default async function Home() {
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-gold/25 via-transparent to-transparent pointer-events-none" />
         <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-gold/40 to-transparent" />
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-28 md:py-44">
-          <div className={cases.length > 0 ? 'grid md:grid-cols-2 gap-16 items-center' : ''}>
+          <div className={heroPost ? 'grid md:grid-cols-2 gap-16 items-center' : ''}>
 
             {/* Coluna esquerda: texto principal */}
             <div>
@@ -132,55 +158,56 @@ export default async function Home() {
               </div>
             </div>
 
-            {/* Coluna direita: preview do case (estilo link compartilhado) */}
-            {cases.length > 0 && (
-              <div className="flex justify-center md:justify-end mt-12 md:mt-0 md:pr-12 lg:pr-20">
-                <div className="w-full max-w-xs bg-white/6 border border-white/12 rounded-2xl overflow-hidden backdrop-blur-sm">
-                  {cases[0].capa_url ? (
-                    <Link href={`/cases/${cases[0].slug}`} className="block">
-                      <div className="relative h-40 w-full">
-                        <Image
-                          src={cases[0].capa_url}
-                          alt={cases[0].titulo}
-                          fill
-                          className="object-cover"
-                          sizes="320px"
-                        />
-                        <div className="absolute inset-0 bg-navy/20" />
+            {/* Coluna direita: preview do último post publicado (qualquer tipo) */}
+            {heroPost && (() => {
+              const heroHref = heroPost.tipo === 'case' ? `/cases/${heroPost.slug}` : heroPost.tipo === 'blog' ? `/blog/${heroPost.slug}` : `/noticias/${heroPost.slug}`
+              const heroListHref = heroPost.tipo === 'case' ? '/cases' : heroPost.tipo === 'blog' ? '/blog' : '/noticias'
+              const heroListLabel = heroPost.tipo === 'case' ? 'Ver todos os cases' : heroPost.tipo === 'blog' ? 'Ver todos os posts' : 'Ver todas as notícias'
+              const heroBadge = heroPost.tipo === 'case' ? 'Case em destaque' : heroPost.tipo === 'blog' ? 'Blog em destaque' : 'Notícia em destaque'
+              const heroReadLabel = heroPost.tipo === 'case' ? 'Ver case →' : heroPost.tipo === 'blog' ? 'Ler post →' : 'Ler notícia →'
+              return (
+                <div className="flex justify-center md:justify-end mt-12 md:mt-0 md:pr-12 lg:pr-20">
+                  <div className="w-full max-w-xs bg-white/6 border border-white/12 rounded-2xl overflow-hidden backdrop-blur-sm">
+                    {heroPost.capa_url ? (
+                      <Link href={heroHref} className="block">
+                        <div className="relative h-40 w-full">
+                          <Image
+                            src={heroPost.capa_url}
+                            alt={heroPost.titulo}
+                            fill
+                            className="object-cover"
+                            sizes="320px"
+                          />
+                          <div className="absolute inset-0 bg-navy/20" />
+                        </div>
+                      </Link>
+                    ) : null}
+                    <div className="p-4">
+                      <span className="text-gold text-[10px] font-bold uppercase tracking-widest">{heroBadge}</span>
+                      <Link href={heroHref} className="group block mt-1">
+                        <h3 className="text-white text-sm font-semibold leading-snug line-clamp-2 group-hover:text-gold transition-colors">
+                          {heroPost.titulo}
+                        </h3>
+                      </Link>
+                      {heroPost.resumo && (
+                        <p className="text-gray-400 text-xs mt-2 line-clamp-2 leading-relaxed">
+                          {heroPost.resumo}
+                        </p>
+                      )}
+                      <div className="flex items-center gap-2 mt-4 pt-3 border-t border-white/8">
+                        <Link href={heroHref} className="text-gold text-xs font-semibold hover:underline">
+                          {heroReadLabel}
+                        </Link>
+                        <span className="text-white/20 text-xs">·</span>
+                        <Link href={heroListHref} className="text-white/45 text-xs hover:text-white/70 transition-colors">
+                          {heroListLabel}
+                        </Link>
                       </div>
-                    </Link>
-                  ) : null}
-                  <div className="p-4">
-                    <span className="text-gold text-[10px] font-bold uppercase tracking-widest">Case em destaque</span>
-                    <Link href={`/cases/${cases[0].slug}`} className="group block mt-1">
-                      <h3 className="text-white text-sm font-semibold leading-snug line-clamp-2 group-hover:text-gold transition-colors">
-                        {cases[0].titulo}
-                      </h3>
-                    </Link>
-                    {cases[0].resumo && (
-                      <p className="text-gray-400 text-xs mt-2 line-clamp-2 leading-relaxed">
-                        {cases[0].resumo}
-                      </p>
-                    )}
-                    <div className="flex items-center gap-2 mt-4 pt-3 border-t border-white/8">
-                      <Link
-                        href={`/cases/${cases[0].slug}`}
-                        className="text-gold text-xs font-semibold hover:underline"
-                      >
-                        Ver case →
-                      </Link>
-                      <span className="text-white/20 text-xs">·</span>
-                      <Link
-                        href="/cases"
-                        className="text-white/45 text-xs hover:text-white/70 transition-colors"
-                      >
-                        Ver todos os cases
-                      </Link>
                     </div>
                   </div>
                 </div>
-              </div>
-            )}
+              )
+            })()}
 
           </div>
         </div>
@@ -422,6 +449,30 @@ export default async function Home() {
               <h2 className="text-3xl md:text-4xl font-bold text-navy dark:text-white mt-3">Depoimentos</h2>
             </div>
             <DepoimentosCarousel depoimentos={depoimentos as DepoimentoPublico[]} />
+          </div>
+        </section>
+      )}
+
+      {/* ── Blog ─────────────────────────────────────────── */}
+      {blogPosts.length > 0 && (
+        <section className="bg-gray-50 dark:bg-[#161616] py-24">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between mb-12">
+              <div>
+                <span className="text-gold font-semibold text-xs uppercase tracking-widest">Blog</span>
+                <h2 className="text-3xl md:text-4xl font-bold text-navy dark:text-white mt-3">
+                  Últimas Postagens
+                </h2>
+              </div>
+              <Link href="/blog" className="mt-4 sm:mt-0 text-gold font-semibold hover:underline text-sm">
+                Ver todos os posts →
+              </Link>
+            </div>
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
+              {blogPosts.map((post) => (
+                <BlogCard key={post.id} post={post} href={`/blog/${post.slug}`} />
+              ))}
+            </div>
           </div>
         </section>
       )}

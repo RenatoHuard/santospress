@@ -368,6 +368,7 @@ type Stage =
 export function CornerRadialMenu({ items, parentItems }: Props) {
   const [open, setOpen]   = useState(false)
   const [stage, setStage] = useState<Stage>({ kind: 'section', sub: 'current', sectionPath: [] })
+  const [expandedId, setExpandedId] = useState<string | null>(null)
   // undefined = carregando; null = admin (mostra tudo); Set = ids permitidos
   const [allowedIds, setAllowedIds] = useState<Set<string> | null | undefined>(undefined)
   const pathname  = usePathname()
@@ -393,9 +394,14 @@ export function CornerRadialMenu({ items, parentItems }: Props) {
   function close() {
     setOpen(false)
     setStage({ kind: 'section', sub: 'current', sectionPath: [] })
+    setExpandedId(null)
   }
 
   function handleBack() {
+    if (expandedId) {
+      setExpandedId(null)
+      return
+    }
     if (stage.kind === 'section') {
       if (stage.sectionPath.length > 0) {
         setStage({ ...stage, sectionPath: stage.sectionPath.slice(0, -1) })
@@ -456,7 +462,7 @@ export function CornerRadialMenu({ items, parentItems }: Props) {
       href: it.href,
       isCurrent: it.href
         ? (it.exact ? pathname === it.href : pathname.startsWith(it.href))
-        : (it.children?.some(c => c.href && pathname.startsWith(c.href)) ?? false),
+        : (expandedId === it.id || (it.children?.some(c => c.href && pathname.startsWith(c.href)) ?? false)),
       action: it.children ? 'section-group' as const : 'section-link' as const,
     }))
   } else {
@@ -493,6 +499,30 @@ export function CornerRadialMenu({ items, parentItems }: Props) {
 
   const arcItems: ArcEntry[] = [...bodyItems, finalBtn]
   const positions = getPositions(arcItems.length)
+
+  // ── Leque inline para section-groups ────────────────────────────
+  const expandedSectionChildren: CornerMenuItem[] = (() => {
+    if (!expandedId || stage.kind !== 'section') return []
+    const baseList = stage.sub === 'parent' ? (parentItems ?? items) : items
+    return baseList.find(it => it.id === expandedId)?.children ?? []
+  })()
+  const expandedParentIdx = expandedId ? bodyItems.findIndex(it => it.id === expandedId) : -1
+  const expandedParentPos = expandedParentIdx >= 0 ? positions[expandedParentIdx] : null
+
+  function getFanPositions(parentPos: { x: number; y: number }, count: number) {
+    if (count === 0) return []
+    const angle = Math.atan2(parentPos.y, parentPos.x)
+    const childRadius = Math.sqrt(parentPos.x ** 2 + parentPos.y ** 2) + 95
+    if (count === 1) return [{ x: Math.cos(angle) * childRadius, y: Math.sin(angle) * childRadius }]
+    return Array.from({ length: count }, (_, i) => {
+      const a = angle + (i - (count - 1) / 2) * (Math.PI / 8)
+      return { x: Math.cos(a) * childRadius, y: Math.sin(a) * childRadius }
+    })
+  }
+
+  const fanPositions = expandedParentPos
+    ? getFanPositions(expandedParentPos, expandedSectionChildren.length)
+    : []
 
   // ── Estilos ─────────────────────────────────────────────────────
 
@@ -551,7 +581,7 @@ export function CornerRadialMenu({ items, parentItems }: Props) {
             ) : item.action === 'section-group' ? (
               <div className="relative">
                 <button
-                  onClick={() => setStage(s => s.kind === 'section' ? { ...s, sectionPath: [...s.sectionPath, item.id] } : s)}
+                  onClick={() => setExpandedId(id => id === item.id ? null : item.id)}
                   className={btnCls(item.isCurrent)}
                 >
                   {item.icon}
@@ -586,6 +616,41 @@ export function CornerRadialMenu({ items, parentItems }: Props) {
               'text-gray-600 dark:text-gray-200',
             ].join(' ')}>
               {item.label}
+            </span>
+          </div>
+        )
+      })}
+
+      {/* Filhos em leque (inline expand) */}
+      {expandedSectionChildren.map((child, i) => {
+        const p = fanPositions[i]
+        if (!p) return null
+        const isCurrentChild = child.href
+          ? (child.exact ? pathname === child.href : pathname.startsWith(child.href))
+          : false
+        const visible = !!(open && expandedId)
+        return (
+          <div
+            key={`fan-${child.id}`}
+            className="fixed z-40 flex flex-col items-center"
+            style={{
+              left: TX + p.x - 24,
+              top: `calc(50vh + ${p.y - 24}px)`,
+              transform: visible ? 'translate(0,0)' : `translate(${-p.x}px,${-p.y}px)`,
+              opacity: visible ? 1 : 0,
+              pointerEvents: visible ? 'auto' : 'none',
+              transition: 'transform 0.44s cubic-bezier(0.34,1.56,0.64,1), opacity 0.22s ease',
+              transitionDelay: visible ? `${i * 0.055}s` : '0s',
+            }}
+          >
+            <Link href={child.href!} onClick={close} className={btnCls(isCurrentChild)}>
+              {child.icon}
+            </Link>
+            <span className={[
+              'mt-1.5 text-[9px] font-bold uppercase tracking-widest whitespace-nowrap select-none',
+              isCurrentChild ? 'text-gold' : 'text-gray-600 dark:text-gray-200',
+            ].join(' ')}>
+              {child.label}
             </span>
           </div>
         )

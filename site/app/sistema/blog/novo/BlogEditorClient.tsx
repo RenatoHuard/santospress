@@ -479,7 +479,12 @@ export function BlogEditorClient({ funcionarios, clientes, initialPost, tipo, ti
       setSaveMsg(effectiveStatus === 'publicado' ? '✓ Publicado!' : '✓ Rascunho salvo')
       setTimeout(() => setSaveMsg(''), 3000)
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Erro ao salvar.')
+      const msg = err instanceof Error ? err.message : String(err)
+      if (msg.includes('Server Components') || msg.includes('Server Action') || msg.includes('digest')) {
+        alert('Sua sessão pode ter expirado. Recarregue a página, faça login novamente e tente salvar de novo.')
+      } else {
+        alert(msg || 'Erro ao salvar.')
+      }
     } finally {
       setSaving(false)
     }

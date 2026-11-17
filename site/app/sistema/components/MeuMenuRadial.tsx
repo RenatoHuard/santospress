@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
 
-type Level = 'closed' | 'main' | 'meus-dados' | 'cadastros' | 'site' | 'noticias' | 'cases'
+type Level = 'closed' | 'main' | 'meus-dados' | 'cadastros' | 'site' | 'noticias' | 'cases' | 'blog'
 
 const PREFERRED_ANGLES: Record<number, number[]> = {
   1: [-90],
@@ -93,6 +93,12 @@ const IconRelatorio = () => (
   </svg>
 )
 
+const IconBlog = ({ size = 24 }: { size?: number }) => (
+  <svg style={{ width: size, height: size }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
+  </svg>
+)
+
 const IconCases = ({ size = 24 }: { size?: number }) => (
   <svg style={{ width: size, height: size }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
     <path strokeLinecap="round" strokeLinejoin="round" d="M20.25 14.15v4.25c0 1.094-.787 2.036-1.872 2.18-2.087.277-4.216.42-6.378.42s-4.291-.143-6.378-.42c-1.085-.144-1.872-1.086-1.872-2.18v-4.25m16.5 0a2.18 2.18 0 00.75-1.661V8.706c0-1.081-.768-2.015-1.837-2.175a48.114 48.114 0 00-3.413-.387m4.5 8.006c-.194.165-.42.295-.673.38A23.978 23.978 0 0112 15.75c-2.648 0-5.195-.429-7.577-1.22a2.016 2.016 0 01-.673-.38m0 0A2.18 2.18 0 013 12.489V8.706c0-1.081.768-2.015 1.837-2.175a48.111 48.111 0 013.413-.387m7.5 0V5.25A2.25 2.25 0 0013.5 3h-3a2.25 2.25 0 00-2.25 2.25v.894m7.5 0a48.667 48.667 0 00-7.5 0M12 12.75h.008v.008H12v-.008z" />
@@ -146,13 +152,21 @@ const SITE_ITEMS = [
   { id: 'editar-site', label: 'Editar Site', href: '/sistema/site', icon: <IconEdit />,     isGroup: false, groupLevel: undefined as Level | undefined },
   { id: 'noticias',    label: 'Notícias',    href: '#',             icon: <IconNoticias />, isGroup: true,  groupLevel: 'noticias' as Level },
   { id: 'cases',       label: 'Post Cases',  href: '#',             icon: <IconCases />,    isGroup: true,  groupLevel: 'cases' as Level },
+  { id: 'blog',        label: 'Blog',        href: '#',             icon: <IconBlog />,     isGroup: true,  groupLevel: 'blog' as Level },
 ]
 
 const NOTICIAS_ITEMS = [
-  { id: 'nova-noticia', label: 'Nova Notícia', href: '/sistema/blog/novo',         icon: <IconNovaNoticia /> },
-  { id: 'publicacoes',  label: 'Publicações',  href: '/sistema/blog',              icon: <IconPublicacoes /> },
-  { id: 'rascunhos',    label: 'Rascunhos',    href: '/sistema/blog/rascunhos',    icon: <IconRascunho /> },
-  { id: 'relatorios',   label: 'Relatórios',   href: '/sistema/blog/relatorios',   icon: <IconRelatorio /> },
+  { id: 'nova-noticia', label: 'Nova Notícia', href: '/sistema/noticias/novo',         icon: <IconNovaNoticia /> },
+  { id: 'publicacoes',  label: 'Publicações',  href: '/sistema/noticias',              icon: <IconPublicacoes /> },
+  { id: 'rascunhos',    label: 'Rascunhos',    href: '/sistema/noticias/rascunhos',    icon: <IconRascunho /> },
+  { id: 'relatorios',   label: 'Relatórios',   href: '/sistema/noticias/relatorios',   icon: <IconRelatorio /> },
+]
+
+const BLOG_ITEMS_MENU = [
+  { id: 'nova-blog',         label: 'Novo Post',   href: '/sistema/blog/novo',         icon: <IconNovaNoticia /> },
+  { id: 'publicacoes-blog',  label: 'Publicações', href: '/sistema/blog',              icon: <IconPublicacoes /> },
+  { id: 'rascunhos-blog',    label: 'Rascunhos',   href: '/sistema/blog/rascunhos',    icon: <IconRascunho /> },
+  { id: 'relatorios-blog',   label: 'Relatórios',  href: '/sistema/blog/relatorios',   icon: <IconRelatorio /> },
 ]
 
 const CASES_ITEMS = [
@@ -182,6 +196,7 @@ export function MeuMenuRadial({ enabledIds }: { enabledIds?: Set<string> | null 
   const isSite       = level === 'site'
   const isNoticias   = level === 'noticias'
   const isCases      = level === 'cases'
+  const isBlog       = level === 'blog'
 
   function close()       { setLevel('closed') }
   function openMain()    { setHasOpened(true); setLevel('main') }
@@ -192,9 +207,11 @@ export function MeuMenuRadial({ enabledIds }: { enabledIds?: Set<string> | null 
   const filteredCadastrosItems  = CADASTROS_ITEMS.filter(i => ok(i.id))
   const filteredNoticiasItems   = NOTICIAS_ITEMS.filter(i => ok(i.id))
   const filteredCasesItems      = CASES_ITEMS.filter(i => ok(i.id))
+  const filteredBlogItems       = BLOG_ITEMS_MENU.filter(i => ok(i.id))
   const filteredSiteItems       = SITE_ITEMS.filter(i => {
     if (i.id === 'noticias') return ok('noticias') && filteredNoticiasItems.length > 0
     if (i.id === 'cases')    return ok('cases') && filteredCasesItems.length > 0
+    if (i.id === 'blog')     return ok('blog') && filteredBlogItems.length > 0
     return ok(i.id)
   })
 
@@ -219,9 +236,10 @@ export function MeuMenuRadial({ enabledIds }: { enabledIds?: Set<string> | null 
   const sitePos          = getPositions(filteredSiteItems.length)
   const noticiasPos      = getPositions(filteredNoticiasItems.length)
   const casesPos         = getPositions(filteredCasesItems.length)
+  const blogPos          = getPositions(filteredBlogItems.length)
 
   // Qual grupo está no centro (apenas grupos com sub-nível)
-  const centerGroup = isMeusDados ? 'meus-dados' : isCadastros ? 'cadastros' : isSite || isNoticias || isCases ? 'site' : null
+  const centerGroup = isMeusDados ? 'meus-dados' : isCadastros ? 'cadastros' : isSite || isNoticias || isCases || isBlog ? 'site' : null
 
   // Aliases para clareza no JSX abaixo
   const activeMeusDadosItems  = filteredMeusDadosItems
@@ -229,6 +247,7 @@ export function MeuMenuRadial({ enabledIds }: { enabledIds?: Set<string> | null 
   const activeSiteItems       = filteredSiteItems
   const activeNoticiasItems   = filteredNoticiasItems
   const activeCasesItems      = filteredCasesItems
+  const activeBlogItems       = filteredBlogItems
 
   return (
     <div className="relative flex items-center justify-center select-none" style={{ width: 480, height: 480 }}>
@@ -373,7 +392,7 @@ export function MeuMenuRadial({ enabledIds }: { enabledIds?: Set<string> | null 
             }}
           >
             {item.isGroup ? (
-              <button onClick={() => item.groupLevel && setLevel(item.groupLevel)} className={`w-16 h-16 ${ITEM_BTN}`}>
+              <button onClick={() => item.groupLevel && setLevel(item.groupLevel as Level)} className={`w-16 h-16 ${ITEM_BTN}`}>
                 {item.icon}
               </button>
             ) : (
@@ -429,6 +448,33 @@ export function MeuMenuRadial({ enabledIds }: { enabledIds?: Set<string> | null 
               pointerEvents: isCases ? 'auto' : 'none',
               transition: 'transform 0.48s cubic-bezier(0.34,1.56,0.64,1), opacity 0.25s ease',
               transitionDelay: isCases ? `${0.1 + i * 0.08}s` : '0s',
+              zIndex: 20,
+            }}
+          >
+            <Link href={item.href} onClick={close} className={`w-16 h-16 ${ITEM_BTN}`}>
+              {item.icon}
+            </Link>
+            <span className={LABEL}>{item.label}</span>
+          </div>
+        )
+      })}
+
+      {/* ── Nível 3: sub-itens de Blog ──────────────────── */}
+      {activeBlogItems.map((item, i) => {
+        const pos = blogPos[i]
+        return (
+          <div
+            key={item.id}
+            className="absolute flex flex-col items-center"
+            style={{
+              left: '50%', top: '50%',
+              transform: isBlog
+                ? `translate(calc(-50% + ${pos.x}px), calc(-50% + ${pos.y}px))`
+                : 'translate(-50%, -50%)',
+              opacity: isBlog ? 1 : 0,
+              pointerEvents: isBlog ? 'auto' : 'none',
+              transition: 'transform 0.48s cubic-bezier(0.34,1.56,0.64,1), opacity 0.25s ease',
+              transitionDelay: isBlog ? `${0.1 + i * 0.08}s` : '0s',
               zIndex: 20,
             }}
           >

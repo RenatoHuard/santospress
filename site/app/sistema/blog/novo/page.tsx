@@ -6,5 +6,13 @@ export default async function NovoBlogPostPage() {
     getFuncionariosBasico(),
     getClientesBasico(),
   ])
-  return <BlogEditorClient funcionarios={funcionarios} clientes={clientes} />
+  return (
+    <BlogEditorClient
+      funcionarios={funcionarios}
+      clientes={clientes}
+      tipo="blog"
+      tipoLabel="Blog"
+      backHref="/sistema/blog"
+    />
+  )
 }

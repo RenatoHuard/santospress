@@ -38,6 +38,9 @@ export default async function EditarBlogPostPage({ params }: Props) {
       funcionarios={funcionarios}
       clientes={clientes}
       initialPost={post as Parameters<typeof BlogEditorClient>[0]['initialPost']}
+      tipo="blog"
+      tipoLabel="Blog"
+      backHref="/sistema/blog"
     />
   )
 }

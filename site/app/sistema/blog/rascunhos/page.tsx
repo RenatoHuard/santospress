@@ -21,7 +21,7 @@ function formatDate(d: string | null) {
   return new Date(d).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })
 }
 
-export default function RascunhosPage() {
+export default function BlogRascunhosPage() {
   const [drafts, setDrafts] = useState<Draft[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -34,7 +34,7 @@ export default function RascunhosPage() {
     setLoading(true)
     setError(null)
     try {
-      setDrafts((await getBlogDrafts()) as unknown as Draft[])
+      setDrafts((await getBlogDrafts('blog')) as unknown as Draft[])
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Erro ao carregar')
     } finally {
@@ -93,7 +93,7 @@ export default function RascunhosPage() {
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
             </svg>
-            Nova Notícia
+            Novo Post
           </Link>
         </div>
 
@@ -120,9 +120,9 @@ export default function RascunhosPage() {
               <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487z" />
             </svg>
             <p className="text-gray-500 dark:text-gray-600 font-medium">Nenhum rascunho pendente.</p>
-            <p className="text-gray-400 dark:text-gray-700 text-sm mt-1">Todas as notícias estão publicadas.</p>
+            <p className="text-gray-400 dark:text-gray-700 text-sm mt-1">Todos os posts estão publicados.</p>
             <Link href="/sistema/blog/novo" className="mt-5 inline-block text-gold hover:text-gold/80 text-sm transition-colors">
-              Criar nova notícia →
+              Criar novo post →
             </Link>
           </div>
         )}

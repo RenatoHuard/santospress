@@ -39,7 +39,7 @@ export default function BlogListPage() {
     setLoading(true)
     setLoadError(false)
     try {
-      setPosts((await getBlogPosts()) as unknown as Post[])
+      setPosts((await getBlogPosts('blog')) as unknown as Post[])
     } catch {
       setLoadError(true)
     } finally {
@@ -54,7 +54,7 @@ export default function BlogListPage() {
     setActionError(null)
     startTransition(async () => {
       try {
-        await despublicarPost(post.id, post.slug, 'noticia')
+        await despublicarPost(post.id, post.slug, 'blog')
         setPosts((prev) => prev.map((p) => p.id === post.id ? { ...p, status: 'rascunho', publicado_em: null } : p))
       } catch (e) {
         setActionError(e instanceof Error ? e.message : 'Erro ao despublicar')
@@ -84,7 +84,7 @@ export default function BlogListPage() {
     <div className="p-8 max-w-5xl mx-auto w-full">
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-gray-900 dark:text-white text-2xl font-bold">Notícias</h1>
+          <h1 className="text-gray-900 dark:text-white text-2xl font-bold">Blog</h1>
           {!loading && !loadError && (
             <p className="text-gray-400 dark:text-gray-600 text-sm mt-0.5">
               {posts.length} publicaç{posts.length === 1 ? 'ão' : 'ões'}
@@ -108,7 +108,7 @@ export default function BlogListPage() {
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
             </svg>
-            Nova Notícia
+            Novo Post
           </Link>
         </div>
       </div>
@@ -121,7 +121,7 @@ export default function BlogListPage() {
 
       {loadError && (
         <div className="bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/30 rounded-xl p-4 text-amber-700 dark:text-amber-400 text-sm mb-6">
-          Configure <code className="font-mono bg-amber-100 dark:bg-black/30 px-1 rounded">SUPABASE_SERVICE_ROLE_KEY</code> no .env.local para visualizar as publicações.
+          Configure <code className="font-mono bg-amber-100 dark:bg-black/30 px-1 rounded">SUPABASE_SERVICE_ROLE_KEY</code> no .env.local para visualizar os posts do blog.
         </div>
       )}
 
@@ -136,9 +136,9 @@ export default function BlogListPage() {
           <svg className="w-10 h-10 text-gray-300 dark:text-gray-700 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 7.5h1.5m-1.5 3h1.5m-7.5 3h7.5m-7.5 3h7.5m3-9h3.375c.621 0 1.125.504 1.125 1.125V18a2.25 2.25 0 01-2.25 2.25M16.5 7.5V18a2.25 2.25 0 002.25 2.25M16.5 7.5V4.875c0-.621-.504-1.125-1.125-1.125H4.125C3.504 3.75 3 4.254 3 4.875V18a2.25 2.25 0 002.25 2.25h13.5M6 7.5h3v3H6v-3z" />
           </svg>
-          <p className="text-gray-500 dark:text-gray-600">Nenhuma publicação ainda.</p>
+          <p className="text-gray-500 dark:text-gray-600">Nenhum post no blog ainda.</p>
           <Link href="/sistema/blog/novo" className="mt-4 inline-block text-gold hover:text-gold/80 text-sm transition-colors">
-            Criar a primeira notícia →
+            Criar o primeiro post →
           </Link>
         </div>
       )}

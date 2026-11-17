@@ -9,7 +9,7 @@ import { getSitePageAnalytics } from '../../actions/site'
 
 // ── Tipos ──────────────────────────────────────────────────────────
 
-type Tab = 'noticias' | 'cases' | 'site'
+type Tab = 'noticias' | 'cases' | 'blog' | 'site'
 
 type BlogAnalytics   = Awaited<ReturnType<typeof getBlogAnalytics>>
 type SiteAnalytics   = Awaited<ReturnType<typeof getSitePageAnalytics>>
@@ -89,14 +89,14 @@ function SparkBar({ byDay, days }: { byDay: Record<string, number>; days: number
 
 // ── Post card ──────────────────────────────────────────────────────
 
-function PostCard({ post, max, sortBy, tipo }: { post: TopPost; max: number; sortBy: string; tipo: 'noticia' | 'case' }) {
+function PostCard({ post, max, sortBy, tipo }: { post: TopPost; max: number; sortBy: string; tipo: 'noticia' | 'case' | 'blog' }) {
   const [expanded,      setExpanded]      = useState(false)
   const [localStatus,   setLocalStatus]   = useState(post.status)
   const [despublicando, setDespublicando] = useState(false)
   const [actionError,   setActionError]   = useState<string | null>(null)
 
-  const editHref = tipo === 'case' ? `/sistema/cases/${post.id}` : `/sistema/blog/${post.id}`
-  const viewHref = tipo === 'case' ? `/cases/${post.slug}` : `/noticias/${post.slug}`
+  const editHref = tipo === 'case' ? `/sistema/cases/${post.id}` : tipo === 'blog' ? `/sistema/blog/${post.id}` : `/sistema/noticias/${post.id}`
+  const viewHref = tipo === 'case' ? `/cases/${post.slug}` : tipo === 'blog' ? `/blog/${post.slug}` : `/noticias/${post.slug}`
 
   async function handleDespublicar(e: React.MouseEvent) {
     e.stopPropagation()
@@ -285,15 +285,16 @@ export default function RelatoriosPage() {
   const searchParams = useSearchParams()
   const router       = useRouter()
 
-  const initialTab = (searchParams.get('tab') as Tab | null) ?? 'noticias'
+  const initialTab = (searchParams.get('tab') as Tab | null) ?? 'blog'
   const [tab,    setTab]    = useState<Tab>(initialTab)
   const [period, setPeriod] = useState(30)
   const [sortBy, setSortBy] = useState<'views' | 'unique'>('views')
   const [page,   setPage]   = useState(1)
 
-  const [blogData, setBlogData] = useState<BlogAnalytics | null>(null)
-  const [caseData, setCaseData] = useState<BlogAnalytics | null>(null)
-  const [siteData, setSiteData] = useState<SiteAnalytics | null>(null)
+  const [blogData,     setBlogData]     = useState<BlogAnalytics | null>(null)
+  const [noticiaData, setNoticiaData]  = useState<BlogAnalytics | null>(null)
+  const [caseData,    setCaseData]     = useState<BlogAnalytics | null>(null)
+  const [siteData,    setSiteData]     = useState<SiteAnalytics | null>(null)
   const [loading,  setLoading]  = useState(true)
   const [error,    setError]    = useState<string | null>(null)
 
@@ -307,12 +308,14 @@ export default function RelatoriosPage() {
     setLoading(true)
     setError(null)
     try {
-      const [b, c, s] = await Promise.all([
+      const [b, n, c, s] = await Promise.all([
+        getBlogAnalytics(period, 'blog'),
         getBlogAnalytics(period, 'noticia'),
         getBlogAnalytics(period, 'case'),
         getSitePageAnalytics(period),
       ])
       setBlogData(b)
+      setNoticiaData(n)
       setCaseData(c)
       setSiteData(s)
     } catch (e) {
@@ -325,7 +328,7 @@ export default function RelatoriosPage() {
   useEffect(() => { load() }, [load])
 
   // Dados activos segundo a aba
-  const activeData = tab === 'noticias' ? blogData : tab === 'cases' ? caseData : null
+  const activeData = tab === 'blog' ? blogData : tab === 'noticias' ? noticiaData : tab === 'cases' ? caseData : null
   const topPosts   = activeData?.topPosts ?? []
   const sortedTop  = [...topPosts].sort((a, b) => sortBy === 'views' ? b.views - a.views : b.unique - a.unique)
   const maxMetric  = sortedTop[0] ? (sortBy === 'views' ? sortedTop[0].views : sortedTop[0].unique) : 1
@@ -341,6 +344,7 @@ export default function RelatoriosPage() {
     : { totalViews: activeData?.totalViews ?? 0, uniqueSessions: activeData?.uniqueSessions ?? 0, byDay: activeData?.byDay ?? {}, trafficSources: activeData?.trafficSources ?? [] }
 
   const TAB_LABELS: Record<Tab, string> = {
+    blog:     'Blog',
     noticias: 'Notícias',
     cases:    'Post Cases',
     site:     'Site',
@@ -374,7 +378,7 @@ export default function RelatoriosPage() {
 
       {/* Tabs */}
       <div className="flex gap-1 bg-gray-100 dark:bg-white/5 rounded-xl p-1 mb-8 w-fit">
-        {(['noticias', 'cases', 'site'] as Tab[]).map(t => (
+        {(['noticias', 'cases', 'blog', 'site'] as Tab[]).map(t => (
           <button
             key={t}
             onClick={() => switchTab(t)}
@@ -488,10 +492,10 @@ export default function RelatoriosPage() {
                   <div className="bg-white dark:bg-[#111] border border-gray-100 dark:border-white/5 rounded-2xl p-10 text-center">
                     <p className="text-gray-400 text-sm">Nenhuma publicação ainda.</p>
                     <Link
-                      href={tab === 'cases' ? '/sistema/cases/novo' : '/sistema/blog/novo'}
+                      href={tab === 'cases' ? '/sistema/cases/novo' : tab === 'noticias' ? '/sistema/noticias/novo' : '/sistema/blog/novo'}
                       className="text-gold text-xs hover:underline mt-2 inline-block"
                     >
-                      {tab === 'cases' ? 'Criar primeiro case →' : 'Criar primeira notícia →'}
+                      {tab === 'cases' ? 'Criar primeiro case →' : tab === 'noticias' ? 'Criar primeira notícia →' : 'Criar primeiro post →'}
                     </Link>
                   </div>
                 ) : (
@@ -503,7 +507,7 @@ export default function RelatoriosPage() {
                           post={post}
                           max={maxMetric}
                           sortBy={sortBy}
-                          tipo={tab === 'cases' ? 'case' : 'noticia'}
+                          tipo={tab === 'cases' ? 'case' : tab === 'noticias' ? 'noticia' : 'blog'}
                         />
                       ))}
                     </div>
