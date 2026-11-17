@@ -443,6 +443,26 @@ export function RadialMenu() {
   const level3Items   = activeSubGroupData?.subItems ?? []
   const level3Positions = getPositions(level3Items.length)
 
+  // Modo inline: subgrupos ficam no lugar e filhos aparecem em leque
+  const useInlineSubgroups = activeGroup === 'imprensa'
+
+  function getInlineFanPositions(parentPos: { x: number; y: number }, count: number) {
+    if (count === 0) return []
+    const angle = Math.atan2(parentPos.y, parentPos.x)
+    const childRadius = Math.sqrt(parentPos.x ** 2 + parentPos.y ** 2) + 95
+    if (count === 1) return [{ x: Math.cos(angle) * childRadius, y: Math.sin(angle) * childRadius }]
+    return Array.from({ length: count }, (_, i) => {
+      const a = angle + (i - (count - 1) / 2) * (Math.PI / 8)
+      return { x: Math.cos(a) * childRadius, y: Math.sin(a) * childRadius }
+    })
+  }
+
+  const activeSubGroupL2Index = level2Items.findIndex(it => it.type === 'subgroup' && it.id === activeSubGroup)
+  const inlineParentPos = activeSubGroupL2Index >= 0 ? level2Positions[activeSubGroupL2Index] : { x: 0, y: 0 }
+  const inlineLevel3Positions = (useInlineSubgroups && activeSubGroupL2Index >= 0)
+    ? getInlineFanPositions(inlineParentPos, level3Items.length)
+    : []
+
   function close() {
     setOpen(false)
     setActiveGroup(null)
@@ -463,14 +483,12 @@ export function RadialMenu() {
 
   // Derived booleans
   const level1Open  = open && !activeGroup
-  const level2Open  = !!activeGroup && !activeSubGroup
+  const level2Open  = !!activeGroup && (!activeSubGroup || useInlineSubgroups)
   const level3Open  = !!activeSubGroup
 
-  // Which center circle is showing:
-  //  - L2: the group circle (e.g. Site)
-  //  - L3: the subgroup circle (e.g. Notícias)
-  const centerGroup    = !!activeGroup && !activeSubGroup
-  const centerSubGroup = !!activeSubGroup
+  // No modo inline o grupo ativo permanece no centro durante o subgrupo
+  const centerGroup    = !!activeGroup && (!activeSubGroup || useInlineSubgroups)
+  const centerSubGroup = !!activeSubGroup && !useInlineSubgroups
 
   const ITEM_BTN =
     'rounded-full flex items-center justify-center bg-gray-100 dark:bg-[#1c1c1c] border border-gray-200 dark:border-white/12 text-gray-500 dark:text-gray-300 hover:bg-gold hover:text-white hover:border-gold shadow-xl transition-all duration-200 hover:scale-110'
@@ -509,7 +527,7 @@ export function RadialMenu() {
         const pos      = mainPositions[i]
         const isGroup  = item.type === 'group'
         // Nível 1 só fica no centro enquanto não há sub-grupo ativo
-        const isCenter = isGroup && activeGroup === item.id && !activeSubGroup
+        const isCenter = isGroup && activeGroup === item.id && (!activeSubGroup || useInlineSubgroups)
 
         const transform = isCenter
           ? 'translate(-50%, -50%)'
@@ -581,7 +599,8 @@ export function RadialMenu() {
       {level2Items.map((item, i) => {
         const pos = level2Positions[i]
         const isSubGroup = item.type === 'subgroup'
-        const isCenterSubGroup = isSubGroup && activeSubGroup === item.id
+        const isCenterSubGroup = isSubGroup && activeSubGroup === item.id && !useInlineSubgroups
+        const isActiveInline   = isSubGroup && activeSubGroup === item.id && useInlineSubgroups
 
         const transform = isCenterSubGroup
           ? 'translate(-50%, -50%)'
@@ -609,13 +628,14 @@ export function RadialMenu() {
             {isSubGroup ? (
               <>
                 <button
-                  onClick={() => isCenterSubGroup ? backFromSubGroup() : openSubGroup((item as SubGroupItem).id)}
+                  onClick={() => isCenterSubGroup || isActiveInline ? backFromSubGroup() : openSubGroup((item as SubGroupItem).id)}
                   className={ITEM_BTN}
                   style={{
                     width: btnSize,
                     height: btnSize,
                     transition: 'width 0.38s cubic-bezier(0.34,1.56,0.64,1), height 0.38s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.3s, background-color 0.3s',
                     ...(isCenterSubGroup ? CENTER_STYLE : {}),
+                    ...(isActiveInline ? { borderColor: '#b5282c', backgroundColor: 'rgba(181,40,44,0.12)', color: '#b5282c' } : {}),
                   }}
                   aria-label={(item as SubGroupItem).label}
                 >
@@ -628,7 +648,11 @@ export function RadialMenu() {
                     </div>
                   ) : (item as SubGroupItem).icon}
                 </button>
-                {!isCenterSubGroup && <span className={LABEL}>{(item as SubGroupItem).label}</span>}
+                {!isCenterSubGroup && (
+                  <span className={LABEL} style={isActiveInline ? { color: '#b5282c' } : undefined}>
+                    {(item as SubGroupItem).label}
+                  </span>
+                )}
               </>
             ) : (
               <>
@@ -644,7 +668,12 @@ export function RadialMenu() {
 
       {/* ── NÍVEL 3 — Sub-itens do sub-grupo ativo ─────────── */}
       {level3Items.map((item, i) => {
-        const pos = level3Positions[i]
+        const pos = useInlineSubgroups
+          ? (inlineLevel3Positions[i] ?? { x: 0, y: 0 })
+          : level3Positions[i]
+        const collapseTransform = useInlineSubgroups
+          ? `translate(calc(-50% + ${inlineParentPos.x}px), calc(-50% + ${inlineParentPos.y}px))`
+          : 'translate(-50%, -50%)'
         return (
           <div
             key={item.id}
@@ -653,7 +682,7 @@ export function RadialMenu() {
               left: '50%', top: '50%',
               transform: level3Open
                 ? `translate(calc(-50% + ${pos.x}px), calc(-50% + ${pos.y}px))`
-                : 'translate(-50%, -50%)',
+                : collapseTransform,
               opacity: level3Open ? 1 : 0,
               pointerEvents: level3Open ? 'auto' : 'none',
               transition: 'transform 0.48s cubic-bezier(0.34,1.56,0.64,1), opacity 0.25s ease',
