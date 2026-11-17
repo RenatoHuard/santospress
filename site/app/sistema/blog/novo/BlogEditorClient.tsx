@@ -457,7 +457,7 @@ export function BlogEditorClient({ funcionarios, clientes, initialPost, tipo, ti
     setSaving(true)
     try {
       const effectiveStatus = forceStatus ?? status
-      const id = await salvarPost({
+      const result = await salvarPost({
         id: savedId ?? undefined,
         titulo: titulo.trim(),
         slug: slug.trim() || slugify(titulo),
@@ -474,17 +474,20 @@ export function BlogEditorClient({ funcionarios, clientes, initialPost, tipo, ti
         cliente_id: clienteId || null,
         tipo: initialPost?.tipo ?? tipo ?? 'noticia',
       })
-      setSavedId(id)
+      if (result.error) {
+        if (result.error === 'UNAUTHORIZED' || result.error === 'FORBIDDEN') {
+          alert('Sessão expirada. Recarregue a página e faça login novamente.')
+        } else {
+          alert('Erro ao salvar: ' + result.error)
+        }
+        return
+      }
+      setSavedId(result.id)
       if (forceStatus) setStatus(forceStatus)
       setSaveMsg(effectiveStatus === 'publicado' ? '✓ Publicado!' : '✓ Rascunho salvo')
       setTimeout(() => setSaveMsg(''), 3000)
     } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err)
-      if (msg.includes('Server Components') || msg.includes('Server Action') || msg.includes('digest')) {
-        alert('Sua sessão pode ter expirado. Recarregue a página, faça login novamente e tente salvar de novo.')
-      } else {
-        alert(msg || 'Erro ao salvar.')
-      }
+      alert('Erro inesperado: ' + (err instanceof Error ? err.message : String(err)))
     } finally {
       setSaving(false)
     }

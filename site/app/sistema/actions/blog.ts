@@ -38,12 +38,17 @@ export interface PostPayload {
   social_link_preview?: SocialPreview | null
 }
 
-export async function salvarPost(payload: PostPayload): Promise<string> {
-  await requireStaff()
+export type SalvarPostResult = { id: string; error?: never } | { id?: never; error: string }
+
+export async function salvarPost(payload: PostPayload): Promise<SalvarPostResult> {
+  try {
+    await requireStaff()
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : 'UNAUTHORIZED' }
+  }
+
   const sb = serviceClient()
 
-  // Preserva publicado_em original ao editar post já publicado.
-  // Só define now() na primeira publicação (quando payload.publicado_em é nulo/vazio).
   const publicado_em =
     payload.status === 'publicado'
       ? (payload.publicado_em ?? new Date().toISOString())
@@ -75,11 +80,11 @@ export async function salvarPost(payload: PostPayload): Promise<string> {
       .from('spress_blog_posts')
       .update(row)
       .eq('id', payload.id)
-    if (error) throw new Error(error.message)
+    if (error) return { error: error.message }
     revalidatePath(`${basePath}/${payload.slug}`)
     revalidatePath(basePath)
     revalidatePath('/')
-    return payload.id
+    return { id: payload.id }
   }
 
   const { data, error } = await sb
@@ -87,11 +92,11 @@ export async function salvarPost(payload: PostPayload): Promise<string> {
     .insert(row)
     .select('id')
     .single()
-  if (error) throw new Error(error.message)
+  if (error) return { error: error.message }
 
   revalidatePath(basePath)
   revalidatePath('/')
-  return data.id
+  return { id: data.id }
 }
 
 export async function uploadBlogImagem(formData: FormData): Promise<string> {
