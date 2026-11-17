@@ -223,6 +223,9 @@ export default function ReleasesPage() {
                     {p.tipo === 'case' ? 'Case' : p.tipo === 'blog' ? 'Blog' : 'Notícia'}
                   </span>
                   <span className="flex-1 text-sm text-gray-800 dark:text-gray-200 truncate">{p.titulo || 'Sem título'}</span>
+                  {p.cliente_nome && (
+                    <span className="text-xs text-gray-500 dark:text-gray-400 shrink-0 hidden sm:inline">{p.cliente_nome}</span>
+                  )}
                   <span className="text-xs text-gray-400 shrink-0">
                     {fmt(p.publicado_em ?? p.created_at)}
                   </span>
