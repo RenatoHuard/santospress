@@ -10,7 +10,7 @@ import { getUnseenSolicitacoesCount } from '../actions/solicitacoes'
 // ── Tipos ──────────────────────────────────────────────────────────
 
 type GroupId    = 'site' | 'cadastros' | 'sistema' | 'kanban' | 'imprensa'
-type SubGroupId = 'noticias' | 'cases' | 'blog'
+type SubGroupId = 'noticias' | 'cases' | 'blog' | 'imprensa-cadastro' | 'imprensa-resultados' | 'imprensa-gestao'
 
 interface SubItem {
   id: string
@@ -295,6 +295,22 @@ export function RadialMenu() {
     { id: 'relatorios-cases',  label: 'Relatórios',  href: '/sistema/cases/relatorios', icon: <IconRelatorio /> },
   ], [])
 
+  const imprensaCadastroSubItems = useMemo<SubItem[]>(() => [
+    { id: 'imprensa-jornalistas', label: 'Jornalistas', href: '/sistema/imprensa/jornalistas', icon: <IconJornalistas /> },
+    { id: 'imprensa-veiculos',    label: 'Veículos',    href: '/sistema/imprensa/veiculos',    icon: <IconVeiculos /> },
+    { id: 'imprensa-metas',       label: 'Metas',       href: '/sistema/imprensa/metas',       icon: <IconMetas /> },
+  ], [])
+
+  const imprensaResultadosSubItems = useMemo<SubItem[]>(() => [
+    { id: 'imprensa-clipping',  label: 'Clipping',  href: '/sistema/imprensa/clipping',  icon: <IconClipping /> },
+    { id: 'imprensa-releases',  label: 'Releases',  href: '/sistema/imprensa/releases',  icon: <IconReleases /> },
+  ], [])
+
+  const imprensaGestaoSubItems = useMemo<SubItem[]>(() => [
+    { id: 'imprensa-ranking', label: 'Ranking', href: '/sistema/imprensa/ranking', icon: <IconRanking /> },
+    { id: 'imprensa-alertas', label: 'Alertas', href: '/sistema/imprensa/alertas', icon: <IconAlertas /> },
+  ], [])
+
   // Estrutura de itens
   const MAIN_ITEMS = useMemo<AnyItem[]>(() => [
     {
@@ -381,18 +397,35 @@ export function RadialMenu() {
       icon: <IconImprensa px={24} />,
       largeIcon: <IconImprensa px={36} />,
       subItems: [
-        { id: 'imprensa-dashboard',   label: 'Painel',      href: '/sistema/imprensa',             icon: <IconRelatorio /> },
-        { id: 'imprensa-mailing',     label: 'Mailing',     href: '/sistema/imprensa/mailing',      icon: <IconMailing /> },
-        { id: 'imprensa-jornalistas', label: 'Jornalistas', href: '/sistema/imprensa/jornalistas',  icon: <IconJornalistas /> },
-        { id: 'imprensa-veiculos',    label: 'Veículos',    href: '/sistema/imprensa/veiculos',     icon: <IconVeiculos /> },
-        { id: 'imprensa-releases',    label: 'Releases',    href: '/sistema/imprensa/releases',     icon: <IconReleases /> },
-        { id: 'imprensa-clipping',    label: 'Clipping',    href: '/sistema/imprensa/clipping',     icon: <IconClipping /> },
-        { id: 'imprensa-metas',       label: 'Metas',       href: '/sistema/imprensa/metas',        icon: <IconMetas /> },
-        { id: 'imprensa-ranking',     label: 'Ranking',     href: '/sistema/imprensa/ranking',      icon: <IconRanking /> },
-        { id: 'imprensa-alertas',     label: 'Alertas',     href: '/sistema/imprensa/alertas',      icon: <IconAlertas /> },
+        { id: 'imprensa-dashboard', label: 'Painel',  href: '/sistema/imprensa',        icon: <IconRelatorio /> },
+        { id: 'imprensa-mailing',   label: 'Mailing', href: '/sistema/imprensa/mailing', icon: <IconMailing /> },
+        {
+          type: 'subgroup',
+          id: 'imprensa-cadastro',
+          label: 'Cadastro',
+          icon:      <IconCadastros px={24} />,
+          largeIcon: <IconCadastros px={36} />,
+          subItems:  imprensaCadastroSubItems,
+        } as SubGroupItem,
+        {
+          type: 'subgroup',
+          id: 'imprensa-resultados',
+          label: 'Resultados',
+          icon:      <IconNoticias px={24} />,
+          largeIcon: <IconNoticias px={36} />,
+          subItems:  imprensaResultadosSubItems,
+        } as SubGroupItem,
+        {
+          type: 'subgroup',
+          id: 'imprensa-gestao',
+          label: 'Gestão',
+          icon:      <IconSistema px={24} />,
+          largeIcon: <IconSistema px={36} />,
+          subItems:  imprensaGestaoSubItems,
+        } as SubGroupItem,
       ],
     },
-  ], [noticiaSubItems, casesSubItems, blogSubItems, unseenCount])
+  ], [noticiaSubItems, casesSubItems, blogSubItems, imprensaCadastroSubItems, imprensaResultadosSubItems, imprensaGestaoSubItems, unseenCount])
 
   const mainPositions = getPositions(MAIN_ITEMS.length)
 

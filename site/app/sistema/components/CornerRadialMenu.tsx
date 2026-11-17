@@ -14,9 +14,10 @@ import { getEffectiveRoles } from '../lib/simulador'
 export interface CornerMenuItem {
   id: string
   label: string
-  href: string
+  href?: string        // ausente = grupo (abre sub-items)
   exact?: boolean
   icon: ReactNode
+  children?: CornerMenuItem[]
 }
 
 interface Props {
@@ -228,60 +229,90 @@ const NAV_TREE: NavNode[] = [
         ),
       },
       {
-        kind: 'leaf', id: 'imprensa-jornalistas', label: 'Jornalistas', href: '/sistema/imprensa/jornalistas',
+        kind: 'group', id: 'imprensa-cadastro', label: 'Cadastro',
         icon: (
           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
           </svg>
         ),
+        children: [
+          {
+            kind: 'leaf', id: 'imprensa-jornalistas', label: 'Jornalistas', href: '/sistema/imprensa/jornalistas',
+            icon: (
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+              </svg>
+            ),
+          },
+          {
+            kind: 'leaf', id: 'imprensa-veiculos', label: 'Veículos', href: '/sistema/imprensa/veiculos',
+            icon: (
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 017.843 4.582M12 3a8.997 8.997 0 00-7.843 4.582m15.686 0A11.953 11.953 0 0112 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0121 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0112 16.5c-3.162 0-6.133-.815-8.716-2.247m0 0A9.015 9.015 0 013 12c0-1.605.42-3.113 1.157-4.418" />
+              </svg>
+            ),
+          },
+          {
+            kind: 'leaf', id: 'imprensa-metas', label: 'Metas', href: '/sistema/imprensa/metas',
+            icon: (
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            ),
+          },
+        ],
       },
       {
-        kind: 'leaf', id: 'imprensa-veiculos', label: 'Veículos', href: '/sistema/imprensa/veiculos',
-        icon: (
-          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 017.843 4.582M12 3a8.997 8.997 0 00-7.843 4.582m15.686 0A11.953 11.953 0 0112 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0121 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0112 16.5c-3.162 0-6.133-.815-8.716-2.247m0 0A9.015 9.015 0 013 12c0-1.605.42-3.113 1.157-4.418" />
-          </svg>
-        ),
-      },
-      {
-        kind: 'leaf', id: 'imprensa-releases', label: 'Releases', href: '/sistema/imprensa/releases',
-        icon: (
-          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
-          </svg>
-        ),
-      },
-      {
-        kind: 'leaf', id: 'imprensa-clipping', label: 'Clipping', href: '/sistema/imprensa/clipping',
+        kind: 'group', id: 'imprensa-resultados', label: 'Resultados',
         icon: (
           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" />
           </svg>
         ),
+        children: [
+          {
+            kind: 'leaf', id: 'imprensa-clipping', label: 'Clipping', href: '/sistema/imprensa/clipping',
+            icon: (
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" />
+              </svg>
+            ),
+          },
+          {
+            kind: 'leaf', id: 'imprensa-releases', label: 'Releases', href: '/sistema/imprensa/releases',
+            icon: (
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
+              </svg>
+            ),
+          },
+        ],
       },
       {
-        kind: 'leaf', id: 'imprensa-metas', label: 'Metas', href: '/sistema/imprensa/metas',
+        kind: 'group', id: 'imprensa-gestao', label: 'Gestão',
         icon: (
           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
           </svg>
         ),
-      },
-      {
-        kind: 'leaf', id: 'imprensa-ranking', label: 'Ranking', href: '/sistema/imprensa/ranking',
-        icon: (
-          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 18.75h-9m9 0a3 3 0 013 3h-15a3 3 0 013-3m9 0v-3.375c0-.621-.503-1.125-1.125-1.125h-.871M7.5 18.75v-3.375c0-.621.504-1.125 1.125-1.125h.872m5.007 0H9.497m5.007 0a7.454 7.454 0 01-.982-3.172M9.497 14.25a7.454 7.454 0 00.981-3.172M5.25 4.236c-.982.143-1.954.317-2.916.52A6.003 6.003 0 007.73 9.728M5.25 4.236V4.5c0 2.108.966 3.99 2.48 5.228M5.25 4.236V2.721C7.456 2.41 9.71 2.25 12 2.25c2.291 0 4.545.16 6.75.47v1.516M7.73 9.728a6.726 6.726 0 002.748 1.35m8.272-6.842V4.5c0 2.108-.966 3.99-2.48 5.228m2.48-5.492a46.32 46.32 0 012.916.52 6.003 6.003 0 01-5.395 4.972m0 0a6.726 6.726 0 01-2.749 1.35m0 0a6.772 6.772 0 01-3.044 0" />
-          </svg>
-        ),
-      },
-      {
-        kind: 'leaf', id: 'imprensa-alertas', label: 'Alertas', href: '/sistema/imprensa/alertas',
-        icon: (
-          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
-          </svg>
-        ),
+        children: [
+          {
+            kind: 'leaf', id: 'imprensa-ranking', label: 'Ranking', href: '/sistema/imprensa/ranking',
+            icon: (
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 18.75h-9m9 0a3 3 0 013 3h-15a3 3 0 013-3m9 0v-3.375c0-.621-.503-1.125-1.125-1.125h-.871M7.5 18.75v-3.375c0-.621.504-1.125 1.125-1.125h.872m5.007 0H9.497m5.007 0a7.454 7.454 0 01-.982-3.172M9.497 14.25a7.454 7.454 0 00.981-3.172M5.25 4.236c-.982.143-1.954.317-2.916.52A6.003 6.003 0 007.73 9.728M5.25 4.236V4.5c0 2.108.966 3.99 2.48 5.228M5.25 4.236V2.721C7.456 2.41 9.71 2.25 12 2.25c2.291 0 4.545.16 6.75.47v1.516M7.73 9.728a6.726 6.726 0 002.748 1.35m8.272-6.842V4.5c0 2.108-.966 3.99-2.48 5.228m2.48-5.492a46.32 46.32 0 012.916.52 6.003 6.003 0 01-5.395 4.972m0 0a6.726 6.726 0 01-2.749 1.35m0 0a6.772 6.772 0 01-3.044 0" />
+              </svg>
+            ),
+          },
+          {
+            kind: 'leaf', id: 'imprensa-alertas', label: 'Alertas', href: '/sistema/imprensa/alertas',
+            icon: (
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
+              </svg>
+            ),
+          },
+        ],
       },
     ],
   },
@@ -302,12 +333,12 @@ function getNodesAtPath(path: string[], tree: NavNode[]): NavNode[] {
 function filterNavNodes(nodes: NavNode[], allowed: Set<string> | null): NavNode[] {
   if (!allowed) return nodes
   return nodes.flatMap((node): NavNode[] => {
-    if (!allowed.has(node.id)) return []
     if (node.kind === 'group') {
       const children = filterNavNodes(node.children, allowed)
       if (children.length === 0) return []
       return [{ ...node, children }]
     }
+    if (!allowed.has(node.id)) return []
     return [node]
   })
 }
@@ -329,14 +360,14 @@ const TX = 36
 // 'tree'     → navega na árvore NAV_TREE
 
 type Stage =
-  | { kind: 'section'; sub: 'current' | 'parent' }
+  | { kind: 'section'; sub: 'current' | 'parent'; sectionPath: string[] }
   | { kind: 'tree';    path: string[] }
 
 // ── Componente ──────────────────────────────────────────────────────
 
 export function CornerRadialMenu({ items, parentItems }: Props) {
   const [open, setOpen]   = useState(false)
-  const [stage, setStage] = useState<Stage>({ kind: 'section', sub: 'current' })
+  const [stage, setStage] = useState<Stage>({ kind: 'section', sub: 'current', sectionPath: [] })
   // undefined = carregando; null = admin (mostra tudo); Set = ids permitidos
   const [allowedIds, setAllowedIds] = useState<Set<string> | null | undefined>(undefined)
   const pathname  = usePathname()
@@ -361,22 +392,22 @@ export function CornerRadialMenu({ items, parentItems }: Props) {
 
   function close() {
     setOpen(false)
-    setStage({ kind: 'section', sub: 'current' })
+    setStage({ kind: 'section', sub: 'current', sectionPath: [] })
   }
 
   function handleBack() {
     if (stage.kind === 'section') {
-      if (stage.sub === 'current' && parentItems?.length) {
-        setStage({ kind: 'section', sub: 'parent' })
+      if (stage.sectionPath.length > 0) {
+        setStage({ ...stage, sectionPath: stage.sectionPath.slice(0, -1) })
+      } else if (stage.sub === 'current' && parentItems?.length) {
+        setStage({ kind: 'section', sub: 'parent', sectionPath: [] })
       } else {
-        // Sobe para a raiz da árvore
         setStage({ kind: 'tree', path: [] })
       }
     } else {
       if (stage.path.length > 0) {
         setStage({ kind: 'tree', path: stage.path.slice(0, -1) })
       }
-      // Em path=[] não há Voltar — só o botão Painel
     }
   }
 
@@ -397,7 +428,7 @@ export function CornerRadialMenu({ items, parentItems }: Props) {
     label: string
     icon: ReactNode
     isCurrent: boolean
-    action: 'section-link' | 'back' | 'home' | 'tree-node'
+    action: 'section-link' | 'section-group' | 'back' | 'home' | 'tree-node'
     href?: string
     node?: NavNode
   }
@@ -407,17 +438,26 @@ export function CornerRadialMenu({ items, parentItems }: Props) {
   const resolvedAllowed = allowedIds  // undefined enquanto carrega → sem filtro
 
   if (stage.kind === 'section') {
-    const rawList = stage.sub === 'parent' ? (parentItems ?? items) : items
+    const baseList = stage.sub === 'parent' ? (parentItems ?? items) : items
+    // Navega para o sub-nível correto via sectionPath
+    let rawList: CornerMenuItem[] = baseList
+    for (const id of stage.sectionPath) {
+      const found = rawList.find(it => it.id === id)
+      rawList = found?.children ?? []
+    }
+    // Grupos (com children) são containers visuais — não filtrados por permissão
     const list = resolvedAllowed
-      ? rawList.filter(it => resolvedAllowed.has(it.id))
+      ? rawList.filter(it => it.children ? true : resolvedAllowed.has(it.id))
       : rawList
     bodyItems = list.map(it => ({
       id: it.id,
       label: it.label,
       icon: it.icon,
       href: it.href,
-      isCurrent: it.exact ? pathname === it.href : pathname.startsWith(it.href),
-      action: 'section-link' as const,
+      isCurrent: it.href
+        ? (it.exact ? pathname === it.href : pathname.startsWith(it.href))
+        : (it.children?.some(c => c.href && pathname.startsWith(c.href)) ?? false),
+      action: it.children ? 'section-group' as const : 'section-link' as const,
     }))
   } else {
     const nodes = getNodesAtPath(stage.path, filteredTree)
@@ -508,6 +548,20 @@ export function CornerRadialMenu({ items, parentItems }: Props) {
               <Link href="/sistema" onClick={close} className={btnCls(false, true)}>
                 {item.icon}
               </Link>
+            ) : item.action === 'section-group' ? (
+              <div className="relative">
+                <button
+                  onClick={() => setStage(s => s.kind === 'section' ? { ...s, sectionPath: [...s.sectionPath, item.id] } : s)}
+                  className={btnCls(item.isCurrent)}
+                >
+                  {item.icon}
+                </button>
+                <span className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-gold rounded-full border-2 border-white dark:border-[#1c1c1c] flex items-center justify-center">
+                  <svg className="w-1.5 h-1.5 text-white" fill="currentColor" viewBox="0 0 6 6">
+                    <path d="M3 1l2 2H1z"/>
+                  </svg>
+                </span>
+              </div>
             ) : item.action === 'section-link' ? (
               <Link href={item.href!} onClick={close} className={btnCls(item.isCurrent)}>
                 {item.icon}
