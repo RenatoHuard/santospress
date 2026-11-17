@@ -77,13 +77,17 @@ export default function VeiculosPage() {
   useEffect(() => { load() }, [])
 
   async function carregarOpcoes() {
-    const [tipo, periodicidade, regiao, cidade] = await Promise.all([
-      getVeiculoOpcoes('tipo'),
-      getVeiculoOpcoes('periodicidade'),
-      getVeiculoOpcoes('regiao'),
-      getVeiculoOpcoes('cidade'),
-    ])
-    setOpcoes({ tipo, periodicidade, regiao, cidade })
+    try {
+      const [tipo, periodicidade, regiao, cidade] = await Promise.all([
+        getVeiculoOpcoes('tipo'),
+        getVeiculoOpcoes('periodicidade'),
+        getVeiculoOpcoes('regiao'),
+        getVeiculoOpcoes('cidade'),
+      ])
+      setOpcoes({ tipo, periodicidade, regiao, cidade })
+    } catch {
+      /* opções opcionais — não bloqueia o formulário */
+    }
   }
 
   function handleBusca(v: string) {
