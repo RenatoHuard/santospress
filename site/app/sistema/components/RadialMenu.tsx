@@ -706,7 +706,7 @@ export function RadialMenu() {
             setOpen((o) => !o)
           }
         }}
-        className="relative z-10 w-[128px] h-[128px] rounded-full bg-white hover:scale-105 focus:outline-none"
+        className="relative z-10 w-[128px] h-[128px] rounded-full bg-white hover:scale-105 focus:outline-none overflow-hidden"
         style={{
           opacity: (centerGroup || centerSubGroup) ? 0 : 1,
           pointerEvents: (centerGroup || centerSubGroup) ? 'none' : 'auto',
@@ -721,6 +721,7 @@ export function RadialMenu() {
           src="/images/logo_santospress.png"
           alt="Santos Press"
           fill
+          sizes="128px"
           className="object-contain p-5"
         />
       </button>

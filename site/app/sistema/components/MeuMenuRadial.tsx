@@ -492,7 +492,7 @@ export function MeuMenuRadial({ enabledIds }: { enabledIds?: Set<string> | null 
           if (level === 'closed') openMain()
           else if (level === 'main') close()
         }}
-        className="relative z-10 w-[128px] h-[128px] rounded-full bg-white hover:scale-105 focus:outline-none"
+        className="relative z-10 w-[128px] h-[128px] rounded-full bg-white hover:scale-105 focus:outline-none overflow-hidden"
         style={{
           opacity: centerGroup ? 0 : 1,
           pointerEvents: centerGroup ? 'none' : 'auto',
@@ -503,7 +503,7 @@ export function MeuMenuRadial({ enabledIds }: { enabledIds?: Set<string> | null 
         }}
         aria-label={isMain ? 'Fechar menu' : 'Abrir menu'}
       >
-        <Image src="/images/logo_santospress.png" alt="Santos Press" fill className="object-contain p-5" />
+        <Image src="/images/logo_santospress.png" alt="Santos Press" fill sizes="128px" className="object-contain p-5" />
       </button>
 
       {/* Click-away */}
