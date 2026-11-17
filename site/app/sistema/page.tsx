@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { getDashboardStats } from './actions'
 import { getMeusRoles } from './actions/auth'
 import { getMenuPermissions } from './actions/menu-permissions'
+import { expandPermissions } from './lib/menu-tree'
 import { podeAcessarAdmin, apenasPerfilProprio, isCliente } from './lib/roles'
 import { getEffectiveRoles } from './lib/simulador'
 import { TopNav } from './components/TopNav'
@@ -22,7 +23,7 @@ export default function DashboardPage() {
   const router = useRouter()
   const [roles, setRoles] = useState<string[] | null>(null)
   const [stats, setStats] = useState<Stats>({ clientesAtivos: 0, funcionariosAtivos: 0, configured: true })
-  const [menuPerms, setMenuPerms] = useState<Set<string> | null>(null)
+  const [menuPerms, setMenuPerms] = useState<Set<string> | null | undefined>(undefined)
 
   useEffect(() => {
     getMeusRoles().then(async (realRoles) => {
@@ -38,7 +39,7 @@ export default function DashboardPage() {
       if (podeAcessarAdmin(r)) {
         getDashboardStats().then(setStats)
       } else if (!isCliente(r)) {
-        getMenuPermissions(r[0]).then(ids => setMenuPerms(new Set(ids)))
+        getMenuPermissions(r[0]).then(ids => setMenuPerms(expandPermissions(ids)))
       }
     })
   }, [router])
@@ -103,7 +104,10 @@ export default function DashboardPage() {
             <p className="text-gray-400 dark:text-gray-700 text-[10px] uppercase tracking-[0.25em] font-medium">
               Área Pessoal
             </p>
-            <MeuMenuRadial enabledIds={menuPerms} />
+            {menuPerms !== undefined
+              ? <MeuMenuRadial enabledIds={menuPerms} />
+              : <div className="w-8 h-8 border-2 border-gold border-t-transparent rounded-full animate-spin" />
+            }
           </>
         ) : (
           /* gestor, rh sem admin — futuramente terão menu próprio */
@@ -111,7 +115,10 @@ export default function DashboardPage() {
             <p className="text-gray-400 dark:text-gray-700 text-[10px] uppercase tracking-[0.25em] font-medium">
               Área Pessoal
             </p>
-            <MeuMenuRadial enabledIds={menuPerms} />
+            {menuPerms !== undefined
+              ? <MeuMenuRadial enabledIds={menuPerms} />
+              : <div className="w-8 h-8 border-2 border-gold border-t-transparent rounded-full animate-spin" />
+            }
           </>
         )}
       </main>

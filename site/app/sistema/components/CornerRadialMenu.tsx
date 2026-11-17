@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { getMeusRoles } from '../actions/auth'
 import { getMenuPermissions } from '../actions/menu-permissions'
+import { expandPermissions } from '../lib/menu-tree'
 import { isAdmin } from '../lib/roles'
 import { getEffectiveRoles } from '../lib/simulador'
 
@@ -334,6 +335,8 @@ function filterNavNodes(nodes: NavNode[], allowed: Set<string> | null): NavNode[
   if (!allowed) return nodes
   return nodes.flatMap((node): NavNode[] => {
     if (node.kind === 'group') {
+      // Group itself in allowed → show the full group
+      if (allowed.has(node.id)) return [node]
       const children = filterNavNodes(node.children, allowed)
       if (children.length === 0) return []
       return [{ ...node, children }]
@@ -381,7 +384,7 @@ export function CornerRadialMenu({ items, parentItems }: Props) {
         setAllowedIds(null)
       } else {
         const ids = await getMenuPermissions(roles[0])
-        setAllowedIds(new Set(ids))
+        setAllowedIds(expandPermissions(ids))
       }
     })
   }, [])
@@ -658,7 +661,7 @@ export function CornerRadialMenu({ items, parentItems }: Props) {
 
       {/* Trigger */}
       <button
-        onClick={() => setOpen(o => !o)}
+        onClick={() => open ? close() : setOpen(true)}
         aria-label={open ? 'Fechar menu' : 'Abrir menu'}
         className={[
           'fixed z-50 flex items-center justify-center rounded-full border-2 transition-all duration-300',

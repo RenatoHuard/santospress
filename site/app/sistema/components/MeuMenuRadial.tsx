@@ -4,13 +4,15 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 
-type Level = 'closed' | 'main' | 'meus-dados' | 'cadastros' | 'site' | 'noticias' | 'cases' | 'blog'
+type Level = 'closed' | 'main' | 'meus-dados' | 'cadastros' | 'site' | 'imprensa'
 
 const PREFERRED_ANGLES: Record<number, number[]> = {
   1: [-90],
   2: [180, 0],
   3: [-90, 0, 180],
-  4: [-135, -45, 45, 135],
+  4: [-135, -45,  45, 135],
+  5: [-135, -68,   0,  68, 135],
+  6: [-135, -81, -27,  27,  81, 135],
 }
 
 function getPositions(count: number, radius = 165) {
@@ -20,6 +22,17 @@ function getPositions(count: number, radius = 165) {
   return degrees.map(deg => {
     const a = deg * (Math.PI / 180)
     return { x: Math.cos(a) * radius, y: Math.sin(a) * radius }
+  })
+}
+
+function getFanPositions(parentPos: { x: number; y: number }, count: number) {
+  if (count === 0) return []
+  const angle = Math.atan2(parentPos.y, parentPos.x)
+  const childRadius = Math.sqrt(parentPos.x ** 2 + parentPos.y ** 2) + 95
+  if (count === 1) return [{ x: Math.cos(angle) * childRadius, y: Math.sin(angle) * childRadius }]
+  return Array.from({ length: count }, (_, i) => {
+    const a = angle + (i - (count - 1) / 2) * (Math.PI / 8)
+    return { x: Math.cos(a) * childRadius, y: Math.sin(a) * childRadius }
   })
 }
 
@@ -128,6 +141,42 @@ const IconBack = () => (
   </svg>
 )
 
+const IconImprensa = ({ size = 24 }: { size?: number }) => (
+  <svg style={{ width: size, height: size }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M12 7.5h1.5m-1.5 3h1.5m-7.5 3h7.5m-7.5 3h7.5m3-9h3.375c.621 0 1.125.504 1.125 1.125V18a2.25 2.25 0 01-2.25 2.25M16.5 7.5V18a2.25 2.25 0 002.25 2.25M16.5 7.5V4.875c0-.621-.504-1.125-1.125-1.125H4.125C3.504 3.75 3 4.254 3 4.875V18a2.25 2.25 0 002.25 2.25h13.5M6 7.5h3v3H6v-3z" />
+  </svg>
+)
+
+const IconMailing = () => (
+  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
+  </svg>
+)
+
+const IconReleases = () => (
+  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
+  </svg>
+)
+
+const IconClipping = () => (
+  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" />
+  </svg>
+)
+
+const IconRanking = () => (
+  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
+  </svg>
+)
+
+const IconAlertas = () => (
+  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
+  </svg>
+)
+
 const IconKanban = ({ size = 24 }: { size?: number }) => (
   <svg style={{ width: size, height: size }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
     <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" />
@@ -143,29 +192,29 @@ const IconCalendario = ({ size = 24 }: { size?: number }) => (
 // ── Itens por nível ──────────────────────────────────────────────────
 
 const MEUS_DADOS_ITEMS = [
-  { id: 'visualizar', label: 'Visualizar',     href: '/sistema/perfil?modo=ver',    icon: <IconEye /> },
+  { id: 'visualizar', label: 'Visualizar',      href: '/sistema/perfil?modo=ver',    icon: <IconEye /> },
   { id: 'atualizar',  label: 'Atualizar Dados', href: '/sistema/perfil?modo=editar', icon: <IconEdit /> },
 ]
 
 const SITE_ITEMS = [
-  { id: 'editar-site', label: 'Editar Site', href: '/sistema/site', icon: <IconEdit />,     isGroup: false, groupLevel: undefined as Level | undefined },
-  { id: 'noticias',    label: 'Notícias',    href: '#',             icon: <IconNoticias />, isGroup: true,  groupLevel: 'noticias' as Level },
-  { id: 'cases',       label: 'Post Cases',  href: '#',             icon: <IconCases />,    isGroup: true,  groupLevel: 'cases' as Level },
-  { id: 'blog',        label: 'Blog',        href: '#',             icon: <IconBlog />,     isGroup: true,  groupLevel: 'blog' as Level },
+  { id: 'editar-site', label: 'Editar Site', href: '/sistema/site', icon: <IconEdit />,     isGroup: false },
+  { id: 'noticias',    label: 'Notícias',    href: '#',             icon: <IconNoticias />, isGroup: true  },
+  { id: 'cases',       label: 'Post Cases',  href: '#',             icon: <IconCases />,    isGroup: true  },
+  { id: 'blog',        label: 'Blog',        href: '#',             icon: <IconBlog />,     isGroup: true  },
 ]
 
 const NOTICIAS_ITEMS = [
-  { id: 'nova-noticia', label: 'Nova Notícia', href: '/sistema/noticias/novo',         icon: <IconNovaNoticia /> },
-  { id: 'publicacoes',  label: 'Publicações',  href: '/sistema/noticias',              icon: <IconPublicacoes /> },
-  { id: 'rascunhos',    label: 'Rascunhos',    href: '/sistema/noticias/rascunhos',    icon: <IconRascunho /> },
-  { id: 'relatorios',   label: 'Relatórios',   href: '/sistema/noticias/relatorios',   icon: <IconRelatorio /> },
+  { id: 'nova-noticia', label: 'Nova Notícia', href: '/sistema/noticias/novo',       icon: <IconNovaNoticia /> },
+  { id: 'publicacoes',  label: 'Publicações',  href: '/sistema/noticias',            icon: <IconPublicacoes /> },
+  { id: 'rascunhos',    label: 'Rascunhos',    href: '/sistema/noticias/rascunhos',  icon: <IconRascunho /> },
+  { id: 'relatorios',   label: 'Relatórios',   href: '/sistema/noticias/relatorios', icon: <IconRelatorio /> },
 ]
 
 const BLOG_ITEMS_MENU = [
-  { id: 'nova-blog',         label: 'Novo Post',   href: '/sistema/blog/novo',         icon: <IconNovaNoticia /> },
-  { id: 'publicacoes-blog',  label: 'Publicações', href: '/sistema/blog',              icon: <IconPublicacoes /> },
-  { id: 'rascunhos-blog',    label: 'Rascunhos',   href: '/sistema/blog/rascunhos',    icon: <IconRascunho /> },
-  { id: 'relatorios-blog',   label: 'Relatórios',  href: '/sistema/blog/relatorios',   icon: <IconRelatorio /> },
+  { id: 'nova-blog',        label: 'Novo Post',   href: '/sistema/blog/novo',       icon: <IconNovaNoticia /> },
+  { id: 'publicacoes-blog', label: 'Publicações', href: '/sistema/blog',            icon: <IconPublicacoes /> },
+  { id: 'rascunhos-blog',   label: 'Rascunhos',   href: '/sistema/blog/rascunhos',  icon: <IconRascunho /> },
+  { id: 'relatorios-blog',  label: 'Relatórios',  href: '/sistema/blog/relatorios', icon: <IconRelatorio /> },
 ]
 
 const CASES_ITEMS = [
@@ -180,34 +229,70 @@ const CADASTROS_ITEMS = [
   { id: 'clientes',     label: 'Clientes',      href: '/sistema/cadastros/clientes',     icon: <IconCliente /> },
 ]
 
+const IMPRENSA_LEVEL_ITEMS = [
+  { id: 'imprensa-dashboard',  label: 'Painel',     href: '/sistema/imprensa', icon: <IconImprensa />,  isGroup: false },
+  { id: 'imprensa-mailing',    label: 'Mailing',    href: '#',                 icon: <IconMailing />,   isGroup: false },
+  { id: 'imprensa-cadastro',   label: 'Cadastro',   href: '#',                 icon: <IconCadastros />, isGroup: true  },
+  { id: 'imprensa-resultados', label: 'Resultados', href: '#',                 icon: <IconClipping />,  isGroup: true  },
+  { id: 'imprensa-gestao',     label: 'Gestão',     href: '#',                 icon: <IconRanking />,   isGroup: true  },
+]
+
+const IMP_CADASTRO_ITEMS = [
+  { id: 'imprensa-jornalistas', label: 'Jornalistas', href: '/sistema/imprensa/jornalistas', icon: <IconFuncionario /> },
+  { id: 'imprensa-veiculos',    label: 'Veículos',    href: '/sistema/imprensa/veiculos',    icon: <IconSite /> },
+  { id: 'imprensa-metas',       label: 'Metas',       href: '/sistema/imprensa/metas',       icon: <IconRelatorio /> },
+]
+
+const IMP_RESULTADOS_ITEMS = [
+  { id: 'imprensa-clipping', label: 'Clipping', href: '/sistema/imprensa/clipping', icon: <IconClipping /> },
+  { id: 'imprensa-releases', label: 'Releases', href: '/sistema/imprensa/releases', icon: <IconReleases /> },
+]
+
+const IMP_GESTAO_ITEMS = [
+  { id: 'imprensa-ranking', label: 'Ranking', href: '/sistema/imprensa/ranking', icon: <IconRanking /> },
+  { id: 'imprensa-alertas', label: 'Alertas', href: '/sistema/imprensa/alertas', icon: <IconAlertas /> },
+]
+
 // ── Componente ───────────────────────────────────────────────────────
 
 export function MeuMenuRadial({ enabledIds }: { enabledIds?: Set<string> | null }) {
   const router = useRouter()
   const [level, setLevel] = useState<Level>('closed')
+  const [expandedId, setExpandedId] = useState<string | null>(null)
   const [hasOpened, setHasOpened] = useState(false)
 
   const ok = (id: string) => !enabledIds || enabledIds.has(id)
 
-  const isMain       = level === 'main'
-  const isMeusDados  = level === 'meus-dados'
-  const isCadastros  = level === 'cadastros'
-  const isSite       = level === 'site'
-  const isNoticias   = level === 'noticias'
-  const isCases      = level === 'cases'
-  const isBlog       = level === 'blog'
+  const isMain      = level === 'main'
+  const isMeusDados = level === 'meus-dados'
+  const isCadastros = level === 'cadastros'
+  const isSite      = level === 'site'
+  const isImprensa  = level === 'imprensa'
 
-  function close()       { setLevel('closed') }
-  function openMain()    { setHasOpened(true); setLevel('main') }
-  function backToMain()  { setLevel('main') }
+  function close()      { setExpandedId(null); setLevel('closed') }
+  function openMain()   { setHasOpened(true); setExpandedId(null); setLevel('main') }
+  function backToMain() { setExpandedId(null); setLevel('main') }
+  function backFromCenter() {
+    if (expandedId) { setExpandedId(null); return }
+    setLevel('main')
+  }
 
   // Itens filtrados por permissão
-  const filteredMeusDadosItems  = MEUS_DADOS_ITEMS.filter(i => ok(i.id))
-  const filteredCadastrosItems  = CADASTROS_ITEMS.filter(i => ok(i.id))
-  const filteredNoticiasItems   = NOTICIAS_ITEMS.filter(i => ok(i.id))
-  const filteredCasesItems      = CASES_ITEMS.filter(i => ok(i.id))
-  const filteredBlogItems       = BLOG_ITEMS_MENU.filter(i => ok(i.id))
-  const filteredSiteItems       = SITE_ITEMS.filter(i => {
+  const filteredMeusDadosItems     = MEUS_DADOS_ITEMS.filter(i => ok(i.id))
+  const filteredCadastrosItems     = CADASTROS_ITEMS.filter(i => ok(i.id))
+  const filteredNoticiasItems      = NOTICIAS_ITEMS.filter(i => ok(i.id))
+  const filteredCasesItems         = CASES_ITEMS.filter(i => ok(i.id))
+  const filteredBlogItems          = BLOG_ITEMS_MENU.filter(i => ok(i.id))
+  const filteredImpCadastroItems   = IMP_CADASTRO_ITEMS.filter(i => ok(i.id))
+  const filteredImpResultadosItems = IMP_RESULTADOS_ITEMS.filter(i => ok(i.id))
+  const filteredImpGestaoItems     = IMP_GESTAO_ITEMS.filter(i => ok(i.id))
+  const filteredImprensaItems      = IMPRENSA_LEVEL_ITEMS.filter(i => {
+    if (i.id === 'imprensa-cadastro')   return filteredImpCadastroItems.length > 0
+    if (i.id === 'imprensa-resultados') return filteredImpResultadosItems.length > 0
+    if (i.id === 'imprensa-gestao')     return filteredImpGestaoItems.length > 0
+    return ok(i.id)
+  })
+  const filteredSiteItems = SITE_ITEMS.filter(i => {
     if (i.id === 'noticias') return ok('noticias') && filteredNoticiasItems.length > 0
     if (i.id === 'cases')    return ok('cases') && filteredCasesItems.length > 0
     if (i.id === 'blog')     return ok('blog') && filteredBlogItems.length > 0
@@ -215,38 +300,55 @@ export function MeuMenuRadial({ enabledIds }: { enabledIds?: Set<string> | null 
   })
 
   const allMainItems = [
-    { id: 'meus-dados', label: 'Meus Dados', icon: <IconUser />,         largeIcon: <IconUser size={36} />,         href: undefined,             onClick: () => setLevel('meus-dados') },
-    { id: 'kanban',     label: 'Kanban',     icon: <IconKanban />,       largeIcon: <IconKanban size={36} />,       href: '/sistema/kanban',     onClick: undefined },
-    { id: 'calendario', label: 'Calendário', icon: <IconCalendario />,   largeIcon: <IconCalendario size={36} />,   href: '/sistema/calendario', onClick: undefined },
-    { id: 'cadastros',  label: 'Cadastros',  icon: <IconCadastros />,    largeIcon: <IconCadastros size={36} />,    href: undefined,             onClick: () => setLevel('cadastros') },
-    { id: 'site',       label: 'Site',       icon: <IconSite />,         largeIcon: <IconSite size={36} />,         href: undefined,             onClick: () => setLevel('site') },
+    { id: 'meus-dados', label: 'Meus Dados', icon: <IconUser />,       largeIcon: <IconUser size={36} />,       href: undefined, onClick: () => { setExpandedId(null); setLevel('meus-dados') } },
+    { id: 'kanban',     label: 'Kanban',     icon: <IconKanban />,     largeIcon: <IconKanban size={36} />,     href: '/sistema/kanban',     onClick: undefined },
+    { id: 'calendario', label: 'Calendário', icon: <IconCalendario />, largeIcon: <IconCalendario size={36} />, href: '/sistema/calendario', onClick: undefined },
+    { id: 'cadastros',  label: 'Cadastros',  icon: <IconCadastros />,  largeIcon: <IconCadastros size={36} />,  href: undefined, onClick: () => { setExpandedId(null); setLevel('cadastros') } },
+    { id: 'site',       label: 'Site',       icon: <IconSite />,       largeIcon: <IconSite size={36} />,       href: undefined, onClick: () => { setExpandedId(null); setLevel('site') } },
+    { id: 'imprensa',   label: 'Imprensa',   icon: <IconImprensa />,   largeIcon: <IconImprensa size={36} />,   href: undefined, onClick: () => { setExpandedId(null); setLevel('imprensa') } },
   ]
 
   const mainItems = allMainItems.filter(i => {
     if (i.id === 'meus-dados') return ok('meus-dados') && filteredMeusDadosItems.length > 0
     if (i.id === 'cadastros')  return ok('cadastros') && filteredCadastrosItems.length > 0
     if (i.id === 'site')       return ok('site') && filteredSiteItems.length > 0
+    if (i.id === 'imprensa')   return ok('imprensa') && filteredImprensaItems.length > 0
     return ok(i.id)
   })
 
-  const mainPositions    = getPositions(mainItems.length)
-  const meusDadosPos     = getPositions(filteredMeusDadosItems.length)
-  const cadastrosPos     = getPositions(filteredCadastrosItems.length)
-  const sitePos          = getPositions(filteredSiteItems.length)
-  const noticiasPos      = getPositions(filteredNoticiasItems.length)
-  const casesPos         = getPositions(filteredCasesItems.length)
-  const blogPos          = getPositions(filteredBlogItems.length)
+  const mainPositions = getPositions(mainItems.length)
+  const meusDadosPos  = getPositions(filteredMeusDadosItems.length)
+  const cadastrosPos  = getPositions(filteredCadastrosItems.length)
+  const sitePos       = getPositions(filteredSiteItems.length)
+  const imprensaPos   = getPositions(filteredImprensaItems.length)
 
-  // Qual grupo está no centro (apenas grupos com sub-nível)
-  const centerGroup = isMeusDados ? 'meus-dados' : isCadastros ? 'cadastros' : isSite || isNoticias || isCases || isBlog ? 'site' : null
+  const centerGroup = isMeusDados ? 'meus-dados' : isCadastros ? 'cadastros' : isSite ? 'site' : isImprensa ? 'imprensa' : null
 
-  // Aliases para clareza no JSX abaixo
-  const activeMeusDadosItems  = filteredMeusDadosItems
-  const activeCadastrosItems  = filteredCadastrosItems
-  const activeSiteItems       = filteredSiteItems
-  const activeNoticiasItems   = filteredNoticiasItems
-  const activeCasesItems      = filteredCasesItems
-  const activeBlogItems       = filteredBlogItems
+  // Fan expand: sub-itens do grupo clicado aparecem além do arco pai
+  const fanRawItems = expandedId
+    ? ({
+        noticias: NOTICIAS_ITEMS,
+        cases: CASES_ITEMS,
+        blog: BLOG_ITEMS_MENU,
+        'imprensa-cadastro': IMP_CADASTRO_ITEMS,
+        'imprensa-resultados': IMP_RESULTADOS_ITEMS,
+        'imprensa-gestao': IMP_GESTAO_ITEMS,
+      } as Record<string, typeof NOTICIAS_ITEMS>)[expandedId] ?? []
+    : []
+  const fanChildren = fanRawItems.filter(i => ok(i.id))
+  const fanParentPos = (() => {
+    if (!expandedId) return { x: 0, y: 0 }
+    if (isSite) {
+      const idx = filteredSiteItems.findIndex(i => i.id === expandedId)
+      return idx >= 0 ? sitePos[idx] : { x: 0, y: 0 }
+    }
+    if (isImprensa) {
+      const idx = filteredImprensaItems.findIndex(i => i.id === expandedId)
+      return idx >= 0 ? imprensaPos[idx] : { x: 0, y: 0 }
+    }
+    return { x: 0, y: 0 }
+  })()
+  const fanPositions = getFanPositions(fanParentPos, fanChildren.length)
 
   return (
     <div className="relative flex items-center justify-center select-none" style={{ width: 480, height: 480 }}>
@@ -265,7 +367,7 @@ export function MeuMenuRadial({ enabledIds }: { enabledIds?: Set<string> | null 
         />
       ))}
 
-      {/* ── Nível 1: Meus Dados + Site ──────────────────────── */}
+      {/* ── Nível 1: itens principais ────────────────────────── */}
       {mainItems.map((item, i) => {
         const pos      = mainPositions[i]
         const isCenter = centerGroup === item.id
@@ -290,7 +392,7 @@ export function MeuMenuRadial({ enabledIds }: { enabledIds?: Set<string> | null 
           >
             <button
               onClick={() => {
-                if (isCenter) { backToMain(); return }
+                if (isCenter) { backFromCenter(); return }
                 if (item.href) { close(); router.push(item.href) }
                 else item.onClick?.()
               }}
@@ -318,7 +420,7 @@ export function MeuMenuRadial({ enabledIds }: { enabledIds?: Set<string> | null 
       })}
 
       {/* ── Nível 2a: sub-itens de Meus Dados ───────────────── */}
-      {activeMeusDadosItems.map((item, i) => {
+      {filteredMeusDadosItems.map((item, i) => {
         const pos = meusDadosPos[i]
         return (
           <div
@@ -345,7 +447,7 @@ export function MeuMenuRadial({ enabledIds }: { enabledIds?: Set<string> | null 
       })}
 
       {/* ── Nível 2b: sub-itens de Cadastros ──────────────────── */}
-      {activeCadastrosItems.map((item, i) => {
+      {filteredCadastrosItems.map((item, i) => {
         const pos = cadastrosPos[i]
         return (
           <div
@@ -371,8 +473,8 @@ export function MeuMenuRadial({ enabledIds }: { enabledIds?: Set<string> | null 
         )
       })}
 
-      {/* ── Nível 2b: sub-itens de Site (Editar Site + Notícias) ── */}
-      {activeSiteItems.map((item, i) => {
+      {/* ── Nível 2c: sub-itens de Site (grupos abrem fan) ──── */}
+      {filteredSiteItems.map((item, i) => {
         const pos = sitePos[i]
         return (
           <div
@@ -391,7 +493,10 @@ export function MeuMenuRadial({ enabledIds }: { enabledIds?: Set<string> | null 
             }}
           >
             {item.isGroup ? (
-              <button onClick={() => item.groupLevel && setLevel(item.groupLevel as Level)} className={`w-16 h-16 ${ITEM_BTN}`}>
+              <button
+                onClick={() => setExpandedId(id => id === item.id ? null : item.id)}
+                className={`w-16 h-16 ${ITEM_BTN}`}
+              >
                 {item.icon}
               </button>
             ) : (
@@ -404,77 +509,59 @@ export function MeuMenuRadial({ enabledIds }: { enabledIds?: Set<string> | null 
         )
       })}
 
-      {/* ── Nível 3: sub-itens de Notícias ──────────────────── */}
-      {activeNoticiasItems.map((item, i) => {
-        const pos = noticiasPos[i]
+      {/* ── Nível 2d: sub-itens de Imprensa (grupos abrem fan) ── */}
+      {filteredImprensaItems.map((item, i) => {
+        const pos = imprensaPos[i]
         return (
           <div
             key={item.id}
             className="absolute flex flex-col items-center"
             style={{
               left: '50%', top: '50%',
-              transform: isNoticias
+              transform: isImprensa
                 ? `translate(calc(-50% + ${pos.x}px), calc(-50% + ${pos.y}px))`
                 : 'translate(-50%, -50%)',
-              opacity: isNoticias ? 1 : 0,
-              pointerEvents: isNoticias ? 'auto' : 'none',
+              opacity: isImprensa ? 1 : 0,
+              pointerEvents: isImprensa ? 'auto' : 'none',
               transition: 'transform 0.48s cubic-bezier(0.34,1.56,0.64,1), opacity 0.25s ease',
-              transitionDelay: isNoticias ? `${0.1 + i * 0.08}s` : '0s',
+              transitionDelay: isImprensa ? `${0.1 + i * 0.08}s` : '0s',
               zIndex: 20,
             }}
           >
-            <Link href={item.href} onClick={close} className={`w-16 h-16 ${ITEM_BTN}`}>
-              {item.icon}
-            </Link>
+            {item.isGroup ? (
+              <button
+                onClick={() => setExpandedId(id => id === item.id ? null : item.id)}
+                className={`w-16 h-16 ${ITEM_BTN}`}
+              >
+                {item.icon}
+              </button>
+            ) : (
+              <Link href={item.href} onClick={close} className={`w-16 h-16 ${ITEM_BTN}`}>
+                {item.icon}
+              </Link>
+            )}
             <span className={LABEL}>{item.label}</span>
           </div>
         )
       })}
 
-      {/* ── Nível 3: sub-itens de Cases ──────────────────── */}
-      {activeCasesItems.map((item, i) => {
-        const pos = casesPos[i]
+      {/* ── Fan: sub-itens do grupo expandido (nível 3) ─────── */}
+      {fanChildren.map((item, i) => {
+        const pos = fanPositions[i]
         return (
           <div
             key={item.id}
             className="absolute flex flex-col items-center"
             style={{
               left: '50%', top: '50%',
-              transform: isCases
+              transform: expandedId
                 ? `translate(calc(-50% + ${pos.x}px), calc(-50% + ${pos.y}px))`
                 : 'translate(-50%, -50%)',
-              opacity: isCases ? 1 : 0,
-              pointerEvents: isCases ? 'auto' : 'none',
+              opacity: expandedId ? 1 : 0,
+              pointerEvents: expandedId ? 'auto' : 'none',
               transition: 'transform 0.48s cubic-bezier(0.34,1.56,0.64,1), opacity 0.25s ease',
-              transitionDelay: isCases ? `${0.1 + i * 0.08}s` : '0s',
-              zIndex: 20,
-            }}
-          >
-            <Link href={item.href} onClick={close} className={`w-16 h-16 ${ITEM_BTN}`}>
-              {item.icon}
-            </Link>
-            <span className={LABEL}>{item.label}</span>
-          </div>
-        )
-      })}
-
-      {/* ── Nível 3: sub-itens de Blog ──────────────────── */}
-      {activeBlogItems.map((item, i) => {
-        const pos = blogPos[i]
-        return (
-          <div
-            key={item.id}
-            className="absolute flex flex-col items-center"
-            style={{
-              left: '50%', top: '50%',
-              transform: isBlog
-                ? `translate(calc(-50% + ${pos.x}px), calc(-50% + ${pos.y}px))`
-                : 'translate(-50%, -50%)',
-              opacity: isBlog ? 1 : 0,
-              pointerEvents: isBlog ? 'auto' : 'none',
-              transition: 'transform 0.48s cubic-bezier(0.34,1.56,0.64,1), opacity 0.25s ease',
-              transitionDelay: isBlog ? `${0.1 + i * 0.08}s` : '0s',
-              zIndex: 20,
+              transitionDelay: expandedId ? `${0.1 + i * 0.08}s` : '0s',
+              zIndex: 30,
             }}
           >
             <Link href={item.href} onClick={close} className={`w-16 h-16 ${ITEM_BTN}`}>

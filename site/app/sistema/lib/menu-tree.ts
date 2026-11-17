@@ -86,6 +86,16 @@ export function getDescendants(id: string): string[] {
   return result
 }
 
+/** Expande IDs de grupo para incluir todos os descendentes, garantindo que
+ *  os dois menus (central e lateral) mostrem os mesmos itens. */
+export function expandPermissions(ids: string[]): Set<string> {
+  const expanded = new Set(ids)
+  for (const id of ids) {
+    for (const desc of getDescendants(id)) expanded.add(desc)
+  }
+  return expanded
+}
+
 export function applyToggle(current: Set<string>, id: string, on: boolean): Set<string> {
   const next = new Set(current)
   if (on) {
