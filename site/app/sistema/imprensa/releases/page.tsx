@@ -31,6 +31,8 @@ export default function ReleasesPage() {
   const [clientePostsFiltro, setClientePostsFiltro] = useState('')
   const [posts, setPosts] = useState<PostVinculado[]>([])
   const [postsLoading, setPostsLoading] = useState(true)
+  const [postsSortKey, setPostsSortKey] = useState<'tipo' | 'titulo' | 'cliente_nome' | 'data'>('data')
+  const [postsSortDir, setPostsSortDir] = useState<'asc' | 'desc'>('desc')
   const PER_PAGE = 30
 
   const load = useCallback(async (p = 1, q = busca) => {
@@ -210,39 +212,83 @@ export default function ReleasesPage() {
           </div>
         ) : posts.length === 0 ? (
           <p className="text-sm text-gray-400 py-8 text-center">Nenhum post vinculado a cliente encontrado.</p>
-        ) : (
-          <div className="bg-white dark:bg-[#111] border border-gray-100 dark:border-white/5 rounded-2xl overflow-hidden">
-            <div className="divide-y divide-gray-50 dark:divide-white/3">
-              {posts.map(p => (
-                <div key={p.id} className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-white/2 transition-colors">
-                  <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0 ${
-                    p.tipo === 'case' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400' :
-                    p.tipo === 'blog' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' :
-                    'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
-                  }`}>
-                    {p.tipo === 'case' ? 'Case' : p.tipo === 'blog' ? 'Blog' : 'Notícia'}
-                  </span>
-                  <span className="flex-1 text-sm text-gray-800 dark:text-gray-200 truncate">{p.titulo || 'Sem título'}</span>
-                  {p.cliente_nome && (
-                    <span className="text-xs text-gray-500 dark:text-gray-400 shrink-0 hidden sm:inline">{p.cliente_nome}</span>
-                  )}
-                  <span className="text-xs text-gray-400 shrink-0">
-                    {fmt(p.publicado_em ?? p.created_at)}
-                  </span>
-                  {p.status === 'publicado' && p.slug && (
-                    <a
-                      href={`/${p.tipo === 'case' ? 'cases' : p.tipo === 'blog' ? 'blog' : 'noticias'}/${p.slug}`}
-                      target="_blank" rel="noreferrer"
-                      className="text-xs text-gold hover:underline shrink-0"
-                    >
-                      Ver →
-                    </a>
-                  )}
-                </div>
-              ))}
+        ) : (() => {
+          function toggleSort(key: typeof postsSortKey) {
+            if (postsSortKey === key) setPostsSortDir(d => d === 'asc' ? 'desc' : 'asc')
+            else { setPostsSortKey(key); setPostsSortDir('asc') }
+          }
+          function SortIcon({ col }: { col: typeof postsSortKey }) {
+            if (postsSortKey !== col) return <span className="ml-1 opacity-30">↕</span>
+            return <span className="ml-1 text-gold">{postsSortDir === 'asc' ? '↑' : '↓'}</span>
+          }
+          const sorted = [...posts].sort((a, b) => {
+            let va: string, vb: string
+            if (postsSortKey === 'tipo') { va = a.tipo; vb = b.tipo }
+            else if (postsSortKey === 'titulo') { va = a.titulo ?? ''; vb = b.titulo ?? '' }
+            else if (postsSortKey === 'cliente_nome') { va = a.cliente_nome ?? ''; vb = b.cliente_nome ?? '' }
+            else { va = a.publicado_em ?? a.created_at; vb = b.publicado_em ?? b.created_at }
+            const cmp = va.localeCompare(vb, 'pt-BR')
+            return postsSortDir === 'asc' ? cmp : -cmp
+          })
+          const thCls = 'px-4 py-2.5 text-left text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider select-none cursor-pointer hover:text-gold transition-colors'
+          return (
+            <div className="bg-white dark:bg-[#111] border border-gray-100 dark:border-white/5 rounded-2xl overflow-hidden">
+              <table className="w-full table-fixed">
+                <colgroup>
+                  <col style={{ width: '90px' }} />
+                  <col />
+                  <col style={{ width: '170px' }} />
+                  <col style={{ width: '115px' }} />
+                  <col style={{ width: '52px' }} />
+                </colgroup>
+                <thead className="bg-gray-50 dark:bg-white/3 border-b border-gray-100 dark:border-white/5">
+                  <tr>
+                    <th className={thCls} onClick={() => toggleSort('tipo')}>Tipo<SortIcon col="tipo" /></th>
+                    <th className={thCls} onClick={() => toggleSort('titulo')}>Título<SortIcon col="titulo" /></th>
+                    <th className={thCls} onClick={() => toggleSort('cliente_nome')}>Cliente<SortIcon col="cliente_nome" /></th>
+                    <th className={thCls} onClick={() => toggleSort('data')}>Data<SortIcon col="data" /></th>
+                    <th className="px-4 py-2.5" />
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-50 dark:divide-white/3">
+                  {sorted.map(p => (
+                    <tr key={p.id} className="hover:bg-gray-50 dark:hover:bg-white/2 transition-colors">
+                      <td className="px-4 py-3">
+                        <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full whitespace-nowrap ${
+                          p.tipo === 'case' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400' :
+                          p.tipo === 'blog' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' :
+                          'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
+                        }`}>
+                          {p.tipo === 'case' ? 'Case' : p.tipo === 'blog' ? 'Blog' : 'Notícia'}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-800 dark:text-gray-200 truncate max-w-0">
+                        <span className="block truncate">{p.titulo || 'Sem título'}</span>
+                      </td>
+                      <td className="px-4 py-3 text-xs text-gray-500 dark:text-gray-400 truncate max-w-0">
+                        <span className="block truncate">{p.cliente_nome ?? '—'}</span>
+                      </td>
+                      <td className="px-4 py-3 text-xs text-gray-400 whitespace-nowrap">
+                        {fmt(p.publicado_em ?? p.created_at)}
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        {p.status === 'publicado' && p.slug && (
+                          <a
+                            href={`/${p.tipo === 'case' ? 'cases' : p.tipo === 'blog' ? 'blog' : 'noticias'}/${p.slug}`}
+                            target="_blank" rel="noreferrer"
+                            className="text-xs text-gold hover:underline"
+                          >
+                            Ver →
+                          </a>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
-          </div>
-        )}
+          )
+        })()}
       </div>
 
       {/* Modal criar/editar */}
